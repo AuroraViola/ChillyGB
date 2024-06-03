@@ -2,7 +2,6 @@
 #include "input.h"
 #include "raylib.h"
 #include <stdint.h>
-#include <stdbool.h>
 
 uint8_t get_joypad(cpu *c, joypad *j){
     uint8_t joypad_register = 0;
@@ -38,25 +37,30 @@ uint8_t get_joypad(cpu *c, joypad *j){
         c->memory[0xff0f] |= 16;
     }
 
+    if (IsKeyPressed(KEY_SPACE))
+        SetTargetFPS(60000);
+    if (IsKeyReleased(KEY_SPACE))
+        SetTargetFPS(60);
+
     if (IsKeyDown(KEY_W))
         j->dpad[DPAD_UP] = 1;
     else
         j->dpad[DPAD_UP] = 0;
 
-    if (IsKeyDown(KEY_S))
+    if (IsKeyDown(KEY_S) && j->dpad[DPAD_UP] == 0)
         j->dpad[DPAD_DOWN] = 1;
     else
         j->dpad[DPAD_DOWN] = 0;
-
-    if (IsKeyDown(KEY_A))
-        j->dpad[DPAD_LEFT] = 1;
-    else
-        j->dpad[DPAD_LEFT] = 0;
 
     if (IsKeyDown(KEY_D))
         j->dpad[DPAD_RIGHT] = 1;
     else
         j->dpad[DPAD_RIGHT] = 0;
+
+    if (IsKeyDown(KEY_A) && j->dpad[DPAD_RIGHT] == 0)
+        j->dpad[DPAD_LEFT] = 1;
+    else
+        j->dpad[DPAD_LEFT] = 0;
 
     if (IsKeyDown(KEY_L))
         j->buttons[BUTTON_A] = 1;
