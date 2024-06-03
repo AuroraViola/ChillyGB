@@ -1,0 +1,5 @@
+cmake-build-debug
+cmake-build-debug-coverage
+cmake-build-release
+Roms
+.idea
