@@ -124,7 +124,7 @@ void load_display(cpu *c, ppu *p) {
         if ((c->memory[0xff40] & 2) != 0) {
             load_sprites(c, p);
             for (int i = 0; i < 40; i++) {
-                if (((p->sprites[i][0] < 160) && (p->sprites[i][0] > 16) && (p->sprites[i][1] < 160) && (p->sprites[i][1] > 8))) {
+                if (((p->sprites[i][0] < 160) && (p->sprites[i][0] > 15) && (p->sprites[i][1] < 160) && (p->sprites[i][1] > 7))) {
                     uint8_t sprite_tile[8][8];
                     decode_tile(c, (0x8000 | (p->sprites[i][2] << 4)), sprite_tile);
 

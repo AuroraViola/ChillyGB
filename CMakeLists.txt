@@ -11,5 +11,7 @@ add_executable(ChillyGB main.c
         opcodes.h
         ppu.h
         ppu.c
+        input.c
+        input.h
 )
 target_link_libraries(ChillyGB raylib)

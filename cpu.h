@@ -40,9 +40,9 @@ typedef struct {
 
 typedef struct {
     uint64_t t_states;
-    uint16_t scan_line_tick;
-    int16_t divider_register;
-    int16_t tima_counter;
+    int32_t scan_line_tick;
+    uint32_t divider_register;
+    uint32_t tima_counter;
     uint32_t frame_tick;
     bool is_frame;
 }tick;

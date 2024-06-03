@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "cpu.h"
 
 uint8_t* r8(cpu *c, uint8_t r) {
@@ -33,6 +34,9 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
         case 0xff46:
             c->memory[addr] = value;
             c->dma_transfer = true;
+            break;
+        case 0xff04:
+            c->memory[addr] = 0;
             break;
         default:
             c->memory[addr] = value;
@@ -307,19 +311,19 @@ uint8_t di(cpu *c, parameters *p) {
 
 uint8_t ldh_imm8_a(cpu *c, parameters *p) {
     c->pc += 2;
-    c->memory[0xff00 + p->imm8] = c->r.reg8[A];
+    set_mem(c, (0xff00 | p->imm8), c->r.reg8[A]);
     return 12;
 }
 
 uint8_t ldh_c_a(cpu *c, parameters *p) {
     c->pc += 1;
-    c->memory[0xff00 + c->r.reg8[C]] = c->r.reg8[A];
+    set_mem(c, (0xff00 | c->r.reg8[C]), c->r.reg8[A]);
     return 8;
 }
 
 uint8_t ldh_a_c(cpu *c, parameters *p) {
     c->pc += 1;
-    c->r.reg8[A] = c->memory[0xff00 + c->r.reg8[C]];
+    c->r.reg8[A] = get_mem(c, (0xff00 | c->r.reg8[C]));
     return 8;
 }
 
@@ -377,7 +381,7 @@ uint8_t pop(cpu *c, parameters *p) {
 
 uint8_t ldh_a_imm8(cpu *c, parameters *p) { //TODO
     c->pc += 2;
-    c->r.reg8[A] = get_mem(c, (0xff00 + p->imm8));
+    c->r.reg8[A] = get_mem(c, (0xff00 | p->imm8));
     return 12;
 }
 

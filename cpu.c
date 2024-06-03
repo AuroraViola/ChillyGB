@@ -7,36 +7,34 @@
 const uint8_t rst_vec[] = {0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38};
 const uint16_t clock_select[] = {1024, 16, 64, 256};
 
-void add_ticks(cpu *c, tick *t, uint8_t ticks){
+void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->t_states += ticks;
     t->scan_line_tick += ticks;
     t->frame_tick += ticks;
 
-    if ((c->memory[0xff40] & 128) != 0) {
-        if (t->frame_tick >= 69905) {
-            t->frame_tick -= 69905;
-            t->is_frame = true;
+    if (t->frame_tick >= 69905) {
+        t->frame_tick -= 69905;
+        t->is_frame = true;
+    }
+
+    if (t->scan_line_tick >= 456) {
+        t->scan_line_tick -= 456;
+        c->memory[0xff44] += 1;
+
+        if (c->memory[0xff44] == c->memory[0xff45]) {
+            c->memory[0xff41] |= 2;
+            if ((c->memory[0xff41] & 64) != 0)
+                c->memory[0xff0f] |= 2;
         }
-
-        if (t->scan_line_tick >= 456) {
+        if (c->memory[0xff44] == 144) {
+            c->memory[0xff0f] |= 1;
+        } else if (c->memory[0xff44] >= 153) {
             t->scan_line_tick -= 456;
-            c->memory[0xff44] += 1;
-
-            if (c->memory[0xff44] == c->memory[0xff45]) {
-                c->memory[0xff41] |= 2;
-                if ((c->memory[0xff41] & 64) != 0)
-                    c->memory[0xff0f] |= 2;
-            }
-            if (c->memory[0xff44] == 144) {
-                c->memory[0xff0f] |= 1;
-            } else if (c->memory[0xff44] >= 153) {
-                t->scan_line_tick -= 456;
-                c->memory[0xff44] = 0;
-            }
+            c->memory[0xff44] = 0;
         }
     }
 
-    if ((c->memory[0xff07] & 1) == 1) {
+    if ((c->memory[0xff07] & 4) != 0) {
         t->tima_counter += ticks;
         if (t->tima_counter > clock_select[c->memory[0xff07] & 3]) {
             t->tima_counter = 0;
@@ -107,7 +105,6 @@ void run_interrupt(cpu *c, tick *t) {
             c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x60;
             add_ticks(c, t, 20);
-            printf("joypad");
         }
     }
 }
@@ -277,7 +274,8 @@ void execute(cpu *c, tick *t) {
         run_interrupt(c, t);
     uint8_t ticks = execute_instruction(c);
     add_ticks(c, t, ticks);
-    if (c->dma_transfer == true)
+    if (c->dma_transfer) {
         c->dma_transfer = false;
         dma_transfer(c, t);
+    }
 }
