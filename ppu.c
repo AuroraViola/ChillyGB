@@ -197,15 +197,13 @@ void load_display(cpu *c, ppu *p) {
                     for (int16_t y = 0; y < 8; y++) {
                         for (int16_t x = 0; x < 8; x++) {
                             if (sprite_tile[y][x] != 0) {
-                                if ((((p->sprites[i][3] >> 7) & 1) == 0) || (p->display[p->sprites[i][0] + y - 16][p->sprites[i][1] + x - 8] == 0))
+                                if ((((p->sprites[i][3] >> 7) & 1) == 0) || (p->display[p->sprites[i][0] + y - 16][p->sprites[i][1] + x - 8] == bg_palette[0]))
                                     p->display[p->sprites[i][0] + y - 16][p->sprites[i][1] + x - 8] = s_palette[sprite_tile[y][x]];
                             }
                         }
                     }
                 }
-
             }
         }
-
     }
 }
