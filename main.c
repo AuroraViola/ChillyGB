@@ -31,6 +31,7 @@ int main(void) {
     ppu p = {};
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*3, 144*3, "ChillyGB");
+    SetWindowMinSize(160, 144);
     SetTargetFPS(60);
     RenderTexture2D display = LoadRenderTexture(160, 144);
     Color pixels[144][160] = { 0 };
@@ -39,7 +40,8 @@ int main(void) {
             pixels[i][j] = (Color){185, 237, 186, 255};
 
     // Load ROM to Memory
-    FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
     assert(cartridge != NULL && "File not found");
     assert(fread(&c.memory[0], 0x8000, 1, cartridge) >= 0);
 
@@ -83,9 +85,12 @@ int main(void) {
                                             (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
             EndDrawing();
+            uint16_t fps = GetFPS();
+            char str[22];
+            sprintf(str, "ChillyGB - %d FPS", fps);
+            SetWindowTitle(str);
         }
 
-        //printf("%ld\n", t.t_states);
         ticks += 1;
     }
 
