@@ -10,22 +10,29 @@ const uint16_t clock_select[] = {1024, 16, 64, 256};
 void add_ticks(cpu *c, tick *t, uint8_t ticks){
     t->t_states += ticks;
     t->scan_line_tick += ticks;
-    if (t->scan_line_tick >= 456) {
-        t->scan_line_tick -= 456;
-        c->memory[0xff44] += 1;
+    t->frame_tick += ticks;
 
-        if (c->memory[0xff44] == c->memory[0xff45]) {
-            c->memory[0xff41] |= 2;
-            if ((c->memory[0xff41] & 64) != 0)
-                c->memory[0xff0f] |= 2;
+    if ((c->memory[0xff40] & 128) != 0) {
+        if (t->frame_tick >= 69905) {
+            t->frame_tick -= 69905;
+            t->is_frame = true;
         }
-        if (c->memory[0xff44] == 144) {
-            c->is_vblank = true;
-            c->memory[0xff0f] |= 1;
-        }
-        else if (c->memory[0xff44] >= 153) {
+
+        if (t->scan_line_tick >= 456) {
             t->scan_line_tick -= 456;
-            c->memory[0xff44] = 0;
+            c->memory[0xff44] += 1;
+
+            if (c->memory[0xff44] == c->memory[0xff45]) {
+                c->memory[0xff41] |= 2;
+                if ((c->memory[0xff41] & 64) != 0)
+                    c->memory[0xff0f] |= 2;
+            }
+            if (c->memory[0xff44] == 144) {
+                c->memory[0xff0f] |= 1;
+            } else if (c->memory[0xff44] >= 153) {
+                t->scan_line_tick -= 456;
+                c->memory[0xff44] = 0;
+            }
         }
     }
 

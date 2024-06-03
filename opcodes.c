@@ -234,7 +234,7 @@ uint8_t ld_imm16_sp(cpu *c, parameters *p) {
     c->pc += 3;
     set_mem(c, p->imm16, (uint8_t)(c->sp & 255));
     set_mem(c, (p->imm16+1), (uint8_t)(c->sp >> 8));
-    return 4;
+    return 20;
 }
 
 uint8_t inc_r8(cpu *c, parameters *p) { // TODO
@@ -803,7 +803,7 @@ uint8_t ret_cond(cpu *c, parameters *p) {
         c->sp++;
         return 20;
     }
-    return 16;
+    return 8;
 }
 
 uint8_t add_hl_r16(cpu *c, parameters *p) {
@@ -850,7 +850,9 @@ uint8_t cp_a_r8(cpu *c, parameters *p) {
         c->r.reg8[F] |= flagH;
     else
         c->r.reg8[F] &= ~flagH;
-    return 8;
+    if (p->operand_r8 == 6)
+        return 8;
+    return 4;
 }
 
 uint8_t daa(cpu *c, parameters *p) {
@@ -967,7 +969,9 @@ uint8_t add_a_r8(cpu *c, parameters *p) {
 
     c->r.reg8[A] = temp;
 
-    return 8;
+    if (p->operand_r8 == 6)
+        return 8;
+    return 4;
 }
 
 uint8_t adc_a_r8(cpu *c, parameters *p) {
@@ -1005,7 +1009,9 @@ uint8_t adc_a_r8(cpu *c, parameters *p) {
     else
         c->r.reg8[F] &= ~flagZ;
 
-    return 8;
+    if (p->operand_r8 == 6)
+        return 8;
+    return 4;
 }
 
 uint8_t sub_a_r8(cpu *c, parameters *p) {
@@ -1034,7 +1040,9 @@ uint8_t sub_a_r8(cpu *c, parameters *p) {
         c->r.reg8[F] &= ~flagH;
 
     c->r.reg8[A] = temp;
-    return 8;
+    if (p->operand_r8 == 6)
+        return 8;
+    return 4;
 }
 
 uint8_t sbc_a_r8(cpu *c, parameters *p) {
@@ -1067,6 +1075,8 @@ uint8_t sbc_a_r8(cpu *c, parameters *p) {
     else
         c->r.reg8[F] &= ~flagZ;
 
+    if (p->operand_r8 == 6)
+        return 8;
     return 4;
 }
 
@@ -1171,7 +1181,7 @@ uint8_t ld_hl_sp_imm8(cpu *c, parameters *p) {
     c->r.reg8[F] &= ~flagN;
     c->r.reg8[F] &= ~flagZ;
 
-    return 16;
+    return 12;
 }
 
 uint8_t halt(cpu *c, parameters *p) {

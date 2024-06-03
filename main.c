@@ -28,13 +28,17 @@ int main(void) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*3, 144*3, "ChillyGB");
     SetTargetFPS(60);
-    Texture2D display;
+    RenderTexture2D display = LoadRenderTexture(160, 144);
+    Color pixels[144][160] = { 0 };
+    for (int i = 0; i < 144; i++)
+        for (int j = 0; j < 160; j++)
+            pixels[i][j] = (Color){185, 237, 186, 255};
 
     //FILE *cartridge = fopen("../Roms/HelloWorld.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/DrMario.gb", "r");
-    FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/01-special.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/02-interrupts.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/03-op sp,hl.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/04-op r,imm.gb", "r");
@@ -51,56 +55,52 @@ int main(void) {
 
     int ticks = 0;
     while(!WindowShouldClose()) {
-        //printf("A:%.2X F:%.2X B:%.2X C:%.2X D:%.2X E:%.2X H:%.2X L:%.2X SP:%.4X PC:%.4X PCMEM:%.2X,%.2X,%.2X,%.2X\n",
-            //c.r.reg8[A], c.r.reg8[F], c.r.reg8[B], c.r.reg8[C], c.r.reg8[D], c.r.reg8[E], c.r.reg8[H], c.r.reg8[L],
-            //c.sp, c.pc, c.memory[c.pc], c.memory[c.pc+1], c.memory[c.pc+2], c.memory[c.pc+3]);
+        if (t.t_states == 7974256)
+            printf("A:%.2X F:%.2X B:%.2X C:%.2X D:%.2X E:%.2X H:%.2X L:%.2X SP:%.4X PC:%.4X PCMEM:%.2X,%.2X,%.2X,%.2X\n",
+                c.r.reg8[A], c.r.reg8[F], c.r.reg8[B], c.r.reg8[C], c.r.reg8[D], c.r.reg8[E], c.r.reg8[H], c.r.reg8[L],
+                c.sp, c.pc, c.memory[c.pc], c.memory[c.pc+1], c.memory[c.pc+2], c.memory[c.pc+3]);
         execute(&c, &t);
         c.memory[0xff00] = (c.memory[0xff00] & 0xf0) + 0xf;
 
-        if (c.is_vblank) {
-            c.is_vblank = false;
+        if (t.is_frame) {
+            t.is_frame = false;
             load_display(&c, &p);
-            Color *pixels = (Color *) malloc(160 * 144 * sizeof(Color));
             for (int y = 0; y < 144; y++) {
                 for (int x = 0; x < 160; x++) {
                     if (p.display[y][x] == 0)
-                        pixels[y * 160 + x] = (Color) {185, 237, 186, 255};
+                        pixels[y][x] = (Color) {185, 237, 186, 255};
                     else if (p.display[y][x] == 1)
-                        pixels[y * 160 + x] = (Color) {118, 196, 123, 255};
+                        pixels[y][x] = (Color) {118, 196, 123, 255};
                     else if (p.display[y][x] == 2)
-                        pixels[y * 160 + x] = (Color) {49, 106, 64, 255};
+                        pixels[y][x] = (Color) {49, 106, 64, 255};
                     else
-                        pixels[y * 160 + x] = (Color) {10, 38, 16, 255};
+                        pixels[y][x] = (Color) {10, 38, 16, 255};
                 }
             }
 
-            Image display_im = {
-                    .data = pixels,
-                    .width = 160,
-                    .height = 144,
-                    .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
-                    .mipmaps = 1,
-            };
-
-            display = LoadTextureFromImage(display_im);
-            UnloadImage(display_im);
-
             float scale = MIN((float) GetScreenWidth() / 160, (float) GetScreenHeight() / 144);
+            BeginTextureMode(display);
+                ClearBackground(RAYWHITE);  // Clear render texture background color
+                for (int i = 0; i < 144; i++)
+                    for (int j = 0; j < 160; j++)
+                        DrawRectangle(j, -i+143, 1, 1, pixels[i][j]);
+            EndTextureMode();
 
             // Draw
             BeginDrawing();
                 ClearBackground(BLACK);
-                DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
+                DrawTexturePro(display.texture, (Rectangle) {0.0f, 0.0f, (float) display.texture.width, (float) display.texture.height},
                                (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
                                             (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
             EndDrawing();
         }
 
+        printf("%d\n", t.t_states);
         ticks += 1;
     }
 
-    UnloadTexture(display);
+    UnloadRenderTexture(display);
 
     CloseWindow();
 

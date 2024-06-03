@@ -17,7 +17,6 @@ typedef struct {
     bool ime_to_be_setted;
 
     bool is_vblank;
-    bool is_scan_line;
     bool dma_transfer;
 
     uint8_t memory[0x10000];
@@ -44,6 +43,8 @@ typedef struct {
     uint16_t scan_line_tick;
     int16_t divider_register;
     int16_t tima_counter;
+    uint32_t frame_tick;
+    bool is_frame;
 }tick;
 
 enum reg8 {
