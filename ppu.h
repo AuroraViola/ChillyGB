@@ -10,6 +10,8 @@ typedef struct {
     uint8_t background[256][256];
     uint8_t window[256][256];
     uint8_t sprites[40][4];
+    uint8_t tiles[256][8][8];
+    uint8_t tilemap[2][1024];
 }ppu;
 
 void load_display(cpu *c, ppu *p);

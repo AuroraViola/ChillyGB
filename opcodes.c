@@ -26,18 +26,34 @@ uint8_t* r8(cpu *c, uint8_t r) {
 
 void set_mem(cpu *c, uint16_t addr, uint8_t value) {
     switch (addr) {
-        case 0x0000 ... 0x7fff:
+        case 0x0000 ... 0x7fff: // Rom
             break;
-        case 0xe000 ... 0xfdff:
+        case 0xe000 ... 0xfdff: // Echo ram
             c->memory[addr - 0x2000] = value;
             break;
-        case 0xff46:
+        case 0xff46: // OAM DMA transfer
             c->memory[addr] = value;
             c->dma_transfer = true;
             break;
-        case 0xff04:
+        case 0xff04: // divider register
             c->memory[addr] = 0;
             break;
+
+        case 0x8000 ... 0x97ff: // Tiles
+            c->memory[addr] = value;
+            c->tiles_write = true;
+            break;
+        case 0x9800 ... 0x9fff: // Tile map
+            c->memory[addr] = value;
+            c->tilemap_write = true;
+            break;
+
+        case 0xff40: // LCDC
+            c->memory[addr] = value;
+            c->tiles_write = true;
+            c->tilemap_write = true;
+            break;
+
         default:
             c->memory[addr] = value;
             break;
@@ -659,13 +675,19 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
             return 8;
         // RES
         case 0x80 ... 0xbf:
-            *r8(c, p->operand_r8) &= ~(1 << b3);
+            if (p->operand_r8 == 6)
+                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) & ~(1 << b3)));
+            else
+                *r8(c, p->operand_r8) &= ~(1 << b3);
             if (p->operand_r8 == 6)
                 return 16;
             return 8;
         // SET
         case 0xc0 ... 0xff:
-            *r8(c, p->operand_r8) |= (1 << b3);
+            if (p->operand_r8 == 6)
+                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) | 1 << b3));
+            else
+                *r8(c, p->operand_r8) |= (1 << b3);
             if (p->operand_r8 == 6)
                 return 16;
             return 8;

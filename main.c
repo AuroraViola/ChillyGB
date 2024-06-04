@@ -28,7 +28,7 @@ int main(void) {
     joypad j1 = {.buttons = { 0 }, .dpad = { 0 }};
 
     // Initialize PPU and Raylib
-    ppu p = {};
+    ppu p = {.display = { 0 }, .background = { 0 }, .window = { 0 }};
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*3, 144*3, "ChillyGB");
     SetWindowMinSize(160, 144);
@@ -40,8 +40,10 @@ int main(void) {
             pixels[i][j] = (Color){185, 237, 186, 255};
 
     // Load ROM to Memory
-    FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
+    //FILE *cartridge = fopen("../Roms/HelloWorld.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
     assert(cartridge != NULL && "File not found");
     assert(fread(&c.memory[0], 0x8000, 1, cartridge) >= 0);
 
@@ -58,14 +60,20 @@ int main(void) {
             load_display(&c, &p);
             for (int y = 0; y < 144; y++) {
                 for (int x = 0; x < 160; x++) {
-                    if (p.display[y][x] == 0)
-                        pixels[y][x] = (Color) {185, 237, 186, 255};
-                    else if (p.display[y][x] == 1)
-                        pixels[y][x] = (Color) {118, 196, 123, 255};
-                    else if (p.display[y][x] == 2)
-                        pixels[y][x] = (Color) {49, 106, 64, 255};
-                    else
-                        pixels[y][x] = (Color) {10, 38, 16, 255};
+                    switch (p.display[y][x]) {
+                        case 0:
+                            pixels[y][x] = (Color) {185, 237, 186, 255};
+                            break;
+                        case 1:
+                            pixels[y][x] = (Color) {118, 196, 123, 255};
+                            break;
+                        case 2:
+                            pixels[y][x] = (Color) {49, 106, 64, 255};
+                            break;
+                        case 3:
+                            pixels[y][x] = (Color) {10, 38, 16, 255};
+                            break;
+                    }
                 }
             }
 
@@ -76,7 +84,6 @@ int main(void) {
                     for (int j = 0; j < 160; j++)
                         DrawRectangle(j, -i+143, 1, 1, pixels[i][j]);
             EndTextureMode();
-
             // Draw
             BeginDrawing();
                 ClearBackground(BLACK);

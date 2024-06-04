@@ -58,80 +58,40 @@ void load_sprites(cpu *c, ppu *p) {
     }
 }
 
-void load_background(cpu *c, ppu *p) {
-    uint16_t bg_tiles_id[1024];
-    if ((c->memory[0xff40] & 8) == 0)
-        for (uint16_t i = 0; i < 1024; i++) {
-            bg_tiles_id[i] = c->memory[0x9800 + i];
-        }
-    else
-        for (uint16_t i = 0; i < 1024; i++) {
-            bg_tiles_id[i] = c->memory[0x9c00 + i];
-        }
-
+void load_tiles(cpu *c, ppu *p) {
     if ((c->memory[0xff40] & 16) != 0) {
-        for (uint16_t i = 0; i < 1024; i++) {
-            bg_tiles_id[i] = 0x8000 + (bg_tiles_id[i] << 4);
+        for (int i = 0; i < 256; i++) {
+            decode_tile(c, (0x8000 + (i << 4)), p->tiles[i]);
         }
     }
     else {
-        for (uint16_t i = 0; i < 1024; i++) {
-            if (bg_tiles_id[i] < 0x80)
-                bg_tiles_id[i] = 0x9000 + (bg_tiles_id[i] << 4);
-            else
-                bg_tiles_id[i] = 0x8000 + (bg_tiles_id[i] << 4);
+        for (int i = 0; i < 128; i++) {
+            decode_tile(c, (0x9000 | (i << 4)), p->tiles[i]);
         }
-    }
-
-    uint8_t tile[8][8];
-    for (int y = 0; y < 32; y++) {
-        uint8_t display_y = y * 8;
-        for (int x = 0; x < 32; x++) {
-            uint8_t display_x = x * 8;
-            decode_tile(c, bg_tiles_id[y * 32 + x], tile);
-            for (int y1 = 0; y1 < 8; y1++) {
-                for (int x1 = 0; x1 < 8; x1++) {
-                    p->background[display_y + y1][display_x + x1] = tile[y1][x1];
-                }
-            }
+        for (int i = 128; i < 256; i++) {
+            decode_tile(c, (0x8800 | (i << 4)), p->tiles[i]);
         }
     }
 }
 
-void load_window(cpu *c, ppu *p) {
-    uint16_t win_tiles_id[1024];
-    if ((c->memory[0xff40] & 64) == 0)
-        for (uint16_t i = 0; i < 1024; i++) {
-            win_tiles_id[i] = c->memory[0x9800 + i];
-        }
-    else
-        for (uint16_t i = 0; i < 1024; i++) {
-            win_tiles_id[i] = c->memory[0x9c00 + i];
-        }
-
-    if ((c->memory[0xff40] & 16) != 0) {
-        for (uint16_t i = 0; i < 1024; i++) {
-            win_tiles_id[i] = 0x8000 + (win_tiles_id[i] << 4);
-        }
+void load_tilemap(cpu *c, ppu *p) {
+    for (int i = 0; i < 1024 ; i++) {
+        p->tilemap[0][i] = c->memory[i + 0x9800];
     }
-    else {
-        for (uint16_t i = 0; i < 1024; i++) {
-            if (win_tiles_id[i] < 0x80)
-                win_tiles_id[i] = 0x9000 + (win_tiles_id[i] << 4);
-            else
-                win_tiles_id[i] = 0x8000 + (win_tiles_id[i] << 4);
-        }
+    for (int i = 0; i < 1024 ; i++) {
+        p->tilemap[1][i] = c->memory[i + 0x9c00];
     }
+}
 
-    uint8_t tile[8][8];
-    for (int y = 0; y < 32; y++) {
-        uint8_t display_y = y * 8;
-        for (int x = 0; x < 32; x++) {
-            uint8_t display_x = x * 8;
-            decode_tile(c, win_tiles_id[y * 32 + x], tile);
-            for (int y1 = 0; y1 < 8; y1++) {
-                for (int x1 = 0; x1 < 8; x1++) {
-                    p->window[display_y + y1][display_x + x1] = tile[y1][x1];
+void load_background(cpu *c, ppu *p) {
+    uint8_t tilemap_select = 1;
+    if ((c->memory[0xff40] & 8) == 0)
+        tilemap_select = 0;
+    for (int i = 0; i < 32; i++) {
+        for (int j = 0; j < 32; j++) {
+            for (int y = 0; y < 8; y++) {
+                for (int x = 0; x < 8; x++) {
+                        p->background[i*8 + y][j*8 + x] = p->tiles[p->tilemap[tilemap_select][32*i+j]][y][x];
                 }
             }
         }
@@ -144,10 +104,19 @@ void load_display(cpu *c, ppu *p) {
     uint8_t obp0 = c->memory[0xff48];
     uint8_t obp1 = c->memory[0xff49];
     uint8_t s_palette[4];
-    load_background(c, p);
-    load_window(c, p);
+
+    if (c->tiles_write) {
+        c->tiles_write = false;
+        load_tiles(c, p);
+    }
+    if (c->tilemap_write) {
+        c->tilemap_write = false;
+        load_tilemap(c, p);
+    }
+
     if ((c->memory[0xff40] & 128) != 0) {
         if ((c->memory[0xff40] & 1) != 0) {
+            load_background(c, p);
             uint8_t scx = c->memory[0xff43];
             uint8_t scy = c->memory[0xff42];
             for (uint8_t y = 0; y < 144; y++) {
@@ -156,13 +125,10 @@ void load_display(cpu *c, ppu *p) {
                 }
             }
         }
-        if (((c->memory[0xff40] & 32) != 0) && ((c->memory[0xff40] & 1) != 0)) {
-            uint8_t wy = c->memory[0xff4a];
-            uint8_t wx = c->memory[0xff4b];
+        else {
             for (uint8_t y = 0; y < 144; y++) {
-                for (uint8_t x = 0; x < 167; x++) {
-                    if (((y + wy) < 144) && ((x + wx - 7) < 160) && ((x + wx - 7) >= 0))
-                        p->display[y + wy][x + wx - 7] = p->window[y][x];
+                for (uint8_t x = 0; x < 160; x++) {
+                    p->display[y][x] = 0;
                 }
             }
         }
@@ -203,6 +169,13 @@ void load_display(cpu *c, ppu *p) {
                         }
                     }
                 }
+            }
+        }
+    }
+    else {
+        for (uint8_t y = 0; y < 144; y++) {
+            for (uint8_t x = 0; x < 160; x++) {
+                p->display[y][x] = 0;
             }
         }
     }

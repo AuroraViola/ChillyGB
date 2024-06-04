@@ -13,11 +13,12 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->frame_tick += ticks;
 
     if (t->frame_tick >= 69905) {
-        t->frame_tick -= 69905;
         t->is_frame = true;
+        t->frame_tick -= 69905;
     }
 
     if (t->scan_line_tick >= 456) {
+        t->is_scanline += 1;
         t->scan_line_tick -= 456;
         c->memory[0xff44] += 1;
 

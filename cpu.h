@@ -16,8 +16,9 @@ typedef struct {
     bool ime;
     bool ime_to_be_setted;
 
-    bool is_vblank;
     bool dma_transfer;
+    bool tilemap_write;
+    bool tiles_write;
 
     uint8_t memory[0x10000];
 }cpu;
@@ -44,6 +45,8 @@ typedef struct {
     uint32_t divider_register;
     uint32_t tima_counter;
     uint32_t frame_tick;
+
+    uint8_t is_scanline;
     bool is_frame;
 }tick;
 
