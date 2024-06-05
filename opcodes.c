@@ -42,16 +42,19 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
         case 0x8000 ... 0x97ff: // Tiles
             c->memory[addr] = value;
             c->tiles_write = true;
+            c->need_bg_wn_reload = true;
             break;
         case 0x9800 ... 0x9fff: // Tile map
             c->memory[addr] = value;
             c->tilemap_write = true;
+            c->need_bg_wn_reload = true;
             break;
 
         case 0xff40: // LCDC
             c->memory[addr] = value;
             c->tiles_write = true;
             c->tilemap_write = true;
+            c->need_bg_wn_reload = true;
             break;
 
         default:

@@ -98,6 +98,21 @@ void load_background(cpu *c, ppu *p) {
     }
 }
 
+void load_window(cpu *c, ppu *p) {
+    uint8_t tilemap_select = 1;
+    if ((c->memory[0xff40] & 64) == 0)
+        tilemap_select = 0;
+    for (int i = 0; i < 32; i++) {
+        for (int j = 0; j < 32; j++) {
+            for (int y = 0; y < 8; y++) {
+                for (int x = 0; x < 8; x++) {
+                    p->window[i*8 + y][j*8 + x] = p->tiles[p->tilemap[tilemap_select][32*i+j]][y][x];
+                }
+            }
+        }
+    }
+}
+
 void load_display(cpu *c, ppu *p) {
     uint8_t bg_pal = c->memory[0xff47];
     uint8_t bg_palette[] = { (bg_pal & 3), ((bg_pal & 12) >> 2), ((bg_pal & 48) >> 4), (bg_pal >> 6) };
@@ -114,24 +129,45 @@ void load_display(cpu *c, ppu *p) {
         load_tilemap(c, p);
     }
 
+    if (c->need_bg_wn_reload) {
+        load_background(c, p);
+        load_window(c, p);
+    }
+
     if ((c->memory[0xff40] & 128) != 0) {
+        // Background
         if ((c->memory[0xff40] & 1) != 0) {
-            load_background(c, p);
             uint8_t scx = c->memory[0xff43];
             uint8_t scy = c->memory[0xff42];
-            for (uint8_t y = 0; y < 144; y++) {
+            if (c->memory[0xff44] < 144) {
+                int y = c->memory[0xff44];
                 for (uint8_t x = 0; x < 160; x++) {
                     p->display[y][x] = bg_palette[p->background[(uint8_t) (y + scy)][(uint8_t) (x + scx)]];
                 }
             }
         }
         else {
-            for (uint8_t y = 0; y < 144; y++) {
+            if (c->memory[0xff44] < 144) {
+                int y = c->memory[0xff44];
                 for (uint8_t x = 0; x < 160; x++) {
                     p->display[y][x] = 0;
                 }
             }
         }
+        // Window
+        if (((c->memory[0xff40] & 1) != 0) && ((c->memory[0xff40] & 32) != 0)) {
+            uint8_t wy = c->memory[0xff4a];
+            uint8_t wx = c->memory[0xff4b];
+            if (c->memory[0xff44] < 144) {
+                int y = c->memory[0xff44];
+                for (uint8_t x = 0; x < 167; x++) {
+                    if ((y >= wy) && ((x + wx - 7) < 160) && ((x + wx - 7) >= 0)) {
+                        p->display[y][x + wx - 7] = p->window[c->window_internal_line][x];
+                    }
+                }
+            }
+        }
+        // Objects
         if ((c->memory[0xff40] & 2) != 0) {
             load_sprites(c, p);
             for (int i = 0; i < 40; i++) {

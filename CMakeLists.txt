@@ -3,7 +3,6 @@ project(ChillyGB C)
 
 set(CMAKE_C_STANDARD 11)
 
-#find_library(RAYLIB raylib)
 add_executable(ChillyGB main.c
         cpu.c
         cpu.h

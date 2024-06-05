@@ -42,10 +42,12 @@ int main(void) {
     // Load ROM to Memory
     //FILE *cartridge = fopen("../Roms/HelloWorld.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
-    FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
-    assert(cartridge != NULL && "File not found");
-    assert(fread(&c.memory[0], 0x8000, 1, cartridge) >= 0);
+    //FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
+    //assert(cartridge != NULL && "File not found");
+    fread(&c.memory[0], 0x8000, 1, cartridge);
 
     int ticks = 0;
     while(!WindowShouldClose()) {
@@ -55,29 +57,32 @@ int main(void) {
         execute(&c, &t);
         c.memory[0xff00] = get_joypad(&c, &j1);
 
-        if (t.is_frame) {
-            t.is_frame = false;
+        //if (t.is_scanline > 0 && c.memory[0xff44] < 144) {
+        if (((ticks % 54) == 0) && c.memory[0xff44] <= 144) {  // temporary fix
+            t.is_scanline = 0;
             load_display(&c, &p);
-            for (int y = 0; y < 144; y++) {
-                for (int x = 0; x < 160; x++) {
-                    switch (p.display[y][x]) {
-                        case 0:
-                            pixels[y][x] = (Color) {185, 237, 186, 255};
-                            break;
-                        case 1:
-                            pixels[y][x] = (Color) {118, 196, 123, 255};
-                            break;
-                        case 2:
-                            pixels[y][x] = (Color) {49, 106, 64, 255};
-                            break;
-                        case 3:
-                            pixels[y][x] = (Color) {10, 38, 16, 255};
-                            break;
-                    }
+            int y = c.memory[0xff44]-1;
+            for (int x = 0; x < 160; x++) {
+                switch (p.display[y][x]) {
+                    case 0:
+                        pixels[y][x] = (Color) {185, 237, 186, 255};
+                        break;
+                    case 1:
+                        pixels[y][x] = (Color) {118, 196, 123, 255};
+                        break;
+                    case 2:
+                        pixels[y][x] = (Color) {49, 106, 64, 255};
+                        break;
+                    case 3:
+                        pixels[y][x] = (Color) {10, 38, 16, 255};
+                        break;
                 }
             }
+        }
 
-            float scale = MIN((float) GetScreenWidth() / 160, (float) GetScreenHeight() / 144);
+        if (t.is_frame && (c.memory[0xff44] < 144)) {
+            t.is_frame = false;
+
             BeginTextureMode(display);
                 ClearBackground(BLACK);
                 for (int i = 0; i < 144; i++)
@@ -85,6 +90,7 @@ int main(void) {
                         DrawRectangle(j, -i+143, 1, 1, pixels[i][j]);
             EndTextureMode();
             // Draw
+            float scale = MIN((float) GetScreenWidth() / 160, (float) GetScreenHeight() / 144);
             BeginDrawing();
                 ClearBackground(BLACK);
                 DrawTexturePro(display.texture, (Rectangle) {0.0f, 0.0f, (float) display.texture.width, (float) display.texture.height},

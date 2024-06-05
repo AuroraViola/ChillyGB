@@ -18,9 +18,12 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
     }
 
     if (t->scan_line_tick >= 456) {
-        t->is_scanline += 1;
+        t->is_scanline++;
         t->scan_line_tick -= 456;
         c->memory[0xff44] += 1;
+        if (((c->memory[0xff4a] < c->memory[0xff44]) && (c->memory[0xff40] & 32) != 0) && ((c->memory[0xff4b] - 7) < 160)) {
+            c->window_internal_line += 1;
+        }
 
         if (c->memory[0xff44] == c->memory[0xff45]) {
             c->memory[0xff41] |= 2;
@@ -32,6 +35,7 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
         } else if (c->memory[0xff44] >= 153) {
             t->scan_line_tick -= 456;
             c->memory[0xff44] = 0;
+            c->window_internal_line = 0;
         }
     }
 
@@ -115,7 +119,7 @@ void dma_transfer(cpu *c, tick *t) {
     for (int i = 0; i < 160; i++) {
         c->memory[0xfe00 + i] = c->memory[to_transfer + i];
     }
-    add_ticks(c, t, 640);
+    //add_ticks(c, t, 640);
 }
 
 uint8_t execute_instruction(cpu *c) {
