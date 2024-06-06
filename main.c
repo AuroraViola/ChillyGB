@@ -20,6 +20,7 @@ int main(void) {
     c.r.reg8[H] = 0x01;
     c.r.reg8[L] = 0x4d;
     c.memory[0xff44] = 0x90;
+    c.memory[0xff04] = 0xab;
 
     // Initialize Timer
     tick t = {.tima_counter = 0, .divider_register = 0, .scan_line_tick = 0, .t_states = 0};
@@ -28,7 +29,7 @@ int main(void) {
     joypad j1 = {.buttons = { 0 }, .dpad = { 0 }};
 
     // Initialize PPU and Raylib
-    ppu p = {.display = { 0 }, .background = { 0 }, .window = { 0 }};
+    ppu p = {.display = { 0 }, .background = { 0 }, .window = { 0 }, .sprite_display = { 0 }};
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*3, 144*3, "ChillyGB");
     SetWindowMinSize(160, 144);
@@ -46,6 +47,7 @@ int main(void) {
     //FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
     FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/bully.gb", "r");
     //assert(cartridge != NULL && "File not found");
     fread(&c.memory[0], 0x8000, 1, cartridge);
 
@@ -57,10 +59,10 @@ int main(void) {
         execute(&c, &t);
         c.memory[0xff00] = get_joypad(&c, &j1);
 
-        //if (t.is_scanline > 0 && c.memory[0xff44] < 144) {
-        if (((ticks % 54) == 0) && c.memory[0xff44] <= 144) {  // temporary fix
-            t.is_scanline = 0;
+        if (t.is_scanline > 0 && c.memory[0xff44] <= 144) {
+        //if (((ticks % 54) == 0) && c.memory[0xff44] <= 144) {  // temporary fix
             load_display(&c, &p);
+            t.is_scanline = 0;
             int y = c.memory[0xff44]-1;
             for (int x = 0; x < 160; x++) {
                 switch (p.display[y][x]) {
@@ -76,6 +78,25 @@ int main(void) {
                     case 3:
                         pixels[y][x] = (Color) {10, 38, 16, 255};
                         break;
+                }
+            }
+            uint8_t y1 = c.memory[0xff44] - 16;
+            if (y1 < 144) {
+                for (int x = 0; x < 160; x++) {
+                    switch (p.sprite_display[y1][x]) {
+                        case 1:
+                            pixels[y1][x] = (Color) {185, 237, 186, 255};
+                            break;
+                        case 2:
+                            pixels[y1][x] = (Color) {118, 196, 123, 255};
+                            break;
+                        case 3:
+                            pixels[y1][x] = (Color) {49, 106, 64, 255};
+                            break;
+                        case 4:
+                            pixels[y1][x] = (Color) {10, 38, 16, 255};
+                            break;
+                    }
                 }
             }
         }

@@ -13,7 +13,6 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->frame_tick += ticks;
 
     if (t->frame_tick >= 69905) {
-        t->is_frame = true;
         t->frame_tick -= 69905;
     }
 
@@ -36,6 +35,7 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
             t->scan_line_tick -= 456;
             c->memory[0xff44] = 0;
             c->window_internal_line = 0;
+            t->is_frame = true;
         }
     }
 
@@ -281,6 +281,7 @@ void execute(cpu *c, tick *t) {
     add_ticks(c, t, ticks);
     if (c->dma_transfer) {
         c->dma_transfer = false;
+        c->need_sprites_reload = true;
         dma_transfer(c, t);
     }
 }

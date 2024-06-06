@@ -50,12 +50,19 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->need_bg_wn_reload = true;
             break;
 
+        case 0xfe00 ... 0xfe9f: // OAM
+            c->memory[addr] = value;
+            c->need_sprites_reload = true;
+            break;
+
         case 0xff40: // LCDC
             c->memory[addr] = value;
             c->tiles_write = true;
             c->tilemap_write = true;
             c->need_bg_wn_reload = true;
+            c->need_sprites_reload = true;
             break;
+
 
         default:
             c->memory[addr] = value;

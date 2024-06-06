@@ -21,6 +21,8 @@ typedef struct {
     bool tilemap_write;
     bool tiles_write;
     bool need_bg_wn_reload;
+    bool need_sprites_reload;
+    bool reset_sprite_display;
 
     uint8_t memory[0x10000];
 }cpu;
