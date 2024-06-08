@@ -31,7 +31,7 @@ int main(void) {
     // Initialize PPU and Raylib
     ppu p = {.display = { 0 }, .background = { 0 }, .window = { 0 }, .sprite_display = { 0 }};
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(160*3, 144*3, "ChillyGB");
+    InitWindow(160*4, 144*3, "ChillyGB");
     SetWindowMinSize(160, 144);
     SetTargetFPS(60);
     RenderTexture2D display = LoadRenderTexture(160, 144);
@@ -43,12 +43,18 @@ int main(void) {
     // Load ROM to Memory
     //FILE *cartridge = fopen("../Roms/HelloWorld.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/exercise.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/DrMario.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/Spot.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/PinballDeluxe.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/MarioLand.gb", "r");
-    FILE *cartridge = fopen("../Roms/Private/KirbyDreamLand.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/Zelda.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/gb240p.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/KirbyDreamLand.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/bully.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/01-special.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/02-interrupts.gb", "r");
@@ -80,7 +86,7 @@ int main(void) {
             if (c.memory[0xff44] <= 144) {
                 load_display(&c, &p);
                 t.is_scanline = 0;
-                int y = c.memory[0xff44]-1;
+                int y = c.memory[0xff44] - 1;
                 for (int x = 0; x < 160; x++) {
                     switch (p.display[y][x]) {
                         case 0:
@@ -98,20 +104,20 @@ int main(void) {
                     }
                 }
             }
-            uint8_t y1 = c.memory[0xff44];
-            for (int x = 8; x < 168; x++) {
+            uint8_t y1 = c.memory[0xff44] - 8;
+            for (int x = 0; x < 160; x++) {
                 switch (p.sprite_display[y1][x]) {
                     case 1:
-                        pixels[y1-16][x-8] = (Color) {185, 237, 186, 255};
+                        pixels[y1][x] = (Color) {185, 237, 186, 255};
                         break;
                     case 2:
-                        pixels[y1-16][x-8] = (Color) {118, 196, 123, 255};
+                        pixels[y1][x] = (Color) {118, 196, 123, 255};
                         break;
                     case 3:
-                        pixels[y1-16][x-8] = (Color) {49, 106, 64, 255};
+                        pixels[y1][x] = (Color) {49, 106, 64, 255};
                         break;
                     case 4:
-                        pixels[y1-16][x-8] = (Color) {10, 38, 16, 255};
+                        pixels[y1][x] = (Color) {10, 38, 16, 255};
                         break;
                 }
             }

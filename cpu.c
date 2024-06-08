@@ -11,8 +11,10 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->t_states += ticks;
     t->scan_line_tick += ticks;
 
-    if (t->scan_line_tick >= 456) {
+    if (t->scan_line_tick >= 376)
         t->is_scanline++;
+
+    if (t->scan_line_tick >= 456) {
         if (c->memory[0xff44] < 144)
             c->memory[0xff41] = (c->memory[0xff41] & 252);
         t->scan_line_tick -= 456;
@@ -29,12 +31,12 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
         }
         if (c->memory[0xff44] == 144) {
             c->memory[0xff0f] |= 1;
+            t->is_frame = true;
             c->memory[0xff41] = (c->memory[0xff41] & 252) | 1;
         } else if (c->memory[0xff44] >= 153) {
             t->scan_line_tick -= 456;
             c->memory[0xff44] = 0;
             c->window_internal_line = 0;
-            t->is_frame = true;
         }
     }
 
