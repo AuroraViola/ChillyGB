@@ -20,6 +20,24 @@ void decode_tile(cpu *c, uint16_t addr, uint8_t tile[8][8]) {
     }
 }
 
+void decode_tile_16(cpu *c, uint16_t addr, uint8_t tile_16[16][8]) {
+    uint8_t encoded_tile[32];
+    addr &= 0xffe0;
+    for (int i = 0; i < 32; i++) {
+        encoded_tile[i] = c->memory[addr + i];
+    }
+
+    for (int y = 0; y < 16; y++) {
+        uint8_t byte1 = encoded_tile[y * 2];
+        uint8_t byte2 = encoded_tile[y * 2 + 1];
+        for (int x = 0; x < 8; x++) {
+            uint8_t bit1 = (byte1 >> (7-x)) & 1;
+            uint8_t bit2 = (byte2 >> (7-x)) & 1;
+            tile_16[y][x] = (bit2 << 1) | bit1;
+        }
+    }
+}
+
 void flipY_tile(uint8_t tile[8][8]) {
     uint8_t tilecopy[8][8];
     for (uint8_t i = 0; i < 8; i++) {
@@ -31,6 +49,21 @@ void flipY_tile(uint8_t tile[8][8]) {
     for (uint8_t i = 0; i < 8; i++) {
         for (uint8_t j = 0; j < 8; j++) {
             tile[i][j] = tilecopy[7-i][j];
+        }
+    }
+}
+
+void flipY_tile_16(uint8_t tile[16][8]) {
+    uint8_t tilecopy[16][8];
+    for (uint8_t i = 0; i < 16; i++) {
+        for (uint8_t j = 0; j < 8; j++) {
+            tilecopy[i][j] = tile[i][j];
+        }
+    }
+
+    for (uint8_t i = 0; i < 16; i++) {
+        for (uint8_t j = 0; j < 8; j++) {
+            tile[i][j] = tilecopy[15-i][j];
         }
     }
 }
@@ -50,28 +83,39 @@ void flipX_tile(uint8_t tile[8][8]) {
     }
 }
 
+void flipX_tile_16(uint8_t tile[16][8]) {
+    uint8_t tilecopy[16][8];
+    for (uint8_t i = 0; i < 16; i++) {
+        for (uint8_t j = 0; j < 8; j++) {
+            tilecopy[i][j] = tile[i][j];
+        }
+    }
+
+    for (uint8_t i = 0; i < 16; i++) {
+        for (uint8_t j = 0; j < 8; j++) {
+            tile[i][j] = tilecopy[i][7-j];
+        }
+    }
+}
+
 void load_sprites(cpu *c, ppu *p) {
     for (int i = 0; i < 40; i++) {
         p->sprites[i].y = c->memory[0xfe00 + (i*4)];
         p->sprites[i].x = c->memory[0xfe00 + (i*4) + 1];
         uint16_t tile_index = 0x8000 | ((uint16_t)(c->memory[0xfe00 + (i*4) + 2]) << 4);
         decode_tile(c, tile_index, p->sprites[i].tile);
-        tile_index &= 0xffe0;
-        decode_tile(c, tile_index, p->sprites[i].tile_16_1);
-        decode_tile(c, (tile_index + 0x10), p->sprites[i].tile_16_2);
+        decode_tile_16(c, tile_index, p->sprites[i].tile_16);
         p->sprites[i].priority = (c->memory[0xfe00 + (i*4) + 3] >> 7) & 1;
 
-        if (((c->memory[0xfe00 + (i*4) + 3] >> 5) & 1) != 0)
+        if (((c->memory[0xfe00 + (i*4) + 3] >> 5) & 1) != 0) {
             flipX_tile(p->sprites[i].tile);
+            flipX_tile_16(p->sprites[i].tile_16);
+        }
 
         if (((c->memory[0xfe00 + (i*4) + 3] >> 6) & 1) != 0) {
             flipY_tile(p->sprites[i].tile);
-            flipY_tile(p->sprites[i].tile_16_1);
-            flipY_tile(p->sprites[i].tile_16_2);
-            p->sprites[i].flipy = true;
+            flipY_tile_16(p->sprites[i].tile_16);
         }
-        else
-            p->sprites[i].flipy = false;
 
         p->sprites[i].palette = (c->memory[0xfe00 + (i*4) + 3] >> 4) & 1;
     }
@@ -196,8 +240,8 @@ void load_display(cpu *c, ppu *p) {
             }
             int c_scanline = c->memory[0xff44];
             uint8_t sp_count = 0;
-            for (int16_t x = 0; x < 160; x++)
-                p->sprite_display[c_scanline][x] = 0;
+            for (int16_t x = 8; x < 168; x++)
+                p->sprite_display[c_scanline+16][x] = 0;
             for (int i = 0; ((i < 40) && (sp_count < 10)) ; i++) {
                 if (p->sprites[i].y == c_scanline) {
                     if (p->sprites[i].palette) {
@@ -213,115 +257,36 @@ void load_display(cpu *c, ppu *p) {
                         s_palette[3] = (obp0 >> 6) & 3;
                     }
 
-                    if ((c->memory[0xff40] & 4) == 0) {
+                    if ((c->memory[0xff40] & 4) == 0) {  // 8x8 objects
                         for (int16_t y = 0; y < 8; y++) {
                             for (int16_t x = 0; x < 8; x++) {
                                 if (p->sprites[i].tile[y][x] != 0) {
                                     if ((p->sprites[i].priority == false) ||
                                         (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] ==
                                          bg_palette[0]))
-                                        p->sprite_display[p->sprites[i].y - 16 + y][p->sprites[i].x - 8 + x] =
+                                        p->sprite_display[p->sprites[i].y + y][p->sprites[i].x + x] =
                                                 s_palette[p->sprites[i].tile[y][x]] + 1;
                                 }
                             }
                         }
                     }
-                    else {
-                        if (p->sprites[i].flipy == false) {
-                            for (int16_t y = 0; y < 8; y++) {
-                                for (int16_t x = 0; x < 8; x++) {
-                                    if (p->sprites[i].tile_16_1[y][x] != 0) {
-                                        if ((p->sprites[i].priority == false) ||
-                                            (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] ==
-                                             bg_palette[0]))
-                                            p->sprite_display[p->sprites[i].y - 16 + y][p->sprites[i].x - 8 + x] =
-                                                    s_palette[p->sprites[i].tile_16_1[y][x]] + 1;
-                                    }
+                    else {  // 8x16 objects
+                        for (int16_t y = 0; y < 16; y++) {
+                            for (int16_t x = 0; x < 8; x++) {
+                                if (p->sprites[i].tile_16[y][x] != 0) {
+                                    if ((p->sprites[i].priority == false) ||
+                                        (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] ==
+                                         bg_palette[0]))
+                                        p->sprite_display[p->sprites[i].y + y][p->sprites[i].x + x] =
+                                                s_palette[p->sprites[i].tile_16[y][x]] + 1;
                                 }
                             }
-                            for (int16_t y = 0; y < 8; y++) {
-                                for (int16_t x = 0; x < 8; x++) {
-                                    if (p->sprites[i].tile_16_2[y][x] != 0) {
-                                        if ((p->sprites[i].priority == false) ||
-                                            (p->display[p->sprites[i].y + y - 8][p->sprites[i].x + x - 8] ==
-                                             bg_palette[0]))
-                                            p->sprite_display[p->sprites[i].y - 8 + y][p->sprites[i].x - 8 + x] =
-                                                    s_palette[p->sprites[i].tile_16_2[y][x]] + 1;
-                                    }
-                                }
-                            }
-                        }
-                        else {
-                            for (int16_t y = 0; y < 8; y++) {
-                                for (int16_t x = 0; x < 8; x++) {
-                                    if (p->sprites[i].tile_16_1[y][x] != 0) {
-                                        if ((p->sprites[i].priority == false) ||
-                                            (p->display[p->sprites[i].y + y - 8][p->sprites[i].x + x - 8] ==
-                                             bg_palette[0]))
-                                            p->sprite_display[p->sprites[i].y - 8 + y][p->sprites[i].x - 8 + x] =
-                                                    s_palette[p->sprites[i].tile_16_1[y][x]] + 1;
-                                    }
-                                }
-                            }
-                            for (int16_t y = 0; y < 8; y++) {
-                                for (int16_t x = 0; x < 8; x++) {
-                                    if (p->sprites[i].tile_16_2[y][x] != 0) {
-                                        if ((p->sprites[i].priority == false) ||
-                                            (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] ==
-                                             bg_palette[0]))
-                                            p->sprite_display[p->sprites[i].y - 16 + y][p->sprites[i].x - 8 + x] =
-                                                    s_palette[p->sprites[i].tile_16_2[y][x]] + 1;
-                                    }
-                                }
-                            }
-
                         }
                     }
                     sp_count += 1;
                 }
             }
         }
-        /*
-        if ((c->memory[0xff40] & 2) != 0) {
-            load_sprites(c, p);
-            for (int i = 0; i < 40; i++) {
-                if (((p->sprites[i][0] < 160) && (p->sprites[i][0] > 15) && (p->sprites[i][1] < 160) && (p->sprites[i][1] > 7))) {
-                    uint8_t sprite_tile[8][8];
-                    decode_tile(c, (0x8000 | (p->sprites[i][2] << 4)), sprite_tile);
-
-                    if (((p->sprites[i][3] >> 4) & 1) != 0) {
-                        s_palette[0] = obp1 & 3;
-                        s_palette[1] = (obp1 >> 2) & 3;
-                        s_palette[2] = (obp1 >> 4) & 3;
-                        s_palette[3] = (obp1 >> 6) & 3;
-                    }
-                    else {
-                        s_palette[0] = obp0 & 3;
-                        s_palette[1] = (obp0 >> 2) & 3;
-                        s_palette[2] = (obp0 >> 4) & 3;
-                        s_palette[3] = (obp0 >> 6) & 3;
-                    }
-
-                    // X flip
-                    if (((p->sprites[i][3] >> 5) & 1) != 0)
-                        flipX_tile(sprite_tile);
-
-                    // Y flip
-                    if (((p->sprites[i][3] >> 6) & 1) != 0)
-                        flipY_tile(sprite_tile);
-
-                    for (int16_t y = 0; y < 8; y++) {
-                        for (int16_t x = 0; x < 8; x++) {
-                            if (sprite_tile[y][x] != 0) {
-                                if ((((p->sprites[i][3] >> 7) & 1) == 0) || (p->display[p->sprites[i][0] + y - 16][p->sprites[i][1] + x - 8] == bg_palette[0]))
-                                    p->display[p->sprites[i][0] + y - 16][p->sprites[i][1] + x - 8] = s_palette[sprite_tile[y][x]];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        */
     }
     else {
         for (uint8_t y = 0; y < 144; y++) {

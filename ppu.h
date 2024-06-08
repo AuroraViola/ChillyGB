@@ -9,10 +9,7 @@ typedef struct {
     int16_t x;
     int16_t y;
     uint8_t tile[8][8];
-    uint8_t tile_16_1[8][8];
-    uint8_t tile_16_2[8][8];
-
-    bool flipy;
+    uint8_t tile_16[16][8];
 
     bool priority;
     bool palette;
@@ -25,7 +22,7 @@ typedef struct {
     uint8_t tiles[256][8][8];
     uint8_t tilemap[2][1024];
     sprite sprites[40];
-    uint8_t sprite_display[144][160];
+    uint8_t sprite_display[176][176];
 }ppu;
 
 void load_display(cpu *c, ppu *p);

@@ -10,11 +10,18 @@ typedef union {
 }registers;
 
 typedef struct {
+    uint8_t data[128][0x4000];
+    uint8_t type;
+    uint16_t banks;
+    uint16_t bank_select;
+}cartridge;
+
+typedef struct {
     registers r;
     uint16_t sp;
     uint16_t pc;
     bool ime;
-    bool ime_to_be_setted;
+    uint8_t ime_to_be_setted;
 
     uint8_t window_internal_line;
     bool dma_transfer;
@@ -24,6 +31,7 @@ typedef struct {
     bool need_sprites_reload;
     bool reset_sprite_display;
 
+    cartridge cart;
     uint8_t memory[0x10000];
 }cpu;
 
@@ -49,7 +57,6 @@ typedef struct {
     int32_t window_line_tick;
     uint32_t divider_register;
     uint32_t tima_counter;
-    uint32_t frame_tick;
 
     uint8_t is_scanline;
     bool is_frame;

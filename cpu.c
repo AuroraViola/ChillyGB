@@ -10,14 +10,11 @@ const uint16_t clock_select[] = {1024, 16, 64, 256};
 void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->t_states += ticks;
     t->scan_line_tick += ticks;
-    t->frame_tick += ticks;
-
-    if (t->frame_tick >= 69905) {
-        t->frame_tick -= 69905;
-    }
 
     if (t->scan_line_tick >= 456) {
         t->is_scanline++;
+        if (c->memory[0xff44] < 144)
+            c->memory[0xff41] = (c->memory[0xff41] & 252);
         t->scan_line_tick -= 456;
         c->memory[0xff44] += 1;
         if (((c->memory[0xff4a] < c->memory[0xff44]) && (c->memory[0xff40] & 32) != 0) && ((c->memory[0xff4b] - 7) < 160)) {
@@ -26,11 +23,13 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
 
         if (c->memory[0xff44] == c->memory[0xff45]) {
             c->memory[0xff41] |= 2;
-            if ((c->memory[0xff41] & 64) != 0)
+            if ((c->memory[0xff41] & 64) != 0) {
                 c->memory[0xff0f] |= 2;
+            }
         }
         if (c->memory[0xff44] == 144) {
             c->memory[0xff0f] |= 1;
+            c->memory[0xff41] = (c->memory[0xff41] & 252) | 1;
         } else if (c->memory[0xff44] >= 153) {
             t->scan_line_tick -= 456;
             c->memory[0xff44] = 0;
@@ -124,9 +123,15 @@ void dma_transfer(cpu *c, tick *t) {
 
 uint8_t execute_instruction(cpu *c) {
     parameters p = {};
+    /*
     uint8_t opcode = c->memory[c->pc];
     p.imm8 = c->memory[c->pc + 1];
     p.imm16 = ((uint16_t)c->memory[c->pc + 2] << 8) | c->memory[c->pc + 1];
+     */
+
+    uint8_t opcode = get_mem(c, c->pc);
+    p.imm8 = get_mem(c, (c->pc+1));
+    p.imm16 = ((uint16_t)get_mem(c, (c->pc+2)) << 8) | get_mem(c, (c->pc+1));
 
     p.condition = (opcode & 0b00011000) >> 3;
 
@@ -279,6 +284,13 @@ void execute(cpu *c, tick *t) {
         run_interrupt(c, t);
     uint8_t ticks = execute_instruction(c);
     add_ticks(c, t, ticks);
+    if (c->ime_to_be_setted == 1) {
+        c->ime_to_be_setted = 2;
+    }
+    else if (c->ime_to_be_setted == 2) {
+        c->ime_to_be_setted = 0;
+        c->ime = true;
+    }
     if (c->dma_transfer) {
         c->dma_transfer = false;
         c->need_sprites_reload = true;

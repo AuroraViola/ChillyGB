@@ -26,7 +26,17 @@ uint8_t* r8(cpu *c, uint8_t r) {
 
 void set_mem(cpu *c, uint16_t addr, uint8_t value) {
     switch (addr) {
-        case 0x0000 ... 0x7fff: // Rom
+        case 0x0000 ... 0x1fff: // Rom
+            break;
+        case 0x2000 ... 0x3fff: // Rom
+            if (c->cart.type == 1) {
+                if ((value & 31) == 0) {
+                    value = 1;
+                }
+                c->cart.bank_select = value & 31;
+            }
+            break;
+        case 0x4000 ... 0x7fff: // Rom
             break;
         case 0xe000 ... 0xfdff: // Echo ram
             c->memory[addr - 0x2000] = value;
@@ -73,9 +83,13 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 uint8_t get_mem(cpu *c, uint16_t addr) {
     switch (addr) {
         case 0xfea0 ... 0xfeff:
-            return 255;
+            return 0;
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
+        case 0x0000 ... 0x3fff:
+            return c->cart.data[0][addr];
+        case 0x4000 ... 0x7fff:
+            return c->cart.data[c->cart.bank_select][addr-0x4000];
         default:
             return c->memory[addr];
     }
@@ -405,7 +419,7 @@ uint8_t pop(cpu *c, parameters *p) {
     return 12;
 }
 
-uint8_t ldh_a_imm8(cpu *c, parameters *p) { //TODO
+uint8_t ldh_a_imm8(cpu *c, parameters *p) {
     c->pc += 2;
     c->r.reg8[A] = get_mem(c, (0xff00 | p->imm8));
     return 12;
@@ -535,6 +549,7 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
             else
                 c->r.reg8[F] &= ~flagZ;
             if (p->operand_r8 == 6)
+                printf("RLC\n");
                 return 16;
             return 8;
         // RRC
@@ -557,6 +572,7 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
             else
                 c->r.reg8[F] &= ~flagZ;
             if (p->operand_r8 == 6)
+                printf("RRC\n");
                 return 16;
             return 8;
         // RL
@@ -580,6 +596,7 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
             else
                 c->r.reg8[F] &= ~flagZ;
             if (p->operand_r8 == 6)
+                printf("RL\n");
                 return 16;
             return 8;
         // RR
@@ -600,6 +617,7 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
             else
                 c->r.reg8[F] &= ~flagZ;
             if (p->operand_r8 == 6)
+                printf("RR\n");
                 return 16;
             return 8;
         // SLA
@@ -619,6 +637,7 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
                 c->r.reg8[F] &= ~flagZ;
             if (p->operand_r8 == 6)
                 return 16;
+            //printf("SLA\n");
             return 8;
         // SRA
         case 0x28 ... 0x2f:
@@ -637,6 +656,7 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
             else
                 c->r.reg8[F] &= ~flagZ;
             if (p->operand_r8 == 6)
+                printf("SRA\n");
                 return 16;
             return 8;
         // SWAP
@@ -652,6 +672,7 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
             else
                 c->r.reg8[F] &= ~flagZ;
             if (p->operand_r8 == 6)
+                printf("SWAP\n");
                 return 16;
             return 8;
         // SRL
@@ -669,11 +690,16 @@ uint8_t prefix(cpu *c, parameters *p) { // TODO
             else
                 c->r.reg8[F] &= ~flagZ;
             if (p->operand_r8 == 6)
+                printf("SRL\n");
                 return 16;
             return 8;
         // BIT
         case 0x40 ... 0x7f:
-            uint8_t iszero = (*r8(c, p->operand_r8) >> b3) & 1;
+            uint8_t iszero;
+            if (p->operand_r8 == 6)
+                iszero = (get_mem(c, c->r.reg16[HL]) >> b3) & 1;
+            else
+                iszero = (*r8(c, p->operand_r8) >> b3) & 1;
             if (iszero == 0)
                 c->r.reg8[F] |= flagZ;
             else
@@ -965,7 +991,9 @@ uint8_t ld_sp_hl(cpu *c, parameters *p) {
 
 uint8_t ei(cpu *c, parameters *p) {
     c->pc += 1;
-    c->ime = true;
+    if (c->ime == 0) {
+        c->ime_to_be_setted += 1;
+    }
     return 4;
 }
 
