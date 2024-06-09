@@ -8,6 +8,23 @@
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
+float frequency = 100.0f;
+
+// Index for audio rendering
+float sineIdx = 0;
+
+void AudioInputCallback(void *buffer, unsigned int frames) {
+    float incr = frequency/44100.0f;
+    short *d = (short *)buffer;
+
+    for (unsigned int i = 0; i < frames; i++)
+    {
+        d[i] = (short)(32000.0f*(sineIdx));
+        sineIdx += incr;
+        if (sineIdx > 1.0f) sineIdx -= 1.0f;
+    }
+}
+
 int main(void) {
     // Initialize CPU and memory
     cpu c = {.pc = 0x100, .sp = 0xfffe};
@@ -44,8 +61,8 @@ int main(void) {
     //FILE *cartridge = fopen("../Roms/HelloWorld.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/exercise.gb", "r");
-    FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/DrMario.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
@@ -74,6 +91,13 @@ int main(void) {
         fread(&c.cart.data[i], 0x4000, 1, cartridge);
     c.cart.bank_select = 1;
 
+    //Initialize APU
+    InitAudioDevice();
+    SetAudioStreamBufferSizeDefault(256);
+    AudioStream stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(stream, AudioInputCallback);
+    PlayAudioStream(stream);
+
     int ticks = 0;
     while(!WindowShouldClose()) {
         //printf("A:%.2X F:%.2X B:%.2X C:%.2X D:%.2X E:%.2X H:%.2X L:%.2X SP:%.4X PC:%.4X PCMEM:%.2X,%.2X,%.2X,%.2X\n",
@@ -81,6 +105,8 @@ int main(void) {
             //c.sp, c.pc, c.memory[c.pc], c.memory[c.pc+1], c.memory[c.pc+2], c.memory[c.pc+3]);
             execute(&c, &t);
         c.memory[0xff00] = get_joypad(&c, &j1);
+        uint32_t periodvalue = (uint16_t)((c.memory[0xff19] & 7) << 8) | c.memory[0xff18];
+        frequency = 131072/(2048-periodvalue);
 
         if (t.is_scanline > 0) {
             if (c.memory[0xff44] <= 144) {

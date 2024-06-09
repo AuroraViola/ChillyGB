@@ -10,7 +10,7 @@ typedef union {
 }registers;
 
 typedef struct {
-    uint8_t data[128][0x4000];
+    uint8_t data[256][0x4000];
     uint8_t type;
     uint16_t banks;
     uint16_t bank_select;
