@@ -11,9 +11,15 @@ typedef union {
 
 typedef struct {
     uint8_t data[256][0x4000];
+
     uint8_t type;
     uint16_t banks;
     uint16_t bank_select;
+
+    uint8_t ram[4][0x2000];
+    uint8_t banks_ram;
+    uint8_t bank_select_ram;
+    bool ram_enable;
 }cartridge;
 
 typedef struct {

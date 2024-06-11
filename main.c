@@ -89,7 +89,7 @@ int main(void) {
     //FILE *cartridge = fopen("../Roms/HelloWorld.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/exercise.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/DrMario.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/MarioLand.gb", "r");
@@ -103,20 +103,39 @@ int main(void) {
     //FILE *cartridge = fopen("../Roms/Private/KirbyDreamLand.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/strikethrough.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/bully.gb", "r");
-    FILE *cartridge = fopen("../Roms/Private/Zelda.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/Zelda.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/PokemonBlue.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/PokemonGold.gbc", "r");
+    //FILE *cartridge = fopen("../Roms/Private/mbc3-tester.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/bad_apple.gb", "r");
+
     fread(&c.cart.data[0], 0x4000, 1, cartridge);
+
     c.cart.type = c.cart.data[0][0x0147];
     c.cart.banks = (2 << c.cart.data[0][0x0148]);
+
+    c.cart.banks_ram = 0;
+    if (c.cart.data[0][0x0149] == 2) {
+        c.cart.banks_ram = 1;
+    }
+    else if (c.cart.data[0][0x0149] == 3) {
+        c.cart.banks_ram = 4;
+    }
+    c.cart.bank_select_ram = 0;
+
     for (int i = 1; i < c.cart.banks; i++)
         fread(&c.cart.data[i], 0x4000, 1, cartridge);
     c.cart.bank_select = 1;
+    c.cart.bank_select_ram = 0;
 
     //Initialize APU
     InitAudioDevice();
     SetAudioStreamBufferSizeDefault(256);
+    // Channel 1
     AudioStream CH1 = LoadAudioStream(44100, 16, 1);
     SetAudioStreamCallback(CH1, AudioInputCallback_CH1);
     PlayAudioStream(CH1);
+    // Channel 2
     AudioStream CH2 = LoadAudioStream(44100, 16, 1);
     SetAudioStreamCallback(CH2, AudioInputCallback_CH2);
     PlayAudioStream(CH2);
