@@ -563,7 +563,7 @@ uint8_t prefix(cpu *c, parameters *p) {
     uint8_t prevC;
     uint8_t b3 = (p->imm8 & 0b00111000) >> 3;
     switch(p->imm8) {
-        // RLC TODO
+        // RLC
         case 0x00 ... 0x07:
             if (p->operand_r8 == 6) {
                 if ((get_mem(c, c->r.reg16[HL]) & 128) != 0)
