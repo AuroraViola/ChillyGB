@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
@@ -53,6 +54,18 @@ void AudioInputCallback_CH2(void *buffer, unsigned int frames) {
     }
 }
 
+char *strreplace(char *s, const char *s1, const char *s2) {
+    char *p = strstr(s, s1);
+    if (p != NULL) {
+        size_t len1 = strlen(s1);
+        size_t len2 = strlen(s2);
+        if (len1 != len2)
+            memmove(p + len2, p + len1, strlen(p + len1) + 1);
+        memcpy(p, s2, len2);
+    }
+    return s;
+}
+
 int main(void) {
     // Initialize CPU and memory
     cpu c = {.pc = 0x100, .sp = 0xfffe};
@@ -86,28 +99,16 @@ int main(void) {
             pixels[i][j] = (Color){185, 237, 186, 255};
 
     // Load ROM to Memory
-    //FILE *cartridge = fopen("../Roms/HelloWorld.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/exercise.gb", "r");
-    FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/DrMario.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/MarioLand.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/PacMan.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/Spot.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/PinballDeluxe.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/alttoo.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/gb240p.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/KirbyDreamLand.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/strikethrough.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/bully.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/Zelda.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/PokemonBlue.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/PokemonGold.gbc", "r");
-    //FILE *cartridge = fopen("../Roms/Private/mbc3-tester.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/bad_apple.gb", "r");
+    //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
+    //char rom_name[50] = "../Roms/Private/Tetris.gb";
+    char rom_name[50] = "../Roms/Private/Zelda.gb";
+    char save_name[50];
+    strncpy(save_name, rom_name, 50);
+    strreplace(save_name, ".gb", ".sv");
+
+    printf("%s\n%s\n", rom_name, save_name);
+
+    FILE *cartridge = fopen(rom_name, "r");
 
     fread(&c.cart.data[0], 0x4000, 1, cartridge);
 
@@ -127,6 +128,18 @@ int main(void) {
         fread(&c.cart.data[i], 0x4000, 1, cartridge);
     c.cart.bank_select = 1;
     c.cart.bank_select_ram = 0;
+    fclose(cartridge);
+
+    if (c.cart.type == 3 || c.cart.type == 0x13) {
+        FILE *save = fopen(save_name, "r");
+        if (save != NULL) {
+            if (c.cart.banks_ram == 1)
+                fread(&c.cart.ram, 0x2000, 1, save);
+            else if (c.cart.banks_ram == 4)
+                fread(&c.cart.ram, 0x8000, 1, save);
+            fclose(save);
+        }
+    }
 
     //Initialize APU
     InitAudioDevice();
@@ -238,6 +251,14 @@ int main(void) {
 
     UnloadRenderTexture(display);
 
+    if (c.cart.type == 3 || c.cart.type == 0x13) {
+        FILE *save = fopen(save_name, "w");
+        if (c.cart.banks_ram == 1)
+            fwrite(&c.cart.ram, 0x2000, 1, save);
+        if (c.cart.banks_ram == 4)
+            fwrite(&c.cart.ram, 0x8000, 1, save);
+        fclose(save);
+    }
     CloseWindow();
 
     return 0;
