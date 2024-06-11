@@ -25,8 +25,7 @@ void AudioInputCallback_CH1(void *buffer, unsigned int frames) {
     float incr = frequency_CH1 / 44100.0f;
     short *d = (short *)buffer;
 
-    for (unsigned int i = 0; i < frames; i++)
-    {
+    for (unsigned int i = 0; i < frames; i++) {
         int8_t sinemap;
         if (sineIdx1 >= duty_CH1)
             sinemap = 1;
@@ -42,8 +41,7 @@ void AudioInputCallback_CH2(void *buffer, unsigned int frames) {
     float incr = frequency_CH2 / 44100.0f;
     short *d = (short *)buffer;
 
-    for (unsigned int i = 0; i < frames; i++)
-    {
+    for (unsigned int i = 0; i < frames; i++) {
         int8_t sinemap;
         if (sineIdx2 >= duty_CH2)
             sinemap = 1;
@@ -94,7 +92,7 @@ int main(void) {
     //FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/DrMario.gb", "r");
-    FILE *cartridge = fopen("../Roms/Private/MarioLand.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/MarioLand.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/PacMan.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
@@ -105,7 +103,7 @@ int main(void) {
     //FILE *cartridge = fopen("../Roms/Private/KirbyDreamLand.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/strikethrough.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/bully.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/Zelda.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/Zelda.gb", "r");
     fread(&c.cart.data[0], 0x4000, 1, cartridge);
     c.cart.type = c.cart.data[0][0x0147];
     c.cart.banks = (2 << c.cart.data[0][0x0148]);
@@ -127,7 +125,7 @@ int main(void) {
     int ticks = 0;
     while(!WindowShouldClose()) {
         execute(&c, &t);
-        c.memory[0xff00] = get_joypad(&c, &j1);
+        c.memory[JOYP] = get_joypad(&c, &j1);
 
         uint32_t periodvalue_CH1 = (uint16_t) ((c.memory[NR14] & 7) << 8) | c.memory[NR13];
         if ((c.memory[NR12] & 0xf8) != 0) {
@@ -172,20 +170,22 @@ int main(void) {
                 }
             }
             uint8_t y1 = c.memory[0xff44] - 8;
-            for (int x = 0; x < 160; x++) {
-                switch (p.sprite_display[y1][x]) {
-                    case 1:
-                        pixels[y1][x] = (Color) {185, 237, 186, 255};
-                        break;
-                    case 2:
-                        pixels[y1][x] = (Color) {118, 196, 123, 255};
-                        break;
-                    case 3:
-                        pixels[y1][x] = (Color) {49, 106, 64, 255};
-                        break;
-                    case 4:
-                        pixels[y1][x] = (Color) {10, 38, 16, 255};
-                        break;
+            if (y1 < 144) {
+                for (int x = 0; x < 160; x++) {
+                    switch (p.sprite_display[y1][x]) {
+                        case 1:
+                            pixels[y1][x] = (Color) {185, 237, 186, 255};
+                            break;
+                        case 2:
+                            pixels[y1][x] = (Color) {118, 196, 123, 255};
+                            break;
+                        case 3:
+                            pixels[y1][x] = (Color) {49, 106, 64, 255};
+                            break;
+                        case 4:
+                            pixels[y1][x] = (Color) {10, 38, 16, 255};
+                            break;
+                    }
                 }
             }
         }

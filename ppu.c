@@ -234,7 +234,7 @@ void load_display(cpu *c, ppu *p) {
 
         if (c_scanline < 144)
             for (int x = 0; x < 160; x++)
-                p->sprite_display[(c_scanline+16) % 144][x] = 0;
+                p->sprite_display[(c_scanline+8) % 144][x] = 0;
         // Objects
         if ((c->memory[0xff40] & 2) != 0) {
             if (c->need_sprites_reload) {
@@ -264,8 +264,7 @@ void load_display(cpu *c, ppu *p) {
                         for (uint8_t y = 0; y < 8; y++) {
                             for (uint8_t x = 0; x < 8; x++) {
                                 if ((p->sprites[i].tile[y][x] != 0) && ((p->sprites[i].y + y) < 160) && ((p->sprites[i].y + y) >= 16) && ((p->sprites[i].x + x) < 168) && ((p->sprites[i].x + x) > 7)) {
-                                    if ((p->sprites[i].priority == false) || (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] ==
-                                         bg_palette[0])) {
+                                    if ((p->sprites[i].priority == false) || (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] == bg_palette[0])) {
                                         p->sprite_display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] = s_palette[p->sprites[i].tile[y][x]] + 1;
                                     }
                                 }
@@ -276,8 +275,7 @@ void load_display(cpu *c, ppu *p) {
                         for (uint8_t y = 0; y < 16; y++) {
                             for (uint8_t x = 0; x < 8; x++) {
                                 if ((p->sprites[i].tile_16[y][x] != 0) && ((p->sprites[i].y + y) < 160) && ((p->sprites[i].y + y) >= 16) && ((p->sprites[i].x + x) < 168) && ((p->sprites[i].x + x) > 7)) {
-                                    if ((p->sprites[i].priority == false) || (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] ==
-                                                                              bg_palette[0])) {
+                                    if ((p->sprites[i].priority == false) || (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] == bg_palette[0])) {
                                         p->sprite_display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] = s_palette[p->sprites[i].tile_16[y][x]] + 1;
                                     }
                                 }
