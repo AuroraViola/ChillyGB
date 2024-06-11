@@ -31,8 +31,11 @@ typedef struct {
     bool need_sprites_reload;
     bool reset_sprite_display;
 
+
     cartridge cart;
     uint8_t memory[0x10000];
+
+    uint8_t apu_div;
 }cpu;
 
 typedef struct {
@@ -58,9 +61,38 @@ typedef struct {
     uint32_t divider_register;
     uint32_t tima_counter;
 
+    uint32_t div_apu_tick;
+
     uint8_t is_scanline;
     bool is_frame;
 }tick;
+
+enum memregs {
+    // Joypad
+    P1 = 0xff00,
+
+    // Serial
+    SB = 0xff01,
+    SC = 0xff02,
+
+    // Timer
+    DIV = 0xff04,
+    TIMA = 0xff05,
+    TMA = 0xff06,
+    TAC = 0xff07,
+
+    // Audio
+    NR10 = 0xff10,
+    NR11 = 0xff11,
+    NR12 = 0xff12,
+    NR13 = 0xff13,
+    NR14 = 0xff14,
+
+    NR21 = 0xff16,
+    NR22 = 0xff17,
+    NR23 = 0xff18,
+    NR24 = 0xff19,
+};
 
 enum reg8 {
     B = 1,

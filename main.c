@@ -8,20 +8,50 @@
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
-float frequency = 100.0f;
+float frequency_CH2 = 100.0f;
+uint8_t volume_CH2 = 15;
 
-// Index for audio rendering
-float sineIdx = 0;
+float frequency_CH1 = 100.0f;
+uint8_t volume_CH1 = 15;
 
-void AudioInputCallback(void *buffer, unsigned int frames) {
-    float incr = frequency/44100.0f;
+float duty_cicle[] = {0.125f, 0.25f, 0.5f, 0.75f};
+
+float sineIdx1 = 0;
+float sineIdx2 = 0;
+float duty_CH1 = 0.5f;
+float duty_CH2 = 0.5f;
+
+void AudioInputCallback_CH1(void *buffer, unsigned int frames) {
+    float incr = frequency_CH1 / 44100.0f;
     short *d = (short *)buffer;
 
     for (unsigned int i = 0; i < frames; i++)
     {
-        d[i] = (short)(32000.0f*(sineIdx));
-        sineIdx += incr;
-        if (sineIdx > 1.0f) sineIdx -= 1.0f;
+        int8_t sinemap;
+        if (sineIdx1 >= duty_CH1)
+            sinemap = 1;
+        else
+            sinemap = 0;
+        d[i] = (short)(((float)(volume_CH1) * 250) * (PI * sinemap));
+        sineIdx1 += incr;
+        if (sineIdx1 > 1.0f) sineIdx1 -= 1.0f;
+    }
+}
+
+void AudioInputCallback_CH2(void *buffer, unsigned int frames) {
+    float incr = frequency_CH2 / 44100.0f;
+    short *d = (short *)buffer;
+
+    for (unsigned int i = 0; i < frames; i++)
+    {
+        int8_t sinemap;
+        if (sineIdx2 >= duty_CH2)
+            sinemap = 1;
+        else
+            sinemap = 0;
+        d[i] = (short)(((float)(volume_CH2) * 250) * (PI * sinemap));
+        sineIdx2 += incr;
+        if (sineIdx2 > 1.0f) sineIdx2 -= 1.0f;
     }
 }
 
@@ -62,28 +92,20 @@ int main(void) {
     //FILE *cartridge = fopen("../Roms/Private/winpos.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/exercise.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/dmg-acid2.gb", "r");
-    FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/Tetris.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/DrMario.gb", "r");
+    FILE *cartridge = fopen("../Roms/Private/MarioLand.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/PacMan.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/bgbtest.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/tellinglys.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/Spot.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/PinballDeluxe.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/MarioLand.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/Zelda.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/alttoo.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/gb240p.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/KirbyDreamLand.gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/strikethrough.gb", "r");
     //FILE *cartridge = fopen("../Roms/Private/bully.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/01-special.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/02-interrupts.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/03-op sp,hl.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/04-op r,imm.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/05-op rp.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/06-ld r,r.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/07-jr,jp,call,ret,rst.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/08-misc instrs.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/09-op r,r.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/10-bit ops.gb", "r");
-    //FILE *cartridge = fopen("../Roms/Private/11-op a,(hl).gb", "r");
+    //FILE *cartridge = fopen("../Roms/Private/Zelda.gb", "r");
     fread(&c.cart.data[0], 0x4000, 1, cartridge);
     c.cart.type = c.cart.data[0][0x0147];
     c.cart.banks = (2 << c.cart.data[0][0x0148]);
@@ -94,19 +116,38 @@ int main(void) {
     //Initialize APU
     InitAudioDevice();
     SetAudioStreamBufferSizeDefault(256);
-    AudioStream stream = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(stream, AudioInputCallback);
-    PlayAudioStream(stream);
+    AudioStream CH1 = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(CH1, AudioInputCallback_CH1);
+    PlayAudioStream(CH1);
+    AudioStream CH2 = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(CH2, AudioInputCallback_CH2);
+    PlayAudioStream(CH2);
+
 
     int ticks = 0;
     while(!WindowShouldClose()) {
-        //printf("A:%.2X F:%.2X B:%.2X C:%.2X D:%.2X E:%.2X H:%.2X L:%.2X SP:%.4X PC:%.4X PCMEM:%.2X,%.2X,%.2X,%.2X\n",
-            //c.r.reg8[A], c.r.reg8[F], c.r.reg8[B], c.r.reg8[C], c.r.reg8[D], c.r.reg8[E], c.r.reg8[H], c.r.reg8[L],
-            //c.sp, c.pc, c.memory[c.pc], c.memory[c.pc+1], c.memory[c.pc+2], c.memory[c.pc+3]);
-            execute(&c, &t);
+        execute(&c, &t);
         c.memory[0xff00] = get_joypad(&c, &j1);
-        uint32_t periodvalue = (uint16_t)((c.memory[0xff19] & 7) << 8) | c.memory[0xff18];
-        frequency = 131072/(2048-periodvalue);
+
+        uint32_t periodvalue_CH1 = (uint16_t) ((c.memory[NR14] & 7) << 8) | c.memory[NR13];
+        if ((c.memory[NR12] & 0xf8) != 0) {
+            frequency_CH1 = 131072 / (2048 - periodvalue_CH1);
+            volume_CH1 = (c.memory[NR12] >> 4);
+        }
+        else {
+            frequency_CH1 = 0;
+            volume_CH1 = 0;
+        }
+
+        uint32_t periodvalue_CH2 = (uint16_t) ((c.memory[NR24] & 7) << 8) | c.memory[NR23];
+        if ((c.memory[NR22] & 0xf8) != 0) {
+            frequency_CH2 = 131072 / (2048 - periodvalue_CH2);
+            volume_CH2 = (c.memory[NR22] >> 4);
+        }
+        else {
+            frequency_CH2 = 0;
+            volume_CH2 = 0;
+        }
 
         if (t.is_scanline > 0) {
             if (c.memory[0xff44] <= 144) {

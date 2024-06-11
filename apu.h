@@ -2,6 +2,6 @@
 #define CHILLYGB_APU_H
 
 
-void AudioInputCallback(void *buffer, unsigned int frames);
+void AudioInputCallback_CH2(void *buffer, unsigned int frames);
 
 #endif //CHILLYGB_APU_H

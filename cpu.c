@@ -40,13 +40,13 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
         }
     }
 
-    if ((c->memory[0xff07] & 4) != 0) {
+    if ((c->memory[TAC] & 4) != 0) {
         t->tima_counter += ticks;
-        if (t->tima_counter > clock_select[c->memory[0xff07] & 3]) {
+        if (t->tima_counter > clock_select[c->memory[TAC] & 3]) {
             t->tima_counter = 0;
-            c->memory[0xff05] += 1;
-            if (c->memory[0xff05] == 0) {
-                c->memory[0xff05] = c->memory[0xff06];
+            c->memory[TIMA] += 1;
+            if (c->memory[TIMA] == 0) {
+                c->memory[TIMA] = c->memory[TMA];
                 c->memory[0xff0f] |= 4;
             }
 
@@ -56,7 +56,12 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->divider_register += ticks;
     if (t->divider_register >= 16384) {
         t->divider_register -= 16384;
-        c->memory[0xff04] += 1;
+        c->memory[DIV] += 1;
+    }
+
+    if (t->div_apu_tick >= 512) {
+        t->divider_register -= 512;
+        c->apu_div += 1;
     }
 }
 
