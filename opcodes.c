@@ -27,44 +27,110 @@ uint8_t* r8(cpu *c, uint8_t r) {
 void set_mem(cpu *c, uint16_t addr, uint8_t value) {
     switch (addr) {
         case 0x0000 ... 0x1fff: // Rom
-            if (c->cart.type == 2 || c->cart.type == 3) {
-                if ((value & 0xf) == 0xa)
-                    c->cart.ram_enable = true;
-                else
-                    c->cart.ram_enable = false;
-            }
-            else if (c->cart.type == 0x12 || c->cart.type == 0x13 || c->cart.type == 0x10) {
-                if (value == 0x0a)
-                    c->cart.ram_enable = true;
-                else if (value == 0)
-                    c->cart.ram_enable = false;
+            switch (c->cart.type) {
+                // MBC 1
+                case 2 ... 3:
+                    if ((value & 0xf) == 0xa)
+                        c->cart.ram_enable = true;
+                    else
+                        c->cart.ram_enable = false;
+                    break;
+                // MBC 3
+                case 0x12 ... 0x13: case 0x10:
+                    if (value == 0x0a)
+                        c->cart.ram_enable = true;
+                    else if (value == 0)
+                        c->cart.ram_enable = false;
+                    break;
+                // MBC 5
+                case 0x1a ... 0x1b: case 0x1d ... 0x1e:
+                    if (value == 0x0a)
+                        c->cart.ram_enable = true;
+                    else if (value == 0)
+                        c->cart.ram_enable = false;
+                    break;
+                default:
+                    break;
             }
             break;
         case 0x2000 ... 0x3fff: // Rom
-            if (c->cart.type >= 1 && c->cart.type <= 3) {
-                if ((value & 31) == 0) {
-                    value = 1;
-                }
-                c->cart.bank_select = value & 31;
-            }
-            else if (c->cart.type >= 17 && c->cart.type <= 19) {
-                if ((value & 127) == 0) {
-                    value = 1;
-                }
-                c->cart.bank_select = value & 127;
+            switch (c->cart.type) {
+                // MBC 1
+                case 1 ... 3:
+                    if ((value & 31) == 0) {
+                        value = 1;
+                    }
+                    c->cart.bank_select = value & 31;
+                    break;
+                // MBC 3
+                case 0x0f ... 0x13:
+                    if ((value & 127) == 0) {
+                        value = 1;
+                    }
+                    c->cart.bank_select = value & 127;
+                    break;
+                // MBC 5
+                case 0x1a ... 0x1e:
+                    if (addr <= 0x2fff)
+                        c->cart.bank_select = value;
+                    break;
+                default:
+                    break;
             }
             break;
         case 0x4000 ... 0x5fff: // Rom
-            if (c->cart.banks_ram > 1 && (value >= 0 && value <= 3)) {
-                c->cart.bank_select_ram = value;
+            switch (c->cart.type) {
+                // MBC 1
+                case 2 ... 3:
+                    if (c->cart.banks > 1) {
+                        if (value >= 0 && value <= 3) {
+                            c->cart.bank_select_ram = value;
+                        }
+                    }
+                    break;
+                // MBC 3
+                case 0x12 ... 0x13:
+                    if (c->cart.banks > 1) {
+                        if (value >= 0 && value <= 3) {
+                            c->cart.bank_select_ram = value;
+                        }
+                    }
+                    break;
+                // MBC3 Timer
+                case 0x0f ... 0x10:
+                    if (c->cart.banks > 1) {
+                        if (value >= 0 && value <= 3) {
+                            c->cart.bank_select_ram = value;
+                        }
+                    }
+                    if (value >= 8 && value <= 12) {
+                        c->cart.bank_select_ram = value;
+                    }
+                    break;
+                // MBC 5
+                case 0x1a ... 0x1b: case 0x1d ... 0x1e:
+                    if (c->cart.banks > 1) {
+                        if (value >= 0 && value <= 16) {
+                            c->cart.bank_select_ram = value;
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
             break;
         case 0x6000 ... 0x7fff: // Rom
             break;
 
         case 0xa000 ... 0xbfff: // Ram
-            if (c->cart.ram_enable)
-                c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+            if (c->cart.ram_enable) {
+                if ((c->cart.type == 0x0f || c->cart.type == 0x10) && (c->cart.bank_select_ram >= 8)) {
+                    // TODO
+                }
+                else {
+                    c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+                }
+            }
             break;
 
         case 0xe000 ... 0xfdff: // Echo ram
@@ -102,7 +168,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->need_sprites_reload = true;
             break;
 
-
         default:
             c->memory[addr] = value;
             break;
@@ -111,19 +176,24 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
 uint8_t get_mem(cpu *c, uint16_t addr) {
     switch (addr) {
-        case 0xfea0 ... 0xfeff:
-            return 0;
-        case 0xe000 ... 0xfdff:
-            return c->memory[addr - 0x2000];
         case 0x0000 ... 0x3fff:
             return c->cart.data[0][addr];
         case 0x4000 ... 0x7fff:
             return c->cart.data[c->cart.bank_select][addr-0x4000];
         case 0xa000 ... 0xbfff:
             if (c->cart.ram_enable) {
-                return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
+                if ((c->cart.type == 0x0f || c->cart.type == 0x10) && (c->cart.bank_select_ram >= 8)) {
+                    // TODO
+                }
+                else {
+                    return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
+                }
             }
             return 0;
+        case 0xfea0 ... 0xfeff:
+            return 0;
+        case 0xe000 ... 0xfdff:
+            return c->memory[addr - 0x2000];
         default:
             return c->memory[addr];
     }

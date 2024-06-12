@@ -100,8 +100,10 @@ int main(void) {
 
     // Load ROM to Memory
     //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
+    char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
+    //char rom_name[50] = "../Roms/Private/PokemonGold.gbc";
     //char rom_name[50] = "../Roms/Private/Tetris.gb";
-    char rom_name[50] = "../Roms/Private/Zelda.gb";
+    //char rom_name[50] = "../Roms/Private/Zelda.gb";
     char save_name[50];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
@@ -122,7 +124,14 @@ int main(void) {
     else if (c.cart.data[0][0x0149] == 3) {
         c.cart.banks_ram = 4;
     }
+    else if (c.cart.data[0][0x0149] == 4) {
+        c.cart.banks_ram = 16;
+    }
+    else if (c.cart.data[0][0x0149] == 5) {
+        c.cart.banks_ram = 8;
+    }
     c.cart.bank_select_ram = 0;
+    c.cart.ram_enable = false;
 
     for (int i = 1; i < c.cart.banks; i++)
         fread(&c.cart.data[i], 0x4000, 1, cartridge);
@@ -130,13 +139,17 @@ int main(void) {
     c.cart.bank_select_ram = 0;
     fclose(cartridge);
 
-    if (c.cart.type == 3 || c.cart.type == 0x13) {
+    if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
         FILE *save = fopen(save_name, "r");
         if (save != NULL) {
             if (c.cart.banks_ram == 1)
                 fread(&c.cart.ram, 0x2000, 1, save);
             else if (c.cart.banks_ram == 4)
                 fread(&c.cart.ram, 0x8000, 1, save);
+            else if (c.cart.banks_ram == 8)
+                fread(&c.cart.ram, 0x10000, 1, save);
+            else if (c.cart.banks_ram == 16)
+                fread(&c.cart.ram, 0x20000, 1, save);
             fclose(save);
         }
     }
@@ -251,12 +264,16 @@ int main(void) {
 
     UnloadRenderTexture(display);
 
-    if (c.cart.type == 3 || c.cart.type == 0x13) {
+    if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
         FILE *save = fopen(save_name, "w");
         if (c.cart.banks_ram == 1)
             fwrite(&c.cart.ram, 0x2000, 1, save);
-        if (c.cart.banks_ram == 4)
+        else if (c.cart.banks_ram == 4)
             fwrite(&c.cart.ram, 0x8000, 1, save);
+        else if (c.cart.banks_ram == 8)
+            fwrite(&c.cart.ram, 0x10000, 1, save);
+        else if (c.cart.banks_ram == 16)
+            fwrite(&c.cart.ram, 0x20000, 1, save);
         fclose(save);
     }
     CloseWindow();
