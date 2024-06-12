@@ -11,24 +11,43 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->t_states += ticks;
     t->scan_line_tick += ticks;
 
-    if (t->scan_line_tick >= 376)
+    // Mode 2
+    if (t->scan_line_tick < 80) {
+        if ((c->memory[LY] < 144) && ((c->memory[STAT] & 3) != 2)) {
+            c->memory[STAT] = (c->memory[STAT] & 252) | 2;
+            if ((c->memory[STAT] & 32) != 0 && c->mode2_select == false) {
+                c->mode2_select = true;
+                c->memory[IF] |= 2;
+            }
+        }
+    }
+    // Mode 3
+    if (t->scan_line_tick < 250 && t->scan_line_tick > 80) {
+        if ((c->memory[LY] < 144) && ((c->memory[STAT] & 3) != 0))
+            c->memory[STAT] = (c->memory[STAT] & 252) | 3;
+    }
+    // Mode 0
+    if (t->scan_line_tick >= 250) {
+        if ((c->memory[LY] < 144) && ((c->memory[STAT] & 3) != 0)) {
+            c->memory[STAT] = (c->memory[STAT] & 252);
+            if ((c->memory[STAT] & 8) != 0 && c->mode0_select == false) {
+                c->mode0_select = true;
+                c->memory[IF] |= 2;
+            }
+        }
         t->is_scanline++;
+    }
 
     if (t->scan_line_tick >= 456) {
-        if (c->memory[LY] < 144)
-            c->memory[STAT] = (c->memory[STAT] & 252);
         t->scan_line_tick -= 456;
         c->memory[LY] += 1;
+        c->lyc_select = false;
+        c->mode0_select = false;
+        c->mode2_select = false;
         if (((c->memory[WY] < c->memory[LY]) && (c->memory[LCDC] & 32) != 0) && ((c->memory[WX] - 7) < 160)) {
             c->window_internal_line += 1;
         }
 
-        if (c->memory[LY] == c->memory[LYC]) {
-            c->memory[STAT] |= 2;
-            if ((c->memory[STAT] & 64) != 0) {
-                c->memory[IF] |= 2;
-            }
-        }
         if (c->memory[LY] == 144) {
             c->memory[IF] |= 1;
             t->is_frame = true;
@@ -39,6 +58,18 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
             c->window_internal_line = 0;
         }
     }
+
+    if (c->memory[LY] == c->memory[LYC]) {
+        c->memory[STAT] |= 4;
+        if ((c->memory[STAT] & 64) != 0 && c->lyc_select == false) {
+            c->lyc_select = true;
+            c->memory[IF] |= 2;
+        }
+    }
+    else {
+        c->memory[STAT] &= 251;
+    }
+
 
     if ((c->memory[TAC] & 4) != 0) {
         t->tima_counter += ticks;

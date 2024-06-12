@@ -136,6 +136,11 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
         case 0xe000 ... 0xfdff: // Echo ram
             c->memory[addr - 0x2000] = value;
             break;
+        case 0xff41: // STAT Interrupt
+            if ((c->memory[addr] & 120) != (value & 120))
+                c->memory[IF] |= 2;
+            c->memory[addr] = value;
+            break;
         case 0xff46: // OAM DMA transfer
             c->memory[addr] = value;
             c->dma_transfer = true;

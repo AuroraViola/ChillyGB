@@ -37,6 +37,9 @@ typedef struct {
     bool need_sprites_reload;
     bool reset_sprite_display;
 
+    bool lyc_select;
+    bool mode0_select;
+    bool mode2_select;
 
     cartridge cart;
     uint8_t memory[0x10000];

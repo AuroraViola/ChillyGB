@@ -77,8 +77,13 @@ int main(void) {
     c.r.reg8[F] = 0xb0;
     c.r.reg8[H] = 0x01;
     c.r.reg8[L] = 0x4d;
-    c.memory[0xff44] = 0x90;
-    c.memory[0xff04] = 0xab;
+    c.memory[LCDC] = 0x91;
+    c.memory[STAT] = 0x85;
+    c.memory[DMA] = 0xff;
+    c.memory[LY] = 0x90;
+    c.memory[DIV] = 0xab;
+    c.memory[IF] = 0xe1;
+    c.memory[TAC] = 0xf8;
 
     // Initialize Timer
     tick t = {.tima_counter = 0, .divider_register = 0, .scan_line_tick = 0, .t_states = 0};
@@ -99,12 +104,14 @@ int main(void) {
             pixels[i][j] = (Color){185, 237, 186, 255};
 
     // Load ROM to Memory
+    //char rom_name[50] = "../Roms/Private/bad_apple.gb";
+    //char rom_name[50] = "../Roms/Private/mbc3-tester.gb";
     //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[50] = "../Roms/Private/PokemonGold.gbc";
     //char rom_name[50] = "../Roms/Private/Tetris.gb";
-    //char rom_name[50] = "../Roms/Private/Zelda.gb";
-    char rom_name[50] = "../Roms/Private/dmg-acid2.gb";
+    char rom_name[50] = "../Roms/Private/Zelda.gb";
+    //char rom_name[50] = "../Roms/Private/dmg-acid2.gb";
     char save_name[50];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
