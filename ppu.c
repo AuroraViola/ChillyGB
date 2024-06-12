@@ -122,7 +122,7 @@ void load_sprites(cpu *c, ppu *p) {
 }
 
 void load_tiles(cpu *c, ppu *p) {
-    if ((c->memory[0xff40] & 16) != 0) {
+    if ((c->memory[LCDC] & 16) != 0) {
         for (int i = 0; i < 256; i++) {
             decode_tile(c, (0x8000 + (i << 4)), p->tiles[i]);
         }
@@ -148,7 +148,7 @@ void load_tilemap(cpu *c, ppu *p) {
 
 void load_background(cpu *c, ppu *p) {
     uint8_t tilemap_select = 1;
-    if ((c->memory[0xff40] & 8) == 0)
+    if ((c->memory[LCDC] & 8) == 0)
         tilemap_select = 0;
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 32; j++) {
@@ -163,7 +163,7 @@ void load_background(cpu *c, ppu *p) {
 
 void load_window(cpu *c, ppu *p) {
     uint8_t tilemap_select = 1;
-    if ((c->memory[0xff40] & 64) == 0)
+    if ((c->memory[LCDC] & 64) == 0)
         tilemap_select = 0;
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 32; j++) {
@@ -177,10 +177,10 @@ void load_window(cpu *c, ppu *p) {
 }
 
 void load_display(cpu *c, ppu *p) {
-    uint8_t bg_pal = c->memory[0xff47];
+    uint8_t bg_pal = c->memory[BGP];
     uint8_t bg_palette[] = { (bg_pal & 3), ((bg_pal & 12) >> 2), ((bg_pal & 48) >> 4), (bg_pal >> 6) };
-    uint8_t obp0 = c->memory[0xff48];
-    uint8_t obp1 = c->memory[0xff49];
+    uint8_t obp0 = c->memory[OBP0];
+    uint8_t obp1 = c->memory[OBP1];
     uint8_t s_palette[4];
 
     if (c->tiles_write) {
@@ -197,32 +197,32 @@ void load_display(cpu *c, ppu *p) {
         load_window(c, p);
     }
 
-    if ((c->memory[0xff40] & 128) != 0) {
+    if ((c->memory[LCDC] & 128) != 0) {
         // Background
-        if ((c->memory[0xff40] & 1) != 0) {
-            uint8_t scx = c->memory[0xff43];
-            uint8_t scy = c->memory[0xff42];
-            if (c->memory[0xff44] < 144) {
-                int y = c->memory[0xff44];
+        if ((c->memory[LCDC] & 1) != 0) {
+            uint8_t scx = c->memory[SCX];
+            uint8_t scy = c->memory[SCY];
+            if (c->memory[LY] < 144) {
+                int y = c->memory[LY];
                 for (uint8_t x = 0; x < 160; x++) {
                     p->display[y][x] = bg_palette[p->background[(uint8_t) (y + scy)][(uint8_t) (x + scx)]];
                 }
             }
         }
         else {
-            if (c->memory[0xff44] < 144) {
-                int y = c->memory[0xff44];
+            if (c->memory[LY] < 144) {
+                int y = c->memory[LY];
                 for (uint8_t x = 0; x < 160; x++) {
                     p->display[y][x] = 0;
                 }
             }
         }
         // Window
-        if (((c->memory[0xff40] & 1) != 0) && ((c->memory[0xff40] & 32) != 0)) {
-            uint8_t wy = c->memory[0xff4a];
-            uint8_t wx = c->memory[0xff4b];
-            if (c->memory[0xff44] < 144) {
-                int y = c->memory[0xff44];
+        if (((c->memory[LCDC] & 1) != 0) && ((c->memory[LCDC] & 32) != 0)) {
+            uint8_t wy = c->memory[WY];
+            uint8_t wx = c->memory[WX];
+            if (c->memory[LY] < 144) {
+                int y = c->memory[LY];
                 for (uint8_t x = 0; x < 167; x++) {
                     if ((y >= wy) && ((x + wx - 7) < 160) && ((x + wx - 7) >= 0)) {
                         p->display[y][x + wx - 7] = bg_palette[p->window[c->window_internal_line][x]];
@@ -230,13 +230,13 @@ void load_display(cpu *c, ppu *p) {
                 }
             }
         }
-        uint8_t c_scanline = c->memory[0xff44];
+        uint8_t c_scanline = c->memory[LY];
 
         if (c_scanline < 144)
             for (int x = 0; x < 160; x++)
                 p->sprite_display[(c_scanline+8) % 144][x] = 0;
         // Objects
-        if ((c->memory[0xff40] & 2) != 0) {
+        if ((c->memory[LCDC] & 2) != 0) {
             if (c->need_sprites_reload) {
                 c->need_sprites_reload = false;
                 load_sprites(c, p);
@@ -260,7 +260,7 @@ void load_display(cpu *c, ppu *p) {
                         s_palette[3] = (obp0 >> 6) & 3;
                     }
 
-                    if ((c->memory[0xff40] & 4) == 0) {
+                    if ((c->memory[LCDC] & 4) == 0) {
                         for (uint8_t y = 0; y < 8; y++) {
                             for (uint8_t x = 0; x < 8; x++) {
                                 if ((p->sprites[i].tile[y][x] != 0) && ((p->sprites[i].y + y) < 160) && ((p->sprites[i].y + y) >= 16) && ((p->sprites[i].x + x) < 168) && ((p->sprites[i].x + x) > 7)) {

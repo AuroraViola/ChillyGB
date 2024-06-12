@@ -100,10 +100,11 @@ int main(void) {
 
     // Load ROM to Memory
     //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
-    char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
+    //char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[50] = "../Roms/Private/PokemonGold.gbc";
     //char rom_name[50] = "../Roms/Private/Tetris.gb";
     //char rom_name[50] = "../Roms/Private/Zelda.gb";
+    char rom_name[50] = "../Roms/Private/dmg-acid2.gb";
     char save_name[50];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
@@ -193,10 +194,10 @@ int main(void) {
         }
 
         if (t.is_scanline > 0) {
-            if (c.memory[0xff44] <= 144) {
+            if (c.memory[LY] <= 144) {
                 load_display(&c, &p);
                 t.is_scanline = 0;
-                int y = c.memory[0xff44] - 1;
+                int y = c.memory[LY] - 1;
                 for (int x = 0; x < 160; x++) {
                     switch (p.display[y][x]) {
                         case 0:
@@ -214,7 +215,7 @@ int main(void) {
                     }
                 }
             }
-            uint8_t y1 = c.memory[0xff44] - 8;
+            uint8_t y1 = c.memory[LY] - 8;
             if (y1 < 144) {
                 for (int x = 0; x < 160; x++) {
                     switch (p.sprite_display[y1][x]) {

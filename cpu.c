@@ -15,27 +15,27 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
         t->is_scanline++;
 
     if (t->scan_line_tick >= 456) {
-        if (c->memory[0xff44] < 144)
-            c->memory[0xff41] = (c->memory[0xff41] & 252);
+        if (c->memory[LY] < 144)
+            c->memory[STAT] = (c->memory[STAT] & 252);
         t->scan_line_tick -= 456;
-        c->memory[0xff44] += 1;
-        if (((c->memory[0xff4a] < c->memory[0xff44]) && (c->memory[0xff40] & 32) != 0) && ((c->memory[0xff4b] - 7) < 160)) {
+        c->memory[LY] += 1;
+        if (((c->memory[WY] < c->memory[LY]) && (c->memory[LCDC] & 32) != 0) && ((c->memory[WX] - 7) < 160)) {
             c->window_internal_line += 1;
         }
 
-        if (c->memory[0xff44] == c->memory[0xff45]) {
-            c->memory[0xff41] |= 2;
-            if ((c->memory[0xff41] & 64) != 0) {
-                c->memory[0xff0f] |= 2;
+        if (c->memory[LY] == c->memory[LYC]) {
+            c->memory[STAT] |= 2;
+            if ((c->memory[STAT] & 64) != 0) {
+                c->memory[IF] |= 2;
             }
         }
-        if (c->memory[0xff44] == 144) {
-            c->memory[0xff0f] |= 1;
+        if (c->memory[LY] == 144) {
+            c->memory[IF] |= 1;
             t->is_frame = true;
-            c->memory[0xff41] = (c->memory[0xff41] & 252) | 1;
-        } else if (c->memory[0xff44] >= 153) {
+            c->memory[STAT] = (c->memory[STAT] & 252) | 1;
+        } else if (c->memory[LY] >= 153) {
             t->scan_line_tick -= 456;
-            c->memory[0xff44] = 0;
+            c->memory[LY] = 0;
             c->window_internal_line = 0;
         }
     }
@@ -47,7 +47,7 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
             c->memory[TIMA] += 1;
             if (c->memory[TIMA] == 0) {
                 c->memory[TIMA] = c->memory[TMA];
-                c->memory[0xff0f] |= 4;
+                c->memory[IF] |= 4;
             }
 
         }
@@ -66,9 +66,9 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
 }
 
 void run_interrupt(cpu *c, tick *t) {
-    if ((c->memory[0xffff] & c->memory[0xff0f]) != 0) {
-        if (((c->memory[0xffff] & 1) == 1) && ((c->memory[0xff0f] & 1) == 1)) {
-            c->memory[0xff0f] &= 0b11111110;
+    if ((c->memory[IE] & c->memory[IF]) != 0) {
+        if (((c->memory[IE] & 1) == 1) && ((c->memory[IF] & 1) == 1)) {
+            c->memory[IF] &= 0b11111110;
             c->ime = false;
             c->sp--;
             c->memory[c->sp] = (uint8_t)(c->pc >> 8);
@@ -77,8 +77,8 @@ void run_interrupt(cpu *c, tick *t) {
             c->pc = 0x40;
             add_ticks(c, t, 20);
         }
-        else if (((c->memory[0xffff] & 2) == 2) && ((c->memory[0xff0f] & 2) == 2)) {
-            c->memory[0xff0f] &= 0b11111101;
+        else if (((c->memory[IE] & 2) == 2) && ((c->memory[IF] & 2) == 2)) {
+            c->memory[IF] &= 0b11111101;
             c->ime = false;
             c->sp--;
             c->memory[c->sp] = (uint8_t) (c->pc >> 8);
@@ -87,8 +87,8 @@ void run_interrupt(cpu *c, tick *t) {
             c->pc = 0x48;
             add_ticks(c, t, 20);
         }
-        else if (((c->memory[0xffff] & 4) == 4) && ((c->memory[0xff0f] & 4) == 4)) {
-            c->memory[0xff0f] &= 0b11111011;
+        else if (((c->memory[IE] & 4) == 4) && ((c->memory[IF] & 4) == 4)) {
+            c->memory[IF] &= 0b11111011;
             c->ime = false;
             c->sp--;
             c->memory[c->sp] = (uint8_t) (c->pc >> 8);
@@ -97,8 +97,8 @@ void run_interrupt(cpu *c, tick *t) {
             c->pc = 0x50;
             add_ticks(c, t, 20);
         }
-        else if (((c->memory[0xffff] & 8) == 8) && ((c->memory[0xff0f] & 8) == 8)) {
-            c->memory[0xff0f] &= 0b11110111;
+        else if (((c->memory[IE] & 8) == 8) && ((c->memory[IF] & 8) == 8)) {
+            c->memory[IF] &= 0b11110111;
             c->ime = false;
             c->sp--;
             c->memory[c->sp] = (uint8_t) (c->pc >> 8);
@@ -107,8 +107,8 @@ void run_interrupt(cpu *c, tick *t) {
             c->pc = 0x58;
             add_ticks(c, t, 20);
         }
-        else if (((c->memory[0xffff] & 16) == 16) && ((c->memory[0xff0f] & 16) == 16)) {
-            c->memory[0xff0f] &= 0b11101111;
+        else if (((c->memory[IE] & 16) == 16) && ((c->memory[IE] & 16) == 16)) {
+            c->memory[IF] &= 0b11101111;
             c->ime = false;
             c->sp--;
             c->memory[c->sp] = (uint8_t) (c->pc >> 8);
@@ -121,7 +121,7 @@ void run_interrupt(cpu *c, tick *t) {
 }
 
 void dma_transfer(cpu *c, tick *t) {
-    uint16_t to_transfer = (uint16_t)(c->memory[0xff46]) << 8;
+    uint16_t to_transfer = (uint16_t)(c->memory[DMA]) << 8;
     for (int i = 0; i < 160; i++) {
         c->memory[0xfe00 + i] = c->memory[to_transfer + i];
     }
