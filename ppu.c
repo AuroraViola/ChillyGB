@@ -225,7 +225,7 @@ void load_display(cpu *c, ppu *p) {
                 int y = c->memory[0xff44];
                 for (uint8_t x = 0; x < 167; x++) {
                     if ((y >= wy) && ((x + wx - 7) < 160) && ((x + wx - 7) >= 0)) {
-                        p->display[y][x + wx - 7] = p->window[c->window_internal_line][x];
+                        p->display[y][x + wx - 7] = bg_palette[p->window[c->window_internal_line][x]];
                     }
                 }
             }
