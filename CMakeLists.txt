@@ -12,7 +12,7 @@ add_executable(ChillyGB main.c
         ppu.c
         input.c
         input.h
-        apu.c
         apu.h
+        apu.c
 )
-target_link_libraries(ChillyGB raylib)
+target_link_libraries(ChillyGB raylib m)

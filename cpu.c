@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "opcodes.h"
+#include "raylib.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -85,14 +86,19 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
     }
 
     t->divider_register += ticks;
-    if (t->divider_register >= 16384) {
-        t->divider_register -= 16384;
+    if (t->divider_register >= 256) {
+        t->divider_register -= 256;
+        if ((c->memory[DIV] & 16) > ((c->memory[DIV] + 1) & 16)) {
+            c->apu_div++;
+            if (c->apu_div % 2 == 0) {
+                c->sound_lenght = true;
+            }
+            if (c->apu_div % 8 == 0) {
+                c->envelope_sweep = true;
+                c->envelope_sweep_pace++;
+            }
+        }
         c->memory[DIV] += 1;
-    }
-
-    if (t->div_apu_tick >= 512) {
-        t->divider_register -= 512;
-        c->apu_div += 1;
     }
 }
 

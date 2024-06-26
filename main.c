@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "cpu.h"
 #include "ppu.h"
+#include "apu.h"
 #include "input.h"
 #include <stdio.h>
 #include <assert.h>
@@ -8,51 +9,6 @@
 #include <string.h>
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
-
-float frequency_CH2 = 100.0f;
-uint8_t volume_CH2 = 15;
-
-float frequency_CH1 = 100.0f;
-uint8_t volume_CH1 = 15;
-
-float duty_cicle[] = {0.125f, 0.25f, 0.5f, 0.75f};
-
-float sineIdx1 = 0;
-float sineIdx2 = 0;
-float duty_CH1 = 0.5f;
-float duty_CH2 = 0.5f;
-
-void AudioInputCallback_CH1(void *buffer, unsigned int frames) {
-    float incr = frequency_CH1 / 44100.0f;
-    short *d = (short *)buffer;
-
-    for (unsigned int i = 0; i < frames; i++) {
-        int8_t sinemap;
-        if (sineIdx1 >= duty_CH1)
-            sinemap = 1;
-        else
-            sinemap = 0;
-        d[i] = (short)(((float)(volume_CH1) * 250) * (PI * sinemap));
-        sineIdx1 += incr;
-        if (sineIdx1 > 1.0f) sineIdx1 -= 1.0f;
-    }
-}
-
-void AudioInputCallback_CH2(void *buffer, unsigned int frames) {
-    float incr = frequency_CH2 / 44100.0f;
-    short *d = (short *)buffer;
-
-    for (unsigned int i = 0; i < frames; i++) {
-        int8_t sinemap;
-        if (sineIdx2 >= duty_CH2)
-            sinemap = 1;
-        else
-            sinemap = 0;
-        d[i] = (short)(((float)(volume_CH2) * 250) * (PI * sinemap));
-        sineIdx2 += incr;
-        if (sineIdx2 > 1.0f) sineIdx2 -= 1.0f;
-    }
-}
 
 char *strreplace(char *s, const char *s1, const char *s2) {
     char *p = strstr(s, s1);
@@ -68,7 +24,7 @@ char *strreplace(char *s, const char *s1, const char *s2) {
 
 int main(void) {
     // Initialize CPU and memory
-    cpu c = {.pc = 0x100, .sp = 0xfffe};
+    cpu c = {.pc = 0x100, .sp = 0xfffe, .ime = false, .ime_to_be_setted = 0};
     c.r.reg8[A] = 0x01;
     c.r.reg8[B] = 0x00;
     c.r.reg8[C] = 0x13;
@@ -104,19 +60,18 @@ int main(void) {
             pixels[i][j] = (Color){185, 237, 186, 255};
 
     // Load ROM to Memory
-    //char rom_name[50] = "../Roms/Private/bad_apple.gb";
-    //char rom_name[50] = "../Roms/Private/mbc3-tester.gb";
+    //char rom_name[50] = "../Roms/Private/bgbtest.gb";
     //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
-    //char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
+    //char rom_name[50] = "../Roms/Private/KirbyDreamLand.gb";
+    //char rom_name[50] = "../Roms/Private/MarioLand.gb";
+    char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
+    //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[50] = "../Roms/Private/PokemonGold.gbc";
     //char rom_name[50] = "../Roms/Private/Tetris.gb";
-    char rom_name[50] = "../Roms/Private/Zelda.gb";
-    //char rom_name[50] = "../Roms/Private/dmg-acid2.gb";
+    //char rom_name[50] = "../Roms/Private/Zelda.gb";
     char save_name[50];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
-
-    printf("%s\n%s\n", rom_name, save_name);
 
     FILE *cartridge = fopen(rom_name, "r");
 
@@ -147,6 +102,17 @@ int main(void) {
     c.cart.bank_select_ram = 0;
     fclose(cartridge);
 
+    // Initialize APU
+    InitAudioDevice();
+
+    ch[0].stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(ch[0].stream, AudioInputCallback_CH1);
+    PlayAudioStream(ch[0].stream);
+
+    ch[1].stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(ch[1].stream, AudioInputCallback_CH2);
+    PlayAudioStream(ch[1].stream);
+
     if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
         FILE *save = fopen(save_name, "r");
         if (save != NULL) {
@@ -162,43 +128,10 @@ int main(void) {
         }
     }
 
-    //Initialize APU
-    InitAudioDevice();
-    SetAudioStreamBufferSizeDefault(256);
-    // Channel 1
-    AudioStream CH1 = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(CH1, AudioInputCallback_CH1);
-    PlayAudioStream(CH1);
-    // Channel 2
-    AudioStream CH2 = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(CH2, AudioInputCallback_CH2);
-    PlayAudioStream(CH2);
-
-
-    int ticks = 0;
     while(!WindowShouldClose()) {
         execute(&c, &t);
         c.memory[JOYP] = get_joypad(&c, &j1);
-
-        uint32_t periodvalue_CH1 = (uint16_t) ((c.memory[NR14] & 7) << 8) | c.memory[NR13];
-        if ((c.memory[NR12] & 0xf8) != 0) {
-            frequency_CH1 = 131072 / (2048 - periodvalue_CH1);
-            volume_CH1 = (c.memory[NR12] >> 4);
-        }
-        else {
-            frequency_CH1 = 0;
-            volume_CH1 = 0;
-        }
-
-        uint32_t periodvalue_CH2 = (uint16_t) ((c.memory[NR24] & 7) << 8) | c.memory[NR23];
-        if ((c.memory[NR22] & 0xf8) != 0) {
-            frequency_CH2 = 131072 / (2048 - periodvalue_CH2);
-            volume_CH2 = (c.memory[NR22] >> 4);
-        }
-        else {
-            frequency_CH2 = 0;
-            volume_CH2 = 0;
-        }
+        Update_Audio(&c);
 
         if (t.is_scanline > 0) {
             if (c.memory[LY] <= 144) {
@@ -245,7 +178,6 @@ int main(void) {
 
         if (t.is_frame && (c.memory[0xff44] < 144)) {
             t.is_frame = false;
-
             BeginTextureMode(display);
                 ClearBackground(BLACK);
                 for (int i = 0; i < 144; i++)
@@ -266,11 +198,7 @@ int main(void) {
             sprintf(str, "ChillyGB - %d FPS", fps);
             SetWindowTitle(str);
         }
-
-        ticks += 1;
     }
-
-    UnloadRenderTexture(display);
 
     if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
         FILE *save = fopen(save_name, "w");
@@ -284,6 +212,8 @@ int main(void) {
             fwrite(&c.cart.ram, 0x20000, 1, save);
         fclose(save);
     }
+
+    UnloadRenderTexture(display);
     CloseWindow();
 
     return 0;

@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "cpu.h"
+#include "apu.h"
 
 uint8_t* r8(cpu *c, uint8_t r) {
     switch (r) {
@@ -171,6 +172,16 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->tilemap_write = true;
             c->need_bg_wn_reload = true;
             c->need_sprites_reload = true;
+            break;
+
+        case NR11: case NR12: case NR13: case NR14:
+            ch[0].is_triggered = true;
+            c->memory[addr] = value;
+            break;
+
+        case NR21: case NR22: case NR23: case NR24:
+            ch[1].is_triggered = true;
+            c->memory[addr] = value;
             break;
 
         default:

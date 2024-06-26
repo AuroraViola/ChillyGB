@@ -20,6 +20,7 @@ typedef struct {
     uint8_t banks_ram;
     uint8_t bank_select_ram;
     bool ram_enable;
+
 }cartridge;
 
 typedef struct {
@@ -45,6 +46,9 @@ typedef struct {
     uint8_t memory[0x10000];
 
     uint8_t apu_div;
+    bool envelope_sweep;
+    uint8_t envelope_sweep_pace;
+    bool sound_lenght;
 }cpu;
 
 typedef struct {
