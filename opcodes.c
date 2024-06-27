@@ -174,7 +174,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->need_sprites_reload = true;
             break;
 
-        case NR11: case NR12: case NR13: case NR14:
+        case NR10: case NR11: case NR12: case NR13: case NR14:
             ch[0].is_triggered = true;
             c->memory[addr] = value;
             break;

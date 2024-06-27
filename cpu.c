@@ -93,6 +93,10 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
             if (c->apu_div % 2 == 0) {
                 c->sound_lenght = true;
             }
+            if (c->apu_div % 4 == 0) {
+                c->freq_sweep = true;
+                c->freq_sweep_pace++;
+            }
             if (c->apu_div % 8 == 0) {
                 c->envelope_sweep = true;
                 c->envelope_sweep_pace++;

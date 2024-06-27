@@ -64,10 +64,10 @@ int main(void) {
     //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[50] = "../Roms/Private/KirbyDreamLand.gb";
     //char rom_name[50] = "../Roms/Private/MarioLand.gb";
-    char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
+    //char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[50] = "../Roms/Private/PokemonGold.gbc";
-    //char rom_name[50] = "../Roms/Private/Tetris.gb";
+    char rom_name[50] = "../Roms/Private/Tetris.gb";
     //char rom_name[50] = "../Roms/Private/Zelda.gb";
     char save_name[50];
     strncpy(save_name, rom_name, 50);

@@ -43,6 +43,15 @@ void Update_CH1(cpu *c) {
             }
         }
     }
+    if ((c->memory[NR10] & 112) != 0 && c->freq_sweep) {
+        if ((c->freq_sweep_pace % ((c->memory[NR10] & 112) >> 4)) == 0) {
+            if ((c->memory[NR10] & 8) != 0) {
+                ch[0].period_value -= (ch[0].period_value / (1 << (c->memory[NR10] & 7)));
+            } else {
+                ch[0].period_value += (ch[0].period_value / (1 << (c->memory[NR10] & 7)));
+            }
+        }
+    }
 }
 
 void Update_CH2(cpu *c) {
@@ -82,6 +91,7 @@ void Update_Audio(cpu *c) {
         ch[1].volume = 0;
     c->sound_lenght = false;
     c->envelope_sweep = false;
+    c->freq_sweep = false;
 }
 
 void AudioInputCallback_CH1(void *buffer, unsigned int frames) {

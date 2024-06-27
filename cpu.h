@@ -48,6 +48,8 @@ typedef struct {
     uint8_t apu_div;
     bool envelope_sweep;
     uint8_t envelope_sweep_pace;
+    bool freq_sweep;
+    uint8_t freq_sweep_pace;
     bool sound_lenght;
 }cpu;
 
