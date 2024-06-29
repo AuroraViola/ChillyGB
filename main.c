@@ -61,14 +61,15 @@ int main(void) {
 
     // Load ROM to Memory
     //char rom_name[50] = "../Roms/Private/bgbtest.gb";
+    //char rom_name[50] = "../Roms/Private/DrMario.gb";
     //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[50] = "../Roms/Private/KirbyDreamLand.gb";
     //char rom_name[50] = "../Roms/Private/MarioLand.gb";
     //char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[50] = "../Roms/Private/PokemonGold.gbc";
-    char rom_name[50] = "../Roms/Private/Tetris.gb";
-    //char rom_name[50] = "../Roms/Private/Zelda.gb";
+    //char rom_name[50] = "../Roms/Private/Tetris.gb";
+    char rom_name[50] = "../Roms/Private/Zelda.gb";
     char save_name[50];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
@@ -105,13 +106,17 @@ int main(void) {
     // Initialize APU
     InitAudioDevice();
 
-    ch[0].stream = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(ch[0].stream, AudioInputCallback_CH1);
-    PlayAudioStream(ch[0].stream);
+    audio.ch1.stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(audio.ch1.stream, AudioInputCallback_CH1);
+    PlayAudioStream(audio.ch1.stream);
 
-    ch[1].stream = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(ch[1].stream, AudioInputCallback_CH2);
-    PlayAudioStream(ch[1].stream);
+    audio.ch2.stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(audio.ch2.stream, AudioInputCallback_CH2);
+    PlayAudioStream(audio.ch2.stream);
+
+    audio.ch3.stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(audio.ch3.stream, AudioInputCallback_CH3);
+    PlayAudioStream(audio.ch3.stream);
 
     if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
         FILE *save = fopen(save_name, "r");

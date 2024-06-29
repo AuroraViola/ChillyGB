@@ -175,12 +175,47 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case NR10: case NR11: case NR12: case NR13: case NR14:
-            ch[0].is_triggered = true;
+            audio.ch1.is_triggered = true;
             c->memory[addr] = value;
             break;
 
         case NR21: case NR22: case NR23: case NR24:
-            ch[1].is_triggered = true;
+            audio.ch2.is_triggered = true;
+            c->memory[addr] = value;
+            break;
+
+        case NR30: case NR31: case NR32: case NR33: case NR34:
+            audio.ch3.is_triggered = true;
+            c->memory[addr] = value;
+            break;
+
+        case NR51:
+            uint8_t ch[4];
+            for (uint8_t i = 0; i < 4; i++) {
+                ch[i] = (value >> i) & 17;
+                switch (ch[i]) {
+                    case 17:
+                        audio.pan[i] = 0.5f;
+                        break;
+                    case 16:
+                        audio.pan[i] = 1.0f;
+                        break;
+                    case 1:
+                        audio.pan[i] = 0.0f;
+                        break;
+                    case 0:
+                        audio.pan[i] = 0.6f;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            c->memory[addr] = value;
+            break;
+
+
+        case 0xff30 ... 0xff3f: // Wave Ram
             c->memory[addr] = value;
             break;
 

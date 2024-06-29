@@ -11,19 +11,33 @@ typedef struct {
     bool is_triggered;
     bool is_active;
     uint8_t lenght;
+    uint8_t wave_duty;
 
     uint16_t period_value;
     float idx;
     uint8_t volume;
-}audio;
+}pulse_channel;
 
 typedef struct {
-    uint8_t volume;
-    float pan[4];
-}audio_master;
+    AudioStream stream;
+    bool is_triggered;
+    bool is_active;
+    uint8_t lenght;
 
-extern audio ch[4];
-extern audio_master master;
+    uint8_t wave_pattern[32];
+    uint16_t period_value;
+    float idx;
+    uint8_t volume;
+}wave_channel;
+
+typedef struct {
+    pulse_channel ch1;
+    pulse_channel ch2;
+    wave_channel ch3;
+    float pan[4];
+}channels;
+
+extern channels audio;
 
 void AudioInputCallback_CH1(void *buffer, unsigned int frames);
 void AudioInputCallback_CH2(void *buffer, unsigned int frames);
