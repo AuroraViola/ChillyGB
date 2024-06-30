@@ -1,6 +1,6 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include "cpu.h"
 #include "apu.h"
 
@@ -23,6 +23,37 @@ uint8_t* r8(cpu *c, uint8_t r) {
         case 7:
             return &c->r.reg8[A];
     }
+}
+
+void reset_apu_regs(cpu *c) {
+    audio.ch1.is_active = false;
+    audio.ch2.is_active = false;
+    audio.ch3.is_active = false;
+    c->memory[NR10] = 0x80;
+    c->memory[NR11] = 0x00;
+    c->memory[NR12] = 0x00;
+    c->memory[NR13] = 0x00;
+    c->memory[NR14] = 0xb8;
+
+    c->memory[NR21] = 0x00;
+    c->memory[NR22] = 0x00;
+    c->memory[NR23] = 0x00;
+    c->memory[NR24] = 0xb8;
+
+    c->memory[NR30] = 0x7f;
+    c->memory[NR31] = 0x00;
+    c->memory[NR32] = 0x00;
+    c->memory[NR33] = 0x00;
+    c->memory[NR34] = 0xb8;
+
+    c->memory[NR41] |= 0xc0;
+    c->memory[NR42] = 0x00;
+    c->memory[NR43] = 0x00;
+    c->memory[NR44] = 0xbf;
+
+    c->memory[NR50] = 0x00;
+    c->memory[NR51] = 0x00;
+
 }
 
 void set_mem(cpu *c, uint16_t addr, uint8_t value) {
@@ -174,55 +205,81 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->need_sprites_reload = true;
             break;
 
+        case NR10: case NR11: case NR12: case NR13:
+            if (audio.is_on)
+                c->memory[addr] = value;
+            break;
         case NR14:
-            if ((value & 0x80) != 0) {
-                audio.ch1.is_triggered = true;
-                audio.ch1.is_active = true;
+            if (audio.is_on) {
+                if ((value & 0x80) != 0) {
+                    audio.ch1.is_triggered = true;
+                    audio.ch1.is_active = true;
+                }
+                c->memory[addr] = value;
             }
-            c->memory[addr] = value;
             break;
 
+        case NR21: case NR22: case NR23:
+            if (audio.is_on)
+                c->memory[addr] = value;
+            break;
         case NR24:
-            if ((value & 0x80) != 0) {
-                audio.ch2.is_triggered = true;
-                audio.ch2.is_active = true;
+            if (audio.is_on) {
+                if ((value & 0x80) != 0) {
+                    audio.ch2.is_triggered = true;
+                    audio.ch2.is_active = true;
+                }
+                c->memory[addr] = value;
             }
-            c->memory[addr] = value;
             break;
 
+        case NR30: case NR31: case NR32: case NR33:
+            if (audio.is_on)
+                c->memory[addr] = value;
+            break;
         case NR34:
-            if ((value & 0x80) != 0) {
-                audio.ch3.is_triggered = true;
-                audio.ch3.is_active = true;
+            if (audio.is_on) {
+                if ((value & 0x80) != 0) {
+                    audio.ch3.is_triggered = true;
+                    audio.ch3.is_active = true;
+                }
+                c->memory[addr] = value;
             }
-            c->memory[addr] = value;
+            break;
+        case NR41: case NR42: case NR43: case NR44:
+            if (audio.is_on)
+                c->memory[addr] = value;
             break;
 
         case NR51:
-            uint8_t ch[4];
-            for (uint8_t i = 0; i < 4; i++) {
-                ch[i] = (value >> i) & 17;
-                switch (ch[i]) {
-                    case 17:
-                        audio.pan[i] = 0.5f;
-                        break;
-                    case 16:
-                        audio.pan[i] = 1.0f;
-                        break;
-                    case 1:
-                        audio.pan[i] = 0.0f;
-                        break;
-                    case 0:
-                        audio.pan[i] = 0.6f;
-                        break;
-                    default:
-                        break;
+            if (audio.is_on) {
+                uint8_t ch[4];
+                for (uint8_t i = 0; i < 4; i++) {
+                    ch[i] = (value >> i) & 17;
+                    switch (ch[i]) {
+                        case 17:
+                            audio.pan[i] = 0.5f;
+                            break;
+                        case 16:
+                            audio.pan[i] = 1.0f;
+                            break;
+                        case 1:
+                            audio.pan[i] = 0.0f;
+                            break;
+                        case 0:
+                            audio.pan[i] = 0.6f;
+                            break;
+                        default:
+                            break;
+                    }
                 }
+                c->memory[addr] = value;
             }
-            c->memory[addr] = value;
             break;
         case NR52:
             audio.is_on = value >> 7;
+            if (!audio.is_on)
+                reset_apu_regs(c);
             c->memory[addr] = value;
             break;
 
@@ -301,6 +358,9 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             if (audio.ch3.is_active)
                 return 0xff;
             return c->memory[addr];
+
+        case 0xff03: case 0xff08 ... 0xff0e: case 0xff15: case 0xff1f: case 0xff27 ... 0xff2f: case 0xff4c ... 0xff7f:
+            return 0xff;
 
 
         default:

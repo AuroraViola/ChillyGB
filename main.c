@@ -23,26 +23,8 @@ char *strreplace(char *s, const char *s1, const char *s2) {
 }
 
 int main(void) {
-    // Initialize CPU and memory
-    cpu c = {.pc = 0x100, .sp = 0xfffe, .ime = false, .ime_to_be_setted = 0};
-    c.r.reg8[A] = 0x01;
-    c.r.reg8[B] = 0x00;
-    c.r.reg8[C] = 0x13;
-    c.r.reg8[D] = 0x00;
-    c.r.reg8[E] = 0xd8;
-    c.r.reg8[F] = 0xb0;
-    c.r.reg8[H] = 0x01;
-    c.r.reg8[L] = 0x4d;
-    c.memory[JOYP] = 0xcf;
-    c.memory[LCDC] = 0x91;
-    c.memory[STAT] = 0x85;
-    c.memory[DMA] = 0xff;
-    c.memory[LY] = 0x90;
-    c.memory[DIV] = 0xab;
-    c.memory[IF] = 0xe1;
-    c.memory[TAC] = 0xf8;
-
-    // Initialize Timer
+    // Initialize CPU, memory and timer
+    cpu c = {};
     tick t = {.tima_counter = 0, .divider_register = 0, .scan_line_tick = 0, .t_states = 0};
 
     // Initialize Joypad
@@ -61,18 +43,27 @@ int main(void) {
             pixels[i][j] = (Color){185, 237, 186, 255};
 
     // Load ROM to Memory
+    //char rom_name[80] = "../Roms/Private/20y.gb";
+    //char rom_name[80] = "../Roms/Private/CounterTest.gb";
     //char rom_name[80] = "../Roms/Private/bgbtest.gb";
     //char rom_name[80] = "../Roms/Private/DrMario.gb";
     //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
-    char rom_name[80] = "../Roms/Private/KirbyDreamLand.gb";
+    //char rom_name[80] = "../Roms/Private/KirbyDreamLand.gb";
     //char rom_name[80] = "../Roms/Private/MarioLand.gb";
     //char rom_name[80] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[80] = "../Roms/Private/PokemonGold.gbc";
     //char rom_name[80] = "../Roms/Private/Tetris.gb";
     //char rom_name[80] = "../Roms/Private/Zelda.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/01-registers.gb";
     //char rom_name[80] = "../Roms/Private/DrMario.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/01-registers.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/02-len ctr.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/09-wave read while on.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/10-wave trigger while on.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/11-regs after power.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/12-wave write while on.gb";
+    char rom_name[80] = "../Roms/Private/bully.gb";
+    //char rom_name[80] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
     char save_name[80];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
@@ -135,6 +126,8 @@ int main(void) {
             fclose(save);
         }
     }
+
+    initialize_cpu_memory(&c);
 
     while(!WindowShouldClose()) {
         execute(&c, &t);

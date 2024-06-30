@@ -173,6 +173,7 @@ enum cond {
     condNZ = 0,
 };
 
+void initialize_cpu_memory(cpu *c);
 void execute(cpu *c, tick *t);
 
 #endif //CHILLYGB_CPU_H

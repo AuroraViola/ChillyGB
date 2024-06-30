@@ -93,7 +93,7 @@ uint8_t get_joypad(cpu *c, joypad *j){
         dpad_enc |= (j->dpad[DPAD_UP] << 2);
         dpad_enc |= (j->dpad[DPAD_DOWN] << 3);
         btn_enc |= ((~dpad_enc) & 15);
-        joypad_register |= ((~btn_enc) & 15);
+        joypad_register |= ((btn_enc) & 15);
 
     }
     else if (((c->memory[0xff00] >> 4) & 3) == 1) {

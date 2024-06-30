@@ -1,12 +1,135 @@
 #include "cpu.h"
+#include "apu.h"
 #include "opcodes.h"
 #include "raylib.h"
-#include <assert.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 const uint8_t rst_vec[] = {0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38};
 const uint16_t clock_select[] = {1024, 16, 64, 256};
+
+uint8_t stretch_number(uint8_t num) {
+    uint8_t t = (num | (num << 2)) & 0b00110011;
+    return ((t + (t | 0b1010101)) ^ 0b1010101) & 0b11111111;
+}
+
+void initialize_cpu_memory(cpu *c) {
+    srand(time(NULL));
+    c->r.reg8[A] = 0x01;
+    c->r.reg8[B] = 0x00;
+    c->r.reg8[C] = 0x13;
+    c->r.reg8[D] = 0x00;
+    c->r.reg8[E] = 0xd8;
+    c->r.reg8[F] = 0xb0;
+    c->r.reg8[H] = 0x01;
+    c->pc = 0x100;
+    c->sp = 0xfffe;
+    c->ime = false;
+    c->ime_to_be_setted = 0;
+    c->need_bg_wn_reload = true;
+    c->tilemap_write = true;
+    c->tiles_write = true;
+    c->need_sprites_reload = true;
+
+    c->memory[JOYP] = 0xcf;
+    c->memory[SB] = 0x00;
+    c->memory[SC] = 0x7e;
+    c->memory[DIV] = 0xac;
+    c->memory[TIMA] = 0x00;
+    c->memory[TMA] = 0x00;
+    c->memory[TAC] = 0xf8;
+    c->memory[IF] = 0xe1;
+
+    audio.ch1.is_active = true;
+    c->memory[NR10] = 0x80;
+    c->memory[NR11] = 0xbf;
+    c->memory[NR12] = 0xf3;
+    c->memory[NR13] = 0xff;
+    c->memory[NR14] = 0xbf;
+
+    c->memory[NR21] = 0x3f;
+    c->memory[NR22] = 0x00;
+    c->memory[NR23] = 0xff;
+    c->memory[NR24] = 0xbf;
+
+    c->memory[NR30] = 0x7f;
+    c->memory[NR31] = 0xff;
+    c->memory[NR32] = 0x9f;
+    c->memory[NR33] = 0xff;
+    c->memory[NR34] = 0xbf;
+
+    c->memory[NR41] = 0xff;
+    c->memory[NR42] = 0x00;
+    c->memory[NR43] = 0x00;
+    c->memory[NR44] = 0xbf;
+
+    c->memory[NR50] = 0x77;
+    c->memory[NR51] = 0xf3;
+    c->memory[NR52] = 0xf1;
+
+    c->memory[LCDC] = 0x91;
+    c->memory[STAT] = 0x89;
+    c->memory[SCY] = 0x00;
+    c->memory[SCX] = 0x00;
+    c->memory[LY] = 0x91;
+    c->memory[LYC] = 0x00;
+    c->memory[DMA] = 0xff;
+    c->memory[BGP] = 0xfc;
+    c->memory[WY] = 0x00;
+    c->memory[WX] = 0x00;
+    c->memory[IE] = 0x00;
+
+    // Initialize WRAM
+    for (uint16_t i = 0xc000; i <= 0xdfff; i++) {
+        c->memory[i] = rand();
+    }
+
+    // Initialize HRAM
+    for (uint16_t i = 0xff80; i <= 0xfffe; i++) {
+        c->memory[i] = rand();
+    }
+
+    // Initialize VRAM
+    for (uint16_t i = 0x8000; i <= 0x9fff; i++) {
+        c->memory[i] = 0;
+    }
+
+    // Initialize Background tiles
+    for (uint16_t i = 0; i < 12; i++) {
+        c->memory[0x9904 + i] = i+1;
+        c->memory[0x9924 + i] = i+13;
+    }
+    c->memory[0x9910] = 0x19;
+
+    // Initialize tiles data
+    uint8_t logo_tiles_initial[24][2];
+    uint8_t logo_tiles[24][4];
+
+    for (uint16_t i = 0; i < 24; i++) {
+        logo_tiles_initial[i][0] = c->cart.data[0][0x104 + (i*2)];
+        logo_tiles_initial[i][1] = c->cart.data[0][0x104 + (i*2) + 1];
+    }
+
+    for (uint16_t i = 0; i < 24; i++) {
+        logo_tiles[i][0] = stretch_number(logo_tiles_initial[i][0] >> 4);
+        logo_tiles[i][1] = stretch_number(logo_tiles_initial[i][0] & 0xf);
+        logo_tiles[i][2] = stretch_number(logo_tiles_initial[i][1] >> 4);
+        logo_tiles[i][3] = stretch_number(logo_tiles_initial[i][1] & 0xf);
+    }
+
+    for (uint16_t i = 0; i < 24; i++) {
+        for (uint16_t j = 0; j < 4; j ++) {
+            c->memory[0x8010 + (i << 4) + (j*4)] = logo_tiles[i][j];
+            c->memory[0x8010 + (i << 4) + (j*4)+2] = logo_tiles[i][j];
+        }
+    }
+
+    uint8_t r_tile[] = {0x3c, 0x42, 0xb9, 0xa5, 0xb9, 0xa5, 0x42, 0x3c};
+    for (uint16_t i = 0; i < 8; i++) {
+        c->memory[0x8190 + (i * 2)] = r_tile[i];
+    }
+}
 
 void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->t_states += ticks;
@@ -171,11 +294,6 @@ void dma_transfer(cpu *c, tick *t) {
 
 uint8_t execute_instruction(cpu *c) {
     parameters p = {};
-    /*
-    uint8_t opcode = c->memory[c->pc];
-    p.imm8 = c->memory[c->pc + 1];
-    p.imm16 = ((uint16_t)c->memory[c->pc + 2] << 8) | c->memory[c->pc + 1];
-     */
 
     uint8_t opcode = get_mem(c, c->pc);
     p.imm8 = get_mem(c, (c->pc+1));
