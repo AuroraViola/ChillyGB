@@ -33,6 +33,7 @@ int main(void) {
     c.r.reg8[F] = 0xb0;
     c.r.reg8[H] = 0x01;
     c.r.reg8[L] = 0x4d;
+    c.memory[JOYP] = 0xcf;
     c.memory[LCDC] = 0x91;
     c.memory[STAT] = 0x85;
     c.memory[DMA] = 0xff;
@@ -50,7 +51,7 @@ int main(void) {
     // Initialize PPU and Raylib
     ppu p = {.display = { 0 }, .background = { 0 }, .window = { 0 }, .sprite_display = { 0 }};
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(160*4, 144*3, "ChillyGB");
+    InitWindow(160*4, 144*4, "ChillyGB");
     SetWindowMinSize(160, 144);
     SetTargetFPS(60);
     RenderTexture2D display = LoadRenderTexture(160, 144);
@@ -60,17 +61,19 @@ int main(void) {
             pixels[i][j] = (Color){185, 237, 186, 255};
 
     // Load ROM to Memory
-    //char rom_name[50] = "../Roms/Private/bgbtest.gb";
-    //char rom_name[50] = "../Roms/Private/DrMario.gb";
-    //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
-    //char rom_name[50] = "../Roms/Private/KirbyDreamLand.gb";
-    //char rom_name[50] = "../Roms/Private/MarioLand.gb";
-    //char rom_name[50] = "../Roms/Private/PokemonGiallo.gb";
-    //char rom_name[50] = "../Roms/Private/PokemonBlue.gb";
-    //char rom_name[50] = "../Roms/Private/PokemonGold.gbc";
-    //char rom_name[50] = "../Roms/Private/Tetris.gb";
-    char rom_name[50] = "../Roms/Private/Zelda.gb";
-    char save_name[50];
+    //char rom_name[80] = "../Roms/Private/bgbtest.gb";
+    //char rom_name[80] = "../Roms/Private/DrMario.gb";
+    //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
+    char rom_name[80] = "../Roms/Private/KirbyDreamLand.gb";
+    //char rom_name[80] = "../Roms/Private/MarioLand.gb";
+    //char rom_name[80] = "../Roms/Private/PokemonGiallo.gb";
+    //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
+    //char rom_name[80] = "../Roms/Private/PokemonGold.gbc";
+    //char rom_name[80] = "../Roms/Private/Tetris.gb";
+    //char rom_name[80] = "../Roms/Private/Zelda.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/01-registers.gb";
+    //char rom_name[80] = "../Roms/Private/DrMario.gb";
+    char save_name[80];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
 
@@ -197,6 +200,14 @@ int main(void) {
                                (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
                                             (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+                /*
+                DrawText(TextFormat("CH3 on: %i", audio.ch3.is_active), 0, 0, 20, RED);
+                DrawText(TextFormat("CH3 DAC: %i", (uint8_t)((c.memory[NR30] & 0x80) != 0)), 120, 0, 20, RED);
+                DrawText(TextFormat("CH3 period: %x", audio.ch3.period_value), 260, 0, 20, RED);
+                DrawText(TextFormat("CH3 volume: %i", audio.ch3.volume), 0, 32, 20, RED);
+                DrawText(TextFormat("CH3 lenght enable: %i", (uint8_t)((c.memory[NR34] & 64) != 0)), 0, 48, 20, RED);
+                DrawText(TextFormat("CH3 lenght: %i", audio.ch3.lenght), 0, 64, 20, RED);
+                 */
             EndDrawing();
             uint16_t fps = GetFPS();
             char str[22];

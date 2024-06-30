@@ -13,6 +13,9 @@ typedef struct {
     uint8_t lenght;
     uint8_t wave_duty;
 
+    uint8_t sweep_pace;
+    uint8_t env_dir;
+
     uint16_t period_value;
     float idx;
     uint8_t volume;
@@ -35,6 +38,7 @@ typedef struct {
     pulse_channel ch2;
     wave_channel ch3;
     float pan[4];
+    bool is_on;
 }channels;
 
 extern channels audio;
