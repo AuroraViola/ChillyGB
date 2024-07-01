@@ -58,12 +58,17 @@ int main(void) {
     //char rom_name[80] = "../Roms/Private/DrMario.gb";
     //char rom_name[80] = "../Roms/dmg_sound/01-registers.gb";
     //char rom_name[80] = "../Roms/dmg_sound/02-len ctr.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/03-trigger.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/04-sweep.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/08-len ctr during power.gb";
     //char rom_name[80] = "../Roms/dmg_sound/09-wave read while on.gb";
     //char rom_name[80] = "../Roms/dmg_sound/10-wave trigger while on.gb";
     //char rom_name[80] = "../Roms/dmg_sound/11-regs after power.gb";
     //char rom_name[80] = "../Roms/dmg_sound/12-wave write while on.gb";
-    char rom_name[80] = "../Roms/Private/bully.gb";
     //char rom_name[80] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
+    //char rom_name[80] = "../Roms/mooneye-acceptance/bits/unused_hwio-GS.gb";
+    //char rom_name[80] = "../Roms/mooneye-utils/dump_boot_hwio.gb";
+    char rom_name[80] = "Zelda.gb";
     char save_name[80];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
@@ -99,6 +104,7 @@ int main(void) {
 
     // Initialize APU
     InitAudioDevice();
+    SetAudioStreamBufferSizeDefault(512);
 
     audio.ch1.stream = LoadAudioStream(44100, 16, 1);
     SetAudioStreamCallback(audio.ch1.stream, AudioInputCallback_CH1);
@@ -111,6 +117,10 @@ int main(void) {
     audio.ch3.stream = LoadAudioStream(44100, 16, 1);
     SetAudioStreamCallback(audio.ch3.stream, AudioInputCallback_CH3);
     PlayAudioStream(audio.ch3.stream);
+
+    audio.ch4.stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(audio.ch4.stream, AudioInputCallback_CH4);
+    PlayAudioStream(audio.ch4.stream);
 
     if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
         FILE *save = fopen(save_name, "r");
@@ -194,12 +204,15 @@ int main(void) {
                                             (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
                 /*
-                DrawText(TextFormat("CH3 on: %i", audio.ch3.is_active), 0, 0, 20, RED);
-                DrawText(TextFormat("CH3 DAC: %i", (uint8_t)((c.memory[NR30] & 0x80) != 0)), 120, 0, 20, RED);
-                DrawText(TextFormat("CH3 period: %x", audio.ch3.period_value), 260, 0, 20, RED);
-                DrawText(TextFormat("CH3 volume: %i", audio.ch3.volume), 0, 32, 20, RED);
-                DrawText(TextFormat("CH3 lenght enable: %i", (uint8_t)((c.memory[NR34] & 64) != 0)), 0, 48, 20, RED);
-                DrawText(TextFormat("CH3 lenght: %i", audio.ch3.lenght), 0, 64, 20, RED);
+                DrawText(TextFormat("CH4 on: %i", audio.ch3.is_active), 0, 0, 20, RED);
+                DrawText(TextFormat("CH4 DAC: %i", (uint8_t)((c.memory[NR42] & 0xf8) != 0)), 120, 0, 20, RED);
+                DrawText(TextFormat("CH4 period: %i", audio.ch4.period), 260, 0, 20, RED);
+                DrawText(TextFormat("CH4 volume: %i", audio.ch4.volume), 0, 32, 20, RED);
+                DrawText(TextFormat("CH4 lenght enable: %i", (uint8_t)((c.memory[NR44] & 64) != 0)), 0, 48, 20, RED);
+                DrawText(TextFormat("CH4 lenght: %i", audio.ch4.lenght), 0, 64, 20, RED);
+                DrawText(TextFormat("CH4 lfsr: %16b", audio.ch4.lfsr), 0, 80, 20, RED);
+                DrawText(TextFormat("CH4 current bit: %i", audio.ch4.current_bit), 0, 96, 20, RED);
+                DrawText(TextFormat("CH4 bit 7 mode: %i", audio.ch4.bit_7_mode), 0, 112, 20, RED);
                  */
             EndDrawing();
             uint16_t fps = GetFPS();

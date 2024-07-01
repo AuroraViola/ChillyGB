@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "apu.h"
 #include "input.h"
 #include "raylib.h"
 #include <stdint.h>
@@ -41,6 +42,16 @@ uint8_t get_joypad(cpu *c, joypad *j){
         SetTargetFPS(60000);
     if (IsKeyReleased(KEY_SPACE))
         SetTargetFPS(60);
+
+    // Only for debug purpose
+    if (IsKeyPressed(KEY_ONE))
+        StopAudioStream(audio.ch1.stream);
+    if (IsKeyPressed(KEY_TWO))
+        StopAudioStream(audio.ch2.stream);
+    if (IsKeyPressed(KEY_THREE))
+        StopAudioStream(audio.ch3.stream);
+    if (IsKeyPressed(KEY_FOUR))
+        StopAudioStream(audio.ch4.stream);
 
     if (IsKeyDown(KEY_W))
         j->dpad[DPAD_UP] = 1;

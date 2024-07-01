@@ -42,6 +42,9 @@ void initialize_cpu_memory(cpu *c) {
     c->memory[IF] = 0xe1;
 
     audio.ch1.is_active = true;
+    audio.ch2.is_active = false;
+    audio.ch3.is_active = false;
+    audio.ch4.is_active = false;
     c->memory[NR10] = 0x80;
     c->memory[NR11] = 0xbf;
     c->memory[NR12] = 0xf3;
@@ -76,6 +79,8 @@ void initialize_cpu_memory(cpu *c) {
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
     c->memory[BGP] = 0xfc;
+    c->memory[OBP0] = 0xff;
+    c->memory[OBP1] = 0xff;
     c->memory[WY] = 0x00;
     c->memory[WX] = 0x00;
     c->memory[IE] = 0x00;

@@ -246,9 +246,19 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 c->memory[addr] = value;
             }
             break;
-        case NR41: case NR42: case NR43: case NR44:
+
+        case NR41: case NR42: case NR43:
             if (audio.is_on)
                 c->memory[addr] = value;
+            break;
+        case NR44:
+            if (audio.is_on) {
+                if ((value & 0x80) != 0) {
+                    audio.ch4.is_triggered = true;
+                    audio.ch4.is_active = true;
+                }
+                c->memory[addr] = value;
+            }
             break;
 
         case NR51:
@@ -351,7 +361,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case NR50:
             return (c->memory[addr] & 0x77);
         case NR52:
-            uint8_t ch_on = audio.ch1.is_active | (audio.ch2.is_active << 1) | (audio.ch3.is_active << 2);
+            uint8_t ch_on = audio.ch1.is_active | (audio.ch2.is_active << 1) | (audio.ch3.is_active << 2) | (audio.ch4.is_active << 3);
             return (c->memory[addr] & 0x80) | ch_on | 0x70;
 
         case 0xff30 ... 0xff3f:

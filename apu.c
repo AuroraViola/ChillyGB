@@ -3,10 +3,35 @@
 #include "raylib.h"
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 channels audio;
 
 uint8_t outputlevels[] = {4, 0, 1, 2};
+uint8_t divtable[] = {8, 16, 32, 48, 64, 80, 96, 112};
+//uint8_t divtable[] = {1, 2, 4, 6, 8, 10, 12, 14};
+
+void tick_lfsr(uint16_t ticks) {
+    audio.ch4.period_timer += ticks;
+
+    if (audio.ch4.period_timer >= audio.ch4.period) {
+        audio.ch4.period_timer -= audio.ch4.period;
+
+        uint16_t bit0 = audio.ch4.lfsr & 1;
+        uint16_t bit1 = (audio.ch4.lfsr >> 1) & 1;
+        if (bit0 == bit1) {
+            audio.ch4.lfsr |= 0x8000;
+            if (audio.ch4.bit_7_mode)
+                audio.ch4.lfsr |= 0x0080;
+        }
+        else {
+            if (audio.ch4.bit_7_mode)
+                audio.ch4.lfsr &= 0xff7f;
+        }
+        audio.ch4.current_bit = audio.ch4.lfsr & 1;
+        audio.ch4.lfsr >>= 1;
+    }
+}
 
 uint8_t get_volume(cpu *c, uint16_t NRx2) {
     return c->memory[NRx2] >> 4;
@@ -150,6 +175,44 @@ void Update_CH3(cpu *c) {
     }
 }
 
+void Update_CH4(cpu *c) {
+    uint8_t clock_div = c->memory[NR43] & 7;
+    uint8_t clock_shift = c->memory[NR43] >> 4;
+    audio.ch4.period = divtable[clock_div] << clock_shift;
+    if (audio.ch4.is_triggered) {
+        audio.ch4.is_triggered = false;
+        audio.ch4.lenght = get_lenght(c, NR41);
+        audio.ch4.volume = get_volume(c, NR42);
+        audio.ch4.sweep_pace = (c->memory[NR42] & 7);
+        audio.ch4.env_dir = (c->memory[NR42] & 8);
+        audio.ch4.period_timer = 0;
+        audio.ch4.lfsr = 0;
+        if ((c->memory[NR43] & 8) != 0)
+            audio.ch4.bit_7_mode = true;
+        else
+            audio.ch4.bit_7_mode = false;
+    }
+    if ((c->memory[NR44] & 64) != 0 && c->sound_lenght) {
+        if (audio.ch4.lenght < 64)
+            audio.ch4.lenght += 1;
+        else {
+            audio.ch4.is_active = false;
+        }
+    }
+
+    if (audio.ch4.sweep_pace != 0 && c->envelope_sweep && audio.ch4.is_active) {
+        if ((c->envelope_sweep_pace % audio.ch4.sweep_pace) == 0) {
+            if (audio.ch4.env_dir != 0) {
+                if (audio.ch4.volume < 15)
+                    audio.ch4.volume += 1;
+            } else {
+                if (audio.ch4.volume > 0)
+                    audio.ch4.volume -= 1;
+            }
+        }
+    }
+}
+
 
 void Update_Audio(cpu *c) {
     if (audio.is_on) {
@@ -168,6 +231,11 @@ void Update_Audio(cpu *c) {
         else
             audio.ch3.is_active = false;
         SetAudioStreamPan(audio.ch3.stream, audio.pan[2]);
+        if ((c->memory[NR42] & 0xf8) != 0)
+            Update_CH4(c);
+        else
+            audio.ch4.is_active = false;
+        SetAudioStreamPan(audio.ch4.stream, audio.pan[3]);
         c->sound_lenght = false;
         c->envelope_sweep = false;
         c->freq_sweep = false;
@@ -207,7 +275,6 @@ void AudioInputCallback_CH2(void *buffer, unsigned int frames) {
 }
 
 void AudioInputCallback_CH3(void *buffer, unsigned int frames) {
-    uint8_t wave_idx = 0;
     int frequency = 65536 / (2048 - audio.ch3.period_value);
     float incr = frequency/44100.0f;
     short *d = (short *)buffer;
@@ -220,9 +287,19 @@ void AudioInputCallback_CH3(void *buffer, unsigned int frames) {
         audio.ch3.idx += incr;
         if (audio.ch3.idx > 1.0f) {
             audio.ch3.idx -= 1.0f;
-            wave_idx++;
-            if (wave_idx >= 32)
-                wave_idx = 0;
         }
+    }
+}
+
+void AudioInputCallback_CH4(void *buffer, unsigned int frames) {
+    short *d = (short *)buffer;
+
+    for (unsigned int i = 0; i < frames/2; i++) {
+        if (audio.ch4.is_active && audio.pan[3] != 0.6f) {
+            tick_lfsr(64);
+            d[i] = (short)(((float)(audio.ch4.volume) * 256) * audio.ch4.current_bit);
+        }
+        else
+            d[i] = 0;
     }
 }
