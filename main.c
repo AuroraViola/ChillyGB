@@ -4,7 +4,6 @@
 #include "apu.h"
 #include "input.h"
 #include <stdio.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,7 +53,7 @@ int main(void) {
     //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[80] = "../Roms/Private/PokemonGold.gbc";
     //char rom_name[80] = "../Roms/Private/Tetris.gb";
-    //char rom_name[80] = "../Roms/Private/Zelda.gb";
+    char rom_name[80] = "../Roms/Private/Zelda.gb";
     //char rom_name[80] = "../Roms/Private/DrMario.gb";
     //char rom_name[80] = "../Roms/dmg_sound/01-registers.gb";
     //char rom_name[80] = "../Roms/dmg_sound/02-len ctr.gb";
@@ -68,7 +67,6 @@ int main(void) {
     //char rom_name[80] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
     //char rom_name[80] = "../Roms/mooneye-acceptance/bits/unused_hwio-GS.gb";
     //char rom_name[80] = "../Roms/mooneye-utils/dump_boot_hwio.gb";
-    char rom_name[80] = "Zelda.gb";
     char save_name[80];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
@@ -101,6 +99,8 @@ int main(void) {
     c.cart.bank_select = 1;
     c.cart.bank_select_ram = 0;
     fclose(cartridge);
+
+    initialize_cpu_memory(&c);
 
     // Initialize APU
     InitAudioDevice();
@@ -137,7 +137,6 @@ int main(void) {
         }
     }
 
-    initialize_cpu_memory(&c);
 
     while(!WindowShouldClose()) {
         execute(&c, &t);
@@ -203,17 +202,6 @@ int main(void) {
                                (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
                                             (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
-                /*
-                DrawText(TextFormat("CH4 on: %i", audio.ch3.is_active), 0, 0, 20, RED);
-                DrawText(TextFormat("CH4 DAC: %i", (uint8_t)((c.memory[NR42] & 0xf8) != 0)), 120, 0, 20, RED);
-                DrawText(TextFormat("CH4 period: %i", audio.ch4.period), 260, 0, 20, RED);
-                DrawText(TextFormat("CH4 volume: %i", audio.ch4.volume), 0, 32, 20, RED);
-                DrawText(TextFormat("CH4 lenght enable: %i", (uint8_t)((c.memory[NR44] & 64) != 0)), 0, 48, 20, RED);
-                DrawText(TextFormat("CH4 lenght: %i", audio.ch4.lenght), 0, 64, 20, RED);
-                DrawText(TextFormat("CH4 lfsr: %16b", audio.ch4.lfsr), 0, 80, 20, RED);
-                DrawText(TextFormat("CH4 current bit: %i", audio.ch4.current_bit), 0, 96, 20, RED);
-                DrawText(TextFormat("CH4 bit 7 mode: %i", audio.ch4.bit_7_mode), 0, 112, 20, RED);
-                 */
             EndDrawing();
             uint16_t fps = GetFPS();
             char str[22];

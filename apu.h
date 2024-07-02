@@ -45,10 +45,11 @@ typedef struct {
     uint8_t env_dir;
 
     uint16_t lfsr;
-    uint32_t period;
-    uint32_t period_timer;
+    uint32_t period_value;
     uint8_t current_bit;
     bool bit_7_mode;
+
+    float idx;
 }noise_channel;
 
 typedef struct {
@@ -68,6 +69,6 @@ void AudioInputCallback_CH3(void *buffer, unsigned int frames);
 void AudioInputCallback_CH4(void *buffer, unsigned int frames);
 
 void Update_Audio(cpu *c);
-void tick_lfsr(uint16_t ticks);
+void tick_lfsr();
 
 #endif //CHILLYGB_APU_H
