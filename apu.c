@@ -115,6 +115,8 @@ void Update_CH1(cpu *c) {
                 c->memory[NR14] = (c->memory[NR14] & 0xf8) | (audio.ch1.period_value >> 8);
             } else {
                 audio.ch1.period_value += (audio.ch1.period_value / (1 << (c->memory[NR10] & 7)));
+                if (audio.ch1.period_value >= 2048)
+                    audio.ch1.is_active = false;
                 c->memory[NR13] = audio.ch1.period_value & 0xff;
                 c->memory[NR14] = (c->memory[NR14] & 0xf8) | (audio.ch1.period_value >> 8);
             }

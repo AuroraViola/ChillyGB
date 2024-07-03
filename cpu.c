@@ -41,6 +41,7 @@ void initialize_cpu_memory(cpu *c) {
     c->memory[TAC] = 0xf8;
     c->memory[IF] = 0xe1;
 
+    audio.is_on = true;
     audio.ch1.is_active = true;
     audio.ch2.is_active = false;
     audio.ch3.is_active = false;

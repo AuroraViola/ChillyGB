@@ -26,9 +26,11 @@ uint8_t* r8(cpu *c, uint8_t r) {
 }
 
 void reset_apu_regs(cpu *c) {
+    audio.is_on = false;
     audio.ch1.is_active = false;
     audio.ch2.is_active = false;
     audio.ch3.is_active = false;
+    audio.ch4.is_active = false;
     c->memory[NR10] = 0x80;
     c->memory[NR11] = 0x00;
     c->memory[NR12] = 0x00;
@@ -46,14 +48,14 @@ void reset_apu_regs(cpu *c) {
     c->memory[NR33] = 0x00;
     c->memory[NR34] = 0xb8;
 
-    c->memory[NR41] |= 0xc0;
+    c->memory[NR41] = 0xc0;
     c->memory[NR42] = 0x00;
     c->memory[NR43] = 0x00;
     c->memory[NR44] = 0xbf;
 
     c->memory[NR50] = 0x00;
     c->memory[NR51] = 0x00;
-
+    c->memory[NR52] = 0x70;
 }
 
 void set_mem(cpu *c, uint16_t addr, uint8_t value) {
@@ -261,6 +263,12 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
 
+        case NR50:
+            if (audio.is_on) {
+                c->memory[addr] = value;
+            }
+            break;
+
         case NR51:
             if (audio.is_on) {
                 uint8_t ch[4];
@@ -287,9 +295,10 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
         case NR52:
-            audio.is_on = value >> 7;
-            if (!audio.is_on)
+            if ((value & 0x80) == 0)
                 reset_apu_regs(c);
+            else
+                audio.is_on = true;
             c->memory[addr] = value;
             break;
 
@@ -327,42 +336,52 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->memory[addr - 0x2000];
 
         case NR10:
-            return (c->memory[addr] & 0x7f) | 0x80;
+            return c->memory[addr] | 0x80;
         case NR11:
-            return (c->memory[addr] & 0xc0) | 0x3f;
+            return c->memory[addr] | 0x3f;
+        case NR12:
+            return c->memory[addr];
         case NR13:
             return 255;
         case NR14:
-            return (c->memory[addr] & 0x40) | 0xbf;
+            return c->memory[addr] | 0xbf;
 
         case NR21:
-            return (c->memory[addr] & 0xc0) | 0x3f;
+            return c->memory[addr] | 0x3f;
+        case NR22:
+            return c->memory[addr];
         case NR23:
             return 255;
         case NR24:
-            return (c->memory[addr] & 0x40) | 0xbf;
+            return c->memory[addr] | 0xbf;
 
         case NR30:
-            return (c->memory[addr] & 0x80) | 0x7f;
+            return c->memory[addr] | 0x7f;
         case NR31:
             return 255;
         case NR32:
-            return (c->memory[addr] & 0x60) | 0x9f;
+            return c->memory[addr] | 0x9f;
         case NR33:
             return 255;
         case NR34:
-            return (c->memory[addr] & 0x40) | 0xbf;
+            return c->memory[addr] | 0xbf;
 
         case NR41:
             return 255;
+        case NR42:
+            return c->memory[addr];
+        case NR43:
+            return c->memory[addr];
         case NR44:
-            return (c->memory[addr] & 0x40) | 0xbf;
+            return c->memory[addr] | 0xbf;
 
         case NR50:
-            return (c->memory[addr] & 0x77);
+            return c->memory[addr];
+        case NR51:
+            return c->memory[addr];
         case NR52:
-            uint8_t ch_on = audio.ch1.is_active | (audio.ch2.is_active << 1) | (audio.ch3.is_active << 2) | (audio.ch4.is_active << 3);
-            return (c->memory[addr] & 0x80) | ch_on | 0x70;
+            uint8_t ch_on = audio.ch1.is_active | (audio.ch2.is_active << 1) | (audio.ch3.is_active << 2) | (audio.ch4.is_active << 3) | 0x70;
+            return (c->memory[addr] & 0xf0) | ch_on;
 
         case 0xff30 ... 0xff3f:
             if (audio.ch3.is_active)

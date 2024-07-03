@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
@@ -53,16 +54,19 @@ int main(void) {
     //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[80] = "../Roms/Private/PokemonGold.gbc";
     //char rom_name[80] = "../Roms/Private/Tetris.gb";
-    char rom_name[80] = "../Roms/Private/Zelda.gb";
+    //char rom_name[80] = "../Roms/Private/Zelda.gb";
     //char rom_name[80] = "../Roms/Private/DrMario.gb";
     //char rom_name[80] = "../Roms/dmg_sound/01-registers.gb";
     //char rom_name[80] = "../Roms/dmg_sound/02-len ctr.gb";
     //char rom_name[80] = "../Roms/dmg_sound/03-trigger.gb";
     //char rom_name[80] = "../Roms/dmg_sound/04-sweep.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/05-sweep details.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/06-overflow on trigger.gb";
+    //char rom_name[80] = "../Roms/dmg_sound/07-len sweep period sync.gb";
     //char rom_name[80] = "../Roms/dmg_sound/08-len ctr during power.gb";
     //char rom_name[80] = "../Roms/dmg_sound/09-wave read while on.gb";
     //char rom_name[80] = "../Roms/dmg_sound/10-wave trigger while on.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/11-regs after power.gb";
+    char rom_name[80] = "../Roms/dmg_sound/11-regs after power.gb";
     //char rom_name[80] = "../Roms/dmg_sound/12-wave write while on.gb";
     //char rom_name[80] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
     //char rom_name[80] = "../Roms/mooneye-acceptance/bits/unused_hwio-GS.gb";
@@ -99,6 +103,10 @@ int main(void) {
     c.cart.bank_select = 1;
     c.cart.bank_select_ram = 0;
     fclose(cartridge);
+
+    time_t rawtime;
+    time (&rawtime);
+    printf("Current Time: %i", ctime(&rawtime));
 
     initialize_cpu_memory(&c);
 
