@@ -30,7 +30,7 @@ typedef struct {
     uint8_t tiles[256][8][8];
     uint8_t tilemap[2][1024];
     sprite sprites[40];
-    sprite_px sprite_display[2][144][160];
+    sprite_px sprite_display[2][176][176];
 
     uint8_t window_internal_line;
     bool wy_trigger;

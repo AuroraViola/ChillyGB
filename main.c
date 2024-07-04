@@ -4,9 +4,7 @@
 #include "apu.h"
 #include "input.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
@@ -43,13 +41,14 @@ int main(void) {
 
     // Load ROM to Memory
     //char rom_name[80] = "../Roms/HelloWorld.gb";
-    char rom_name[80] = "../Roms/Private/dmg-acid2.gb";
+    //char rom_name[80] = "../Roms/Private/dmg-acid2.gb";
     //char rom_name[80] = "../Roms/Private/DrMario.gb";
     //char rom_name[80] = "../Roms/Private/MarioLand.gb";
     //char rom_name[80] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
-    //char rom_name[80] = "../Roms/Private/MarioLand2.gb";
-    //char rom_name[80] = "../Roms/Private/Zelda.gb";
+    //char rom_name[80] = "../Roms/Private/MarioLand.gb";
+    char rom_name[80] = "../Roms/Private/Zelda.gb";
+    //char rom_name[80] = "../Roms/Private/Spot.gb";
     //char rom_name[80] = "../Roms/Private/bad_apple.gb";
     //char rom_name[80] = "../Roms/Private/20y.gb";
     //char rom_name[80] = "../Roms/Private/bgbtest.gb";
