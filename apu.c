@@ -10,6 +10,23 @@ channels audio;
 uint8_t outputlevels[] = {4, 0, 1, 2};
 uint8_t divtable[] = {8, 16, 32, 48, 64, 80, 96, 112};
 
+void load_audio_streams() {
+    audio.ch1.stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(audio.ch1.stream, AudioInputCallback_CH1);
+    PlayAudioStream(audio.ch1.stream);
+
+    audio.ch2.stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(audio.ch2.stream, AudioInputCallback_CH2);
+    PlayAudioStream(audio.ch2.stream);
+
+    audio.ch3.stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(audio.ch3.stream, AudioInputCallback_CH3);
+    PlayAudioStream(audio.ch3.stream);
+
+    audio.ch4.stream = LoadAudioStream(44100, 16, 1);
+    SetAudioStreamCallback(audio.ch4.stream, AudioInputCallback_CH4);
+    PlayAudioStream(audio.ch4.stream);
+}
 void tick_lfsr() {
     uint16_t bit0 = audio.ch4.lfsr & 1;
     uint16_t bit1 = (audio.ch4.lfsr >> 1) & 1;

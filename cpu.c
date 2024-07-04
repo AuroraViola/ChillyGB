@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "apu.h"
+#include "ppu.h"
 #include "opcodes.h"
 #include "raylib.h"
 #include <time.h>
@@ -27,10 +28,11 @@ void initialize_cpu_memory(cpu *c) {
     c->sp = 0xfffe;
     c->ime = false;
     c->ime_to_be_setted = 0;
-    c->need_bg_wn_reload = true;
-    c->tilemap_write = true;
-    c->tiles_write = true;
-    c->need_sprites_reload = true;
+    c->is_halted = false;
+    video.need_bg_wn_reload = true;
+    video.tilemap_write = true;
+    video.tiles_write = true;
+    video.need_sprites_reload = true;
 
     c->memory[JOYP] = 0xcf;
     c->memory[SB] = 0x00;
@@ -74,10 +76,18 @@ void initialize_cpu_memory(cpu *c) {
     c->memory[NR52] = 0xf1;
 
     c->memory[LCDC] = 0x91;
-    c->memory[STAT] = 0x89;
+    video.bg_enable = true;
+    video.obj_enable = false;
+    video.obj_size = false;
+    video.bg_tilemap = false;
+    video.bg_tiles = true;
+    video.window_enable = false;
+    video.window_tilemap = false;
+    video.is_on = true;
+    video.mode = 1;
     c->memory[SCY] = 0x00;
     c->memory[SCX] = 0x00;
-    c->memory[LY] = 0x91;
+    video.scan_line = 0xff;
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
     c->memory[BGP] = 0xfc;
@@ -140,67 +150,48 @@ void initialize_cpu_memory(cpu *c) {
 
 void add_ticks(cpu *c, tick *t, uint16_t ticks){
     t->t_states += ticks;
-    t->scan_line_tick += ticks;
+    t->scan_line_tick -= ticks;
 
-    // Mode 2
-    if (t->scan_line_tick < 80) {
-        if ((c->memory[LY] < 144) && ((c->memory[STAT] & 3) != 2)) {
-            c->memory[STAT] = (c->memory[STAT] & 252) | 2;
-            if ((c->memory[STAT] & 32) != 0 && c->mode2_select == false) {
-                c->mode2_select = true;
-                c->memory[IF] |= 2;
-            }
-        }
-    }
-    // Mode 3
-    if (t->scan_line_tick < 250 && t->scan_line_tick > 80) {
-        if ((c->memory[LY] < 144) && ((c->memory[STAT] & 3) != 0))
-            c->memory[STAT] = (c->memory[STAT] & 252) | 3;
-    }
-    // Mode 0
-    if (t->scan_line_tick >= 250) {
-        if ((c->memory[LY] < 144) && ((c->memory[STAT] & 3) != 0)) {
-            c->memory[STAT] = (c->memory[STAT] & 252);
-            if ((c->memory[STAT] & 8) != 0 && c->mode0_select == false) {
-                c->mode0_select = true;
-                c->memory[IF] |= 2;
-            }
-        }
-        t->is_scanline++;
-    }
-
-    if (t->scan_line_tick >= 456) {
-        t->scan_line_tick -= 456;
-        c->memory[LY] += 1;
-        c->lyc_select = false;
-        c->mode0_select = false;
-        c->mode2_select = false;
-        if (((c->memory[WY] < c->memory[LY]) && (c->memory[LCDC] & 32) != 0) && ((c->memory[WX] - 7) < 160)) {
-            c->window_internal_line += 1;
-        }
-
-        if (c->memory[LY] == 144) {
+    if (t->scan_line_tick < 0) {
+        t->scan_line_tick += 456;
+        video.scan_line++;
+        if (video.scan_line == 144) {
+            video.mode = 1;
             c->memory[IF] |= 1;
-            t->is_frame = true;
-            c->memory[STAT] = (c->memory[STAT] & 252) | 1;
-        } else if (c->memory[LY] >= 153) {
-            t->scan_line_tick -= 456;
-            c->memory[LY] = 0;
-            c->window_internal_line = 0;
+            if (video.mode1_select)
+                c->memory[IF] |= 2;
+            video.draw_screen = true;
         }
-    }
 
-    if (c->memory[LY] == c->memory[LYC]) {
-        c->memory[STAT] |= 4;
-        if ((c->memory[STAT] & 64) != 0 && c->lyc_select == false) {
-            c->lyc_select = true;
+        if (video.scan_line >= 153) {
+            video.scan_line = 0;
+            video.wy_trigger = false;
+            video.window_internal_line = 0;
+        }
+
+        if (video.scan_line < 144) {
+            video.is_scan_line = true;
+        }
+        if (video.scan_line == c->memory[LYC] && video.lyc_select)
             c->memory[IF] |= 2;
-        }
-    }
-    else {
-        c->memory[STAT] &= 251;
     }
 
+    if (video.scan_line < 144) {
+        if (t->scan_line_tick > 376 && video.mode != 2) {
+            if (video.scan_line == c->memory[WY])
+                video.wy_trigger = true;
+            video.mode = 2;
+            if (video.mode2_select)
+                c->memory[IF] |= 2;
+        } else if (t->scan_line_tick < 88 && video.mode != 0) {
+            load_display(c);
+            video.mode = 0;
+            if (video.mode0_select)
+                c->memory[IF] |= 2;
+        } else if ((t->scan_line_tick >= 88 && t->scan_line_tick <= 376) && video.mode != 3) {
+            video.mode = 3;
+        }
+    }
 
     if ((c->memory[TAC] & 4) != 0) {
         t->tima_counter += ticks;
@@ -211,7 +202,6 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
                 c->memory[TIMA] = c->memory[TMA];
                 c->memory[IF] |= 4;
             }
-
         }
     }
 
@@ -238,6 +228,8 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
 
 void run_interrupt(cpu *c, tick *t) {
     if ((c->memory[IE] & c->memory[IF]) != 0) {
+        c->ime = false;
+        c->is_halted = false;
         if (((c->memory[IE] & 1) == 1) && ((c->memory[IF] & 1) == 1)) {
             c->memory[IF] &= 0b11111110;
             c->ime = false;
@@ -455,8 +447,16 @@ uint8_t execute_instruction(cpu *c) {
 void execute(cpu *c, tick *t) {
     if (c->ime == true)
         run_interrupt(c, t);
-    uint8_t ticks = execute_instruction(c);
-    add_ticks(c, t, ticks);
+    if (!c->is_halted) {
+        uint8_t ticks = execute_instruction(c);
+        add_ticks(c, t, ticks);
+    }
+    else {
+        add_ticks(c, t, 4);
+        if ((c->memory[IE] & c->memory[IF]) != 0) {
+            c->is_halted = false;
+        }
+    }
     if (c->ime_to_be_setted == 1) {
         c->ime_to_be_setted = 2;
     }
@@ -464,9 +464,9 @@ void execute(cpu *c, tick *t) {
         c->ime_to_be_setted = 0;
         c->ime = true;
     }
-    if (c->dma_transfer) {
-        c->dma_transfer = false;
-        c->need_sprites_reload = true;
+    if (video.dma_transfer) {
+        video.dma_transfer = false;
+        video.need_sprites_reload = true;
         dma_transfer(c, t);
     }
 }

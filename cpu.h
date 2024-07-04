@@ -29,18 +29,8 @@ typedef struct {
     uint16_t pc;
     bool ime;
     uint8_t ime_to_be_setted;
+    bool is_halted;
 
-    uint8_t window_internal_line;
-    bool dma_transfer;
-    bool tilemap_write;
-    bool tiles_write;
-    bool need_bg_wn_reload;
-    bool need_sprites_reload;
-    bool reset_sprite_display;
-
-    bool lyc_select;
-    bool mode0_select;
-    bool mode2_select;
 
     cartridge cart;
     uint8_t memory[0x10000];

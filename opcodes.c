@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "cpu.h"
 #include "apu.h"
+#include "ppu.h"
 
 uint8_t* r8(cpu *c, uint8_t r) {
     switch (r) {
@@ -94,7 +95,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     if ((value & 31) == 0) {
                         value = 1;
                     }
-                    c->cart.bank_select = value & 31;
+                    c->cart.bank_select = (value & 31) % c->cart.banks;
                     break;
                 // MBC 3
                 case 0x0f ... 0x13:
@@ -170,41 +171,64 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
         case 0xe000 ... 0xfdff: // Echo ram
             c->memory[addr - 0x2000] = value;
             break;
-        case 0xff41: // STAT Interrupt
-            if ((c->memory[addr] & 120) != (value & 120))
+
+        case STAT: // STAT Interrupt
+            if (((value >> 6) & 1) != video.lyc_select)
                 c->memory[IF] |= 2;
-            c->memory[addr] = value;
+            if (((value >> 5) & 1) != video.mode2_select)
+                c->memory[IF] |= 2;
+            if (((value >> 4) & 1) != video.mode1_select)
+                c->memory[IF] |= 2;
+            if (((value >> 3) & 1) != video.mode0_select)
+                c->memory[IF] |= 2;
+            video.lyc_select = (value >> 6) & 1;
+            video.mode2_select = (value >> 5) & 1;
+            video.mode1_select = (value >> 4) & 1;
+            video.mode0_select = (value >> 3) & 1;
             break;
-        case 0xff46: // OAM DMA transfer
+
+        case DMA: // OAM DMA transfer
             c->memory[addr] = value;
-            c->dma_transfer = true;
+            video.dma_transfer = true;
             break;
-        case 0xff04: // divider register
+
+        case DIV: // divider register
             c->memory[addr] = 0;
             break;
 
         case 0x8000 ... 0x97ff: // Tiles
             c->memory[addr] = value;
-            c->tiles_write = true;
-            c->need_bg_wn_reload = true;
+            video.tiles_write = true;
+            video.need_bg_wn_reload = true;
             break;
         case 0x9800 ... 0x9fff: // Tile map
             c->memory[addr] = value;
-            c->tilemap_write = true;
-            c->need_bg_wn_reload = true;
+            video.tilemap_write = true;
+            video.need_bg_wn_reload = true;
             break;
 
         case 0xfe00 ... 0xfe9f: // OAM
             c->memory[addr] = value;
-            c->need_sprites_reload = true;
+            video.need_sprites_reload = true;
             break;
 
-        case 0xff40: // LCDC
-            c->memory[addr] = value;
-            c->tiles_write = true;
-            c->tilemap_write = true;
-            c->need_bg_wn_reload = true;
-            c->need_sprites_reload = true;
+        case LCDC:
+            video.bg_enable = value & 1;
+            video.obj_enable = (value >> 1) & 1;
+            video.obj_size = (value >> 2) & 1;
+            video.bg_tilemap = (value >> 3) & 1;
+            video.bg_tiles = (value >> 4) & 1;
+            if (video.bg_enable)
+                video.window_enable = (value >> 5) & 1;
+            else
+                video.window_enable = false;
+            video.window_tilemap = (value >> 6) & 1;
+            video.is_on = (value >> 7) & 1;
+
+            video.need_bg_wn_reload = true;
+            video.tiles_write = true;
+            video.tilemap_write = true;
+            video.need_sprites_reload = true;
             break;
 
         case NR10: case NR11: case NR12: case NR13:
@@ -334,6 +358,22 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 0;
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
+
+        case JOYP:
+            return c->memory[addr] | 0xc0;
+        case SC:
+            return c->memory[addr] | 0x7e;
+        case TAC:
+            return c->memory[addr] | 0xf8;
+        case IF:
+            return c->memory[addr] | 0xe0;
+        case STAT:
+            return video.mode | ((video.scan_line == c->memory[LYC]) << 2) | (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
+
+        case LY:
+            return video.scan_line;
+        case LCDC:
+            return video.bg_enable | (video.obj_enable << 1) | (video.obj_size << 2) | (video.bg_tilemap << 3) | (video.bg_tiles << 4) | (video.window_enable << 5) | (video.window_tilemap << 6) | (video.is_on << 7);
 
         case NR10:
             return c->memory[addr] | 0x80;
@@ -648,6 +688,7 @@ uint8_t jr_cond(cpu *c, parameters *p) {
 uint8_t di(cpu *c, parameters *p) {
     c->pc += 1;
     c->ime = false;
+    c->ime_to_be_setted = 0;
     return 4;
 }
 
@@ -1697,6 +1738,7 @@ uint8_t ld_hl_sp_imm8(cpu *c, parameters *p) {
 
 uint8_t halt(cpu *c, parameters *p) {
     c->pc += 1;
+    c->is_halted = true;
     return 4;
 }
 

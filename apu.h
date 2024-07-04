@@ -68,6 +68,7 @@ void AudioInputCallback_CH2(void *buffer, unsigned int frames);
 void AudioInputCallback_CH3(void *buffer, unsigned int frames);
 void AudioInputCallback_CH4(void *buffer, unsigned int frames);
 
+void load_audio_streams();
 void Update_Audio(cpu *c);
 void tick_lfsr();
 

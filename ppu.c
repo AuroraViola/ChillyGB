@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+ppu video;
+
 void decode_tile(cpu *c, uint16_t addr, uint8_t tile[8][8]) {
     uint8_t encoded_tile[16];
     for (int i = 0; i < 16; i++) {
@@ -98,199 +100,147 @@ void flipX_tile_16(uint8_t tile[16][8]) {
     }
 }
 
-void load_sprites(cpu *c, ppu *p) {
+void load_sprites(cpu *c) {
     for (int i = 0; i < 40; i++) {
-        p->sprites[i].y = c->memory[0xfe00 + (i*4)];
-        p->sprites[i].x = c->memory[0xfe00 + (i*4) + 1];
+        video.sprites[i].y = c->memory[0xfe00 + (i*4)];
+        video.sprites[i].x = c->memory[0xfe00 + (i*4) + 1];
         uint16_t tile_index = 0x8000 | ((uint16_t)(c->memory[0xfe00 + (i*4) + 2]) << 4);
-        decode_tile(c, tile_index, p->sprites[i].tile);
-        decode_tile_16(c, tile_index, p->sprites[i].tile_16);
-        p->sprites[i].priority = (c->memory[0xfe00 + (i*4) + 3] >> 7) & 1;
+        decode_tile(c, tile_index, video.sprites[i].tile);
+        decode_tile_16(c, tile_index, video.sprites[i].tile_16);
+        video.sprites[i].priority = (c->memory[0xfe00 + (i*4) + 3] >> 7) & 1;
 
         if (((c->memory[0xfe00 + (i*4) + 3] >> 5) & 1) != 0) {
-            flipX_tile(p->sprites[i].tile);
-            flipX_tile_16(p->sprites[i].tile_16);
+            flipX_tile(video.sprites[i].tile);
+            flipX_tile_16(video.sprites[i].tile_16);
         }
 
         if (((c->memory[0xfe00 + (i*4) + 3] >> 6) & 1) != 0) {
-            flipY_tile(p->sprites[i].tile);
-            flipY_tile_16(p->sprites[i].tile_16);
+            flipY_tile(video.sprites[i].tile);
+            flipY_tile_16(video.sprites[i].tile_16);
         }
 
-        p->sprites[i].palette = (c->memory[0xfe00 + (i*4) + 3] >> 4) & 1;
+        video.sprites[i].palette = (c->memory[0xfe00 + (i*4) + 3] >> 4) & 1;
     }
 }
 
-void load_tiles(cpu *c, ppu *p) {
-    if ((c->memory[LCDC] & 16) != 0) {
+void load_tiles(cpu *c) {
+    if (video.bg_tiles) {
         for (int i = 0; i < 256; i++) {
-            decode_tile(c, (0x8000 + (i << 4)), p->tiles[i]);
+            decode_tile(c, (0x8000 + (i << 4)), video.tiles[i]);
         }
     }
     else {
         for (int i = 0; i < 128; i++) {
-            decode_tile(c, (0x9000 | (i << 4)), p->tiles[i]);
+            decode_tile(c, (0x9000 | (i << 4)), video.tiles[i]);
         }
         for (int i = 128; i < 256; i++) {
-            decode_tile(c, (0x8800 | (i << 4)), p->tiles[i]);
+            decode_tile(c, (0x8800 | (i << 4)), video.tiles[i]);
         }
     }
 }
 
-void load_tilemap(cpu *c, ppu *p) {
+void load_tilemap(cpu *c) {
     for (int i = 0; i < 1024 ; i++) {
-        p->tilemap[0][i] = c->memory[i + 0x9800];
+        video.tilemap[0][i] = c->memory[i + 0x9800];
     }
     for (int i = 0; i < 1024 ; i++) {
-        p->tilemap[1][i] = c->memory[i + 0x9c00];
+        video.tilemap[1][i] = c->memory[i + 0x9c00];
     }
 }
 
-void load_background(cpu *c, ppu *p) {
-    uint8_t tilemap_select = 1;
-    if ((c->memory[LCDC] & 8) == 0)
-        tilemap_select = 0;
+void load_background() {
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 32; j++) {
             for (int y = 0; y < 8; y++) {
                 for (int x = 0; x < 8; x++) {
-                    p->background[i*8 + y][j*8 + x] = p->tiles[p->tilemap[tilemap_select][32*i+j]][y][x];
+                    video.background[i*8 + y][j*8 + x] = video.tiles[video.tilemap[video.bg_tilemap][32*i+j]][y][x];
                 }
             }
         }
     }
 }
 
-void load_window(cpu *c, ppu *p) {
-    uint8_t tilemap_select = 1;
-    if ((c->memory[LCDC] & 64) == 0)
-        tilemap_select = 0;
+void load_window() {
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 32; j++) {
             for (int y = 0; y < 8; y++) {
                 for (int x = 0; x < 8; x++) {
-                    p->window[i*8 + y][j*8 + x] = p->tiles[p->tilemap[tilemap_select][32*i+j]][y][x];
+                    video.window[i*8 + y][j*8 + x] = video.tiles[video.tilemap[video.window_tilemap][32*i+j]][y][x];
                 }
             }
         }
     }
 }
 
-void load_display(cpu *c, ppu *p) {
+void load_sprite_displays() {
+    for (int i = 0; i < 40; i++) {
+        for (int x = 0; x < 8; x++) {
+
+        }
+    }
+}
+
+void load_display(cpu *c) {
     uint8_t bg_pal = c->memory[BGP];
     uint8_t bg_palette[] = { (bg_pal & 3), ((bg_pal & 12) >> 2), ((bg_pal & 48) >> 4), (bg_pal >> 6) };
-    uint8_t obp0 = c->memory[OBP0];
-    uint8_t obp1 = c->memory[OBP1];
-    uint8_t s_palette[4];
 
-    if (c->tiles_write) {
-        c->tiles_write = false;
-        load_tiles(c, p);
+    if (video.tiles_write) {
+        video.tiles_write = false;
+        load_tiles(c);
     }
-    if (c->tilemap_write) {
-        c->tilemap_write = false;
-        load_tilemap(c, p);
+    if (video.tilemap_write) {
+        video.tilemap_write = false;
+        load_tilemap(c);
     }
-    if (c->need_bg_wn_reload) {
-        c->need_bg_wn_reload = false;
-        load_background(c, p);
-        load_window(c, p);
+    if (video.need_bg_wn_reload) {
+        video.need_bg_wn_reload = false;
+        load_background();
+        load_window();
+    }
+    if (video.need_sprites_reload) {
+        video.need_sprites_reload = false;
+        load_sprites(c);
+        load_sprite_displays();
     }
 
-    if ((c->memory[LCDC] & 128) != 0) {
+    if (video.is_on) {
         // Background
-        if ((c->memory[LCDC] & 1) != 0) {
+        if (video.bg_enable) {
             uint8_t scx = c->memory[SCX];
             uint8_t scy = c->memory[SCY];
-            if (c->memory[LY] < 144) {
-                int y = c->memory[LY];
-                for (uint8_t x = 0; x < 160; x++) {
-                    p->display[y][x] = bg_palette[p->background[(uint8_t) (y + scy)][(uint8_t) (x + scx)]];
-                }
+            int y = video.scan_line;
+            for (uint8_t x = 0; x < 160; x++) {
+                video.display[y][x] = bg_palette[video.background[(uint8_t) (y + scy)][(uint8_t) (x + scx)]];
             }
         }
         else {
-            if (c->memory[LY] < 144) {
-                int y = c->memory[LY];
-                for (uint8_t x = 0; x < 160; x++) {
-                    p->display[y][x] = 0;
-                }
+            int y = video.scan_line;
+            for (uint8_t x = 0; x < 160; x++) {
+                video.display[y][x] = 0;
             }
         }
         // Window
-        if (((c->memory[LCDC] & 1) != 0) && ((c->memory[LCDC] & 32) != 0)) {
+        if (video.window_enable && video.wy_trigger) {
             uint8_t wy = c->memory[WY];
             uint8_t wx = c->memory[WX];
-            if (c->memory[LY] < 144) {
-                int y = c->memory[LY];
+            int y = video.scan_line;
+            if (wx < 167) {
                 for (uint8_t x = 0; x < 167; x++) {
                     if ((y >= wy) && ((x + wx - 7) < 160) && ((x + wx - 7) >= 0)) {
-                        p->display[y][x + wx - 7] = bg_palette[p->window[c->window_internal_line][x]];
+                        video.display[y][x + wx - 7] = bg_palette[video.window[video.window_internal_line][x]];
                     }
                 }
+                video.window_internal_line++;
             }
         }
-        uint8_t c_scanline = c->memory[LY];
+        if (video.obj_enable) {
 
-        if (c_scanline < 144)
-            for (int x = 0; x < 160; x++)
-                p->sprite_display[(c_scanline+8) % 144][x] = 0;
-        // Objects
-        if ((c->memory[LCDC] & 2) != 0) {
-            if (c->need_sprites_reload) {
-                c->need_sprites_reload = false;
-                load_sprites(c, p);
-            }
-
-            uint8_t sprite_count = 0;
-            uint8_t sprite_overlap[256] = { 0 };
-
-            for (uint8_t i = 0; ((i < 40) && (sprite_count < 10)); i++) {
-                if (p->sprites[i].y == (c_scanline + 8) && (sprite_overlap[p->sprites[i].x] == false)) {
-                    sprite_overlap[p->sprites[i].x] = true;
-                    if (p->sprites[i].palette) {
-                        s_palette[0] = obp1 & 3;
-                        s_palette[1] = (obp1 >> 2) & 3;
-                        s_palette[2] = (obp1 >> 4) & 3;
-                        s_palette[3] = (obp1 >> 6) & 3;
-                    } else {
-                        s_palette[0] = obp0 & 3;
-                        s_palette[1] = (obp0 >> 2) & 3;
-                        s_palette[2] = (obp0 >> 4) & 3;
-                        s_palette[3] = (obp0 >> 6) & 3;
-                    }
-
-                    if ((c->memory[LCDC] & 4) == 0) {
-                        for (uint8_t y = 0; y < 8; y++) {
-                            for (uint8_t x = 0; x < 8; x++) {
-                                if ((p->sprites[i].tile[y][x] != 0) && ((p->sprites[i].y + y) < 160) && ((p->sprites[i].y + y) >= 16) && ((p->sprites[i].x + x) < 168) && ((p->sprites[i].x + x) > 7)) {
-                                    if ((p->sprites[i].priority == false) || (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] == bg_palette[0])) {
-                                        p->sprite_display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] = s_palette[p->sprites[i].tile[y][x]] + 1;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        for (uint8_t y = 0; y < 16; y++) {
-                            for (uint8_t x = 0; x < 8; x++) {
-                                if ((p->sprites[i].tile_16[y][x] != 0) && ((p->sprites[i].y + y) < 160) && ((p->sprites[i].y + y) >= 16) && ((p->sprites[i].x + x) < 168) && ((p->sprites[i].x + x) > 7)) {
-                                    if ((p->sprites[i].priority == false) || (p->display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] == bg_palette[0])) {
-                                        p->sprite_display[p->sprites[i].y + y - 16][p->sprites[i].x + x - 8] = s_palette[p->sprites[i].tile_16[y][x]] + 1;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    sprite_count += 1;
-                }
-            }
         }
     }
     else {
         for (uint8_t y = 0; y < 144; y++) {
             for (uint8_t x = 0; x < 160; x++) {
-                p->display[y][x] = 0;
+                video.display[y][x] = 0;
             }
         }
     }

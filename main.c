@@ -25,13 +25,12 @@ char *strreplace(char *s, const char *s1, const char *s2) {
 int main(void) {
     // Initialize CPU, memory and timer
     cpu c = {};
-    tick t = {.tima_counter = 0, .divider_register = 0, .scan_line_tick = 0, .t_states = 0};
+    tick t = {.tima_counter = 0, .divider_register = 0, .scan_line_tick = 300, .t_states = 0};
 
     // Initialize Joypad
     joypad j1 = {.buttons = { 0 }, .dpad = { 0 }};
 
-    // Initialize PPU and Raylib
-    ppu p = {.display = { 0 }, .background = { 0 }, .window = { 0 }, .sprite_display = { 0 }};
+    // Initialize Raylib
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*4, 144*4, "ChillyGB");
     SetWindowMinSize(160, 144);
@@ -43,34 +42,24 @@ int main(void) {
             pixels[i][j] = (Color){185, 237, 186, 255};
 
     // Load ROM to Memory
-    //char rom_name[80] = "../Roms/Private/20y.gb";
-    //char rom_name[80] = "../Roms/Private/CounterTest.gb";
-    //char rom_name[80] = "../Roms/Private/bgbtest.gb";
+    //char rom_name[80] = "../Roms/HelloWorld.gb";
+    char rom_name[80] = "../Roms/Private/dmg-acid2.gb";
     //char rom_name[80] = "../Roms/Private/DrMario.gb";
-    //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
-    //char rom_name[80] = "../Roms/Private/KirbyDreamLand.gb";
     //char rom_name[80] = "../Roms/Private/MarioLand.gb";
     //char rom_name[80] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
-    //char rom_name[80] = "../Roms/Private/PokemonGold.gbc";
-    //char rom_name[80] = "../Roms/Private/Tetris.gb";
+    //char rom_name[80] = "../Roms/Private/MarioLand2.gb";
     //char rom_name[80] = "../Roms/Private/Zelda.gb";
-    //char rom_name[80] = "../Roms/Private/DrMario.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/01-registers.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/02-len ctr.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/03-trigger.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/04-sweep.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/05-sweep details.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/06-overflow on trigger.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/07-len sweep period sync.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/08-len ctr during power.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/09-wave read while on.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/10-wave trigger while on.gb";
-    char rom_name[80] = "../Roms/dmg_sound/11-regs after power.gb";
-    //char rom_name[80] = "../Roms/dmg_sound/12-wave write while on.gb";
+    //char rom_name[80] = "../Roms/Private/bad_apple.gb";
+    //char rom_name[80] = "../Roms/Private/20y.gb";
+    //char rom_name[80] = "../Roms/Private/bgbtest.gb";
+    //char rom_name[80] = "../Roms/Private/cpu_instrs.gb";
+    //char rom_name[80] = "../Roms/Private/KirbyDreamLand.gb";
+    //char rom_name[80] = "../Roms/Private/winpos.gb";
+    //char rom_name[80] = "../Roms/Private/Tetris.gb";
     //char rom_name[80] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
     //char rom_name[80] = "../Roms/mooneye-acceptance/bits/unused_hwio-GS.gb";
-    //char rom_name[80] = "../Roms/mooneye-utils/dump_boot_hwio.gb";
+    //char rom_name[80] = "../Roms/Private/L2.GB";
     char save_name[80];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
@@ -104,32 +93,6 @@ int main(void) {
     c.cart.bank_select_ram = 0;
     fclose(cartridge);
 
-    time_t rawtime;
-    time (&rawtime);
-    printf("Current Time: %i", ctime(&rawtime));
-
-    initialize_cpu_memory(&c);
-
-    // Initialize APU
-    InitAudioDevice();
-    SetAudioStreamBufferSizeDefault(512);
-
-    audio.ch1.stream = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(audio.ch1.stream, AudioInputCallback_CH1);
-    PlayAudioStream(audio.ch1.stream);
-
-    audio.ch2.stream = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(audio.ch2.stream, AudioInputCallback_CH2);
-    PlayAudioStream(audio.ch2.stream);
-
-    audio.ch3.stream = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(audio.ch3.stream, AudioInputCallback_CH3);
-    PlayAudioStream(audio.ch3.stream);
-
-    audio.ch4.stream = LoadAudioStream(44100, 16, 1);
-    SetAudioStreamCallback(audio.ch4.stream, AudioInputCallback_CH4);
-    PlayAudioStream(audio.ch4.stream);
-
     if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
         FILE *save = fopen(save_name, "r");
         if (save != NULL) {
@@ -145,57 +108,38 @@ int main(void) {
         }
     }
 
+    initialize_cpu_memory(&c);
+
+    // Initialize APU
+    InitAudioDevice();
+    SetAudioStreamBufferSizeDefault(512);
+    load_audio_streams();
 
     while(!WindowShouldClose()) {
         execute(&c, &t);
         c.memory[JOYP] = get_joypad(&c, &j1);
         Update_Audio(&c);
 
-        if (t.is_scanline > 0) {
-            if (c.memory[LY] <= 144) {
-                load_display(&c, &p);
-                t.is_scanline = 0;
-                int y = c.memory[LY] - 1;
-                for (int x = 0; x < 160; x++) {
-                    switch (p.display[y][x]) {
+        if (video.draw_screen == true) {
+            video.draw_screen = false;
+            for (int i = 0; i < 144; i++) {
+                for (int j = 0; j < 160; j++) {
+                    switch (video.display[i][j]) {
                         case 0:
-                            pixels[y][x] = (Color) {185, 237, 186, 255};
+                            pixels[i][j] = (Color) {185, 237, 186, 255};
                             break;
                         case 1:
-                            pixels[y][x] = (Color) {118, 196, 123, 255};
+                            pixels[i][j] = (Color) {118, 196, 123, 255};
                             break;
                         case 2:
-                            pixels[y][x] = (Color) {49, 106, 64, 255};
+                            pixels[i][j] = (Color) {49, 106, 64, 255};
                             break;
                         case 3:
-                            pixels[y][x] = (Color) {10, 38, 16, 255};
+                            pixels[i][j] = (Color) {10, 38, 16, 255};
                             break;
                     }
                 }
             }
-            uint8_t y1 = c.memory[LY] - 8;
-            if (y1 < 144) {
-                for (int x = 0; x < 160; x++) {
-                    switch (p.sprite_display[y1][x]) {
-                        case 1:
-                            pixels[y1][x] = (Color) {185, 237, 186, 255};
-                            break;
-                        case 2:
-                            pixels[y1][x] = (Color) {118, 196, 123, 255};
-                            break;
-                        case 3:
-                            pixels[y1][x] = (Color) {49, 106, 64, 255};
-                            break;
-                        case 4:
-                            pixels[y1][x] = (Color) {10, 38, 16, 255};
-                            break;
-                    }
-                }
-            }
-        }
-
-        if (t.is_frame && (c.memory[0xff44] < 144)) {
-            t.is_frame = false;
             BeginTextureMode(display);
                 ClearBackground(BLACK);
                 for (int i = 0; i < 144; i++)
