@@ -172,7 +172,14 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->memory[addr - 0x2000] = value;
             break;
 
+        case LYC: // STAT Interrupt
+            if (video.scan_line == value && video.lyc_select)
+                c->memory[IF] |= 2;
+            c->memory[addr] = value;
+            break;
+
         case STAT: // STAT Interrupt
+            /*
             if (((value >> 6) & 1) != video.lyc_select)
                 c->memory[IF] |= 2;
             if (((value >> 5) & 1) != video.mode2_select)
@@ -181,6 +188,8 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 c->memory[IF] |= 2;
             if (((value >> 3) & 1) != video.mode0_select)
                 c->memory[IF] |= 2;
+                */
+            c->memory[IF] |= 2;
             video.lyc_select = (value >> 6) & 1;
             video.mode2_select = (value >> 5) & 1;
             video.mode1_select = (value >> 4) & 1;

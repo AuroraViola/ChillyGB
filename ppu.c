@@ -185,6 +185,8 @@ void load_sprite_displays() {
                         video.sprite_display[0][video.sprites[i].y + y][video.sprites[i].x + x].priority = video.sprites[i].priority;
                     }
                 }
+                if (video.sprites[i].y + y < 176)
+                    video.sprite_display[0][video.sprites[i].y + y][video.sprites[i].x].initial_obj_px = true;
             }
             for (int y = 0; y < 16; y++) {
                 for (int x = 0; x < 8; x++) {
@@ -194,9 +196,27 @@ void load_sprite_displays() {
                         video.sprite_display[1][video.sprites[i].y + y][video.sprites[i].x + x].priority = video.sprites[i].priority;
                     }
                 }
+                if (video.sprites[i].y + y < 176)
+                    video.sprite_display[1][video.sprites[i].y + y][video.sprites[i].x].initial_obj_px = true;
             }
         }
     }
+}
+
+uint16_t get_mode3_duration(cpu *c) {
+    uint16_t duration = c->memory[SCX] % 8;
+    if (c->memory[WX] < 167)
+        duration += 6;
+    int y = video.scan_line;
+    for (uint8_t x = 0; x < 176; x++) {
+        if (video.sprite_display[video.obj_size][y][x].initial_obj_px) {
+            if (x == 0)
+                duration += 11;
+            else
+                duration += 6;
+        }
+    }
+    return duration;
 }
 
 void load_display(cpu *c) {

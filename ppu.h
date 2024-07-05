@@ -19,6 +19,7 @@ typedef struct {
     uint8_t color;
     bool priority;
     bool palette;
+    bool initial_obj_px;
 }sprite_px;
 
 typedef struct {
@@ -34,6 +35,8 @@ typedef struct {
 
     uint8_t window_internal_line;
     bool wy_trigger;
+
+    uint8_t mode3_duration;
 
     bool is_on;
     bool bg_enable;
@@ -63,5 +66,6 @@ typedef struct {
 extern ppu video;
 
 void load_display(cpu *c);
+uint16_t get_mode3_duration(cpu *c);
 
 #endif //CHILLYGB_PPU_H

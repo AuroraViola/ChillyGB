@@ -155,6 +155,7 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
     if (t->scan_line_tick < 0) {
         t->scan_line_tick += 456;
         video.scan_line++;
+        video.mode3_duration = 0;
         if (video.scan_line == 144) {
             video.mode = 1;
             c->memory[IF] |= 1;
@@ -183,12 +184,13 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
             video.mode = 2;
             if (video.mode2_select)
                 c->memory[IF] |= 2;
-        } else if (t->scan_line_tick < 88 && video.mode != 0) {
+        } else if (t->scan_line_tick < (205 - video.mode3_duration) && video.mode != 0) {
             load_display(c);
             video.mode = 0;
             if (video.mode0_select)
                 c->memory[IF] |= 2;
-        } else if ((t->scan_line_tick >= 88 && t->scan_line_tick <= 376) && video.mode != 3) {
+        } else if ((t->scan_line_tick >= (205 - video.mode3_duration) && t->scan_line_tick <= 376) && video.mode != 3) {
+            video.mode3_duration = get_mode3_duration(c);
             video.mode = 3;
         }
     }
@@ -445,8 +447,6 @@ uint8_t execute_instruction(cpu *c) {
 }
 
 void execute(cpu *c, tick *t) {
-    if (c->ime == true)
-        run_interrupt(c, t);
     if (!c->is_halted) {
         uint8_t ticks = execute_instruction(c);
         add_ticks(c, t, ticks);
@@ -464,6 +464,8 @@ void execute(cpu *c, tick *t) {
         c->ime_to_be_setted = 0;
         c->ime = true;
     }
+    if (c->ime == true)
+        run_interrupt(c, t);
     if (video.dma_transfer) {
         video.dma_transfer = false;
         video.need_sprites_reload = true;

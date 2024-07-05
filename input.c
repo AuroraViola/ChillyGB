@@ -42,6 +42,10 @@ uint8_t get_joypad(cpu *c, joypad *j){
         SetTargetFPS(60000);
     if (IsKeyReleased(KEY_SPACE))
         SetTargetFPS(60);
+    if (IsKeyPressed(KEY_B))
+        SetTargetFPS(2);
+    if (IsKeyReleased(KEY_B))
+        SetTargetFPS(60);
 
     if (IsKeyDown(KEY_W))
         j->dpad[DPAD_UP] = 1;

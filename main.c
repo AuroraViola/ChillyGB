@@ -47,18 +47,19 @@ int main(void) {
     //char rom_name[80] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[80] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[80] = "../Roms/Private/MarioLand.gb";
-    char rom_name[80] = "../Roms/Private/Zelda.gb";
+    //char rom_name[80] = "../Roms/Private/Zelda.gb";
     //char rom_name[80] = "../Roms/Private/Spot.gb";
     //char rom_name[80] = "../Roms/Private/bad_apple.gb";
     //char rom_name[80] = "../Roms/Private/20y.gb";
+    //char rom_name[80] = "../Roms/Private/alttoo.gb";
     //char rom_name[80] = "../Roms/Private/bgbtest.gb";
-    //char rom_name[80] = "../Roms/Private/cpu_instrs.gb";
     //char rom_name[80] = "../Roms/Private/KirbyDreamLand.gb";
     //char rom_name[80] = "../Roms/Private/winpos.gb";
     //char rom_name[80] = "../Roms/Private/Tetris.gb";
     //char rom_name[80] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
     //char rom_name[80] = "../Roms/mooneye-acceptance/bits/unused_hwio-GS.gb";
     //char rom_name[80] = "../Roms/Private/L2.GB";
+    char rom_name[80] = "../Roms/Private/halt_bug.gb";
     char save_name[80];
     strncpy(save_name, rom_name, 50);
     strreplace(save_name, ".gb", ".sv");
@@ -153,6 +154,8 @@ int main(void) {
                                (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
                                             (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+                DrawText(TextFormat("LY: %i", video.scan_line), 0, 0, 30, RED);
+                DrawText(TextFormat("LYC: %i", c.memory[LYC]), 0, 30, 30, RED);
             EndDrawing();
             uint16_t fps = GetFPS();
             char str[22];
