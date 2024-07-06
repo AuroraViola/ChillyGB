@@ -30,14 +30,22 @@ int main(void) {
     InitWindow(160*4, 144*4, "ChillyGB");
     SetWindowMinSize(160, 144);
     SetTargetFPS(60);
-    RenderTexture2D display = LoadRenderTexture(160, 144);
     Color pixels[144][160] = { 0 };
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)
             pixels[i][j] = (Color){185, 237, 186, 255};
+    Image display_image = {
+            .data = pixels,
+            .width = 160,
+            .height = 144,
+            .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
+            .mipmaps = 1
+    };
+    Texture2D display = LoadTextureFromImage(display_image);
+
 
     // Load ROM to Memory
-    char rom_name[256] = "../Roms/HelloWorld.gb";
+    //char rom_name[256] = "../Roms/HelloWorld.gb";
     //char rom_name[256] = "../Roms/Private/tellinglys.gb";
     //char rom_name[256] = "../Roms/Private/dmg-acid2.gb";
     //char rom_name[256] = "../Roms/Private/DrMario.gb";
@@ -50,7 +58,7 @@ int main(void) {
     //char rom_name[256] = "../Roms/Private/gb240p.gb";
     //char rom_name[256] = "../Roms/Private/Spot.gb";
     //char rom_name[256] = "../Roms/Private/bad_apple.gb";
-    //char rom_name[256] = "../Roms/Private/20y.gb";
+    char rom_name[256] = "../Roms/Private/20y.gb";
     //char rom_name[256] = "../Roms/Private/alttoo.gb";
     //char rom_name[256] = "../Roms/Private/bgbtest.gb";
     //char rom_name[256] = "../Roms/Private/KirbyDreamLand.gb";
@@ -117,7 +125,6 @@ int main(void) {
 
     while(!WindowShouldClose()) {
         execute(&c, &t);
-        Update_Audio(&c);
 
         if (video.draw_screen == true) {
             video.draw_screen = false;
@@ -139,22 +146,18 @@ int main(void) {
                     }
                 }
             }
-            BeginTextureMode(display);
-                for (int i = 0; i < 144; i++)
-                    for (int j = 0; j < 160; j++)
-                        DrawRectangle(j, -i+143, 1, 1, pixels[i][j]);
-            EndTextureMode();
+            UpdateTexture(display, pixels);
             // Draw
             float scale = MIN((float) GetScreenWidth() / 160, (float) GetScreenHeight() / 144);
             BeginDrawing();
                 ClearBackground(BLACK);
-                DrawTexturePro(display.texture, (Rectangle) {0.0f, 0.0f, (float) display.texture.width, (float) display.texture.height},
+                DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
                                (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
                                             (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
             EndDrawing();
             uint16_t fps = GetFPS();
-            char str[22];
+            char str[40];
             sprintf(str, "ChillyGB - %d FPS", fps);
             SetWindowTitle(str);
         }
@@ -173,7 +176,6 @@ int main(void) {
         fclose(save);
     }
 
-    UnloadRenderTexture(display);
     CloseWindow();
 
     return 0;

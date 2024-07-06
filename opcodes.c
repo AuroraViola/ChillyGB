@@ -377,24 +377,24 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 for (int i = 0; i < 4; i++) {
                     enc |= (j1.btn[i]) << i;
                 }
-                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc;
+                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc | 0xc0;
             }
             else if (j1.btn_on) {
                 uint8_t enc = 0;
                 for (int i = 0; i < 4; i++) {
                     enc |= (j1.btn[i]) << i;
                 }
-                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc;
+                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc | 0xc0;
             }
             else if (j1.dpad_on) {
                 uint8_t enc = 0;
                 for (int i = 0; i < 4; i++) {
                     enc |= (j1.dpad[i]) << i;
                 }
-                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc;
+                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc | 0xc0;
             }
             else {
-                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | 0xf;
+                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | 0xcf;
             }
         case SC:
             return c->memory[addr] | 0x7e;

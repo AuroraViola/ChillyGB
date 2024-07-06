@@ -19,7 +19,7 @@ bool update_keys() {
     }
 
     if (IsKeyPressed(KEY_SPACE))
-        SetTargetFPS(100000);
+        SetTargetFPS(3000);
     if (IsKeyReleased(KEY_SPACE))
         SetTargetFPS(60);
 

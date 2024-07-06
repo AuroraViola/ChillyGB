@@ -227,6 +227,7 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
                 c->envelope_sweep = true;
                 c->envelope_sweep_pace++;
             }
+            Update_Audio(c);
         }
         c->memory[DIV] += 1;
     }
