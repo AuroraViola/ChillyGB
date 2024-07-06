@@ -30,6 +30,7 @@ typedef struct {
     bool ime;
     uint8_t ime_to_be_setted;
     bool is_halted;
+    bool first_halt;
 
 
     cartridge cart;
@@ -62,13 +63,11 @@ typedef struct {
 typedef struct {
     uint64_t t_states;
     int32_t scan_line_tick;
-    int32_t window_line_tick;
     uint32_t divider_register;
     uint32_t tima_counter;
 
     uint32_t div_apu_tick;
 
-    uint8_t is_scanline;
     bool is_frame;
 }tick;
 

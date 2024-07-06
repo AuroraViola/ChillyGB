@@ -4,8 +4,12 @@
 #define CHILLYGB_INPUT_H
 
 typedef struct {
-    uint8_t dpad[4];
-    uint8_t buttons[4];
+    KeyboardKey keys_dpad[4];
+    KeyboardKey keys_btn[4];
+    bool dpad[4];
+    bool btn[4];
+    bool dpad_on;
+    bool btn_on;
 }joypad;
 
 enum dpad {
@@ -22,6 +26,7 @@ enum buttons {
     BUTTON_START = 3
 };
 
-uint8_t get_joypad(cpu *c, joypad *j);
+extern joypad j1;
+bool update_keys();
 
 #endif //CHILLYGB_INPUT_H

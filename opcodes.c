@@ -1,9 +1,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "cpu.h"
 #include "apu.h"
 #include "ppu.h"
+#include "input.h"
 
 uint8_t* r8(cpu *c, uint8_t r) {
     switch (r) {
@@ -172,23 +174,23 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->memory[addr - 0x2000] = value;
             break;
 
-        case LYC: // STAT Interrupt
+        case JOYP:
+            if (((value >> 4) & 1) == 0)
+                j1.dpad_on = true;
+            else
+                j1.dpad_on = false;
+            if (((value >> 5) & 1) == 0)
+                j1.btn_on = true;
+            else
+                j1.btn_on = false;
+
+        case LYC:
             if (video.scan_line == value && video.lyc_select)
                 c->memory[IF] |= 2;
             c->memory[addr] = value;
             break;
 
         case STAT: // STAT Interrupt
-            /*
-            if (((value >> 6) & 1) != video.lyc_select)
-                c->memory[IF] |= 2;
-            if (((value >> 5) & 1) != video.mode2_select)
-                c->memory[IF] |= 2;
-            if (((value >> 4) & 1) != video.mode1_select)
-                c->memory[IF] |= 2;
-            if (((value >> 3) & 1) != video.mode0_select)
-                c->memory[IF] |= 2;
-                */
             c->memory[IF] |= 2;
             video.lyc_select = (value >> 6) & 1;
             video.mode2_select = (value >> 5) & 1;
@@ -210,6 +212,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             video.tiles_write = true;
             video.need_bg_wn_reload = true;
             break;
+
         case 0x9800 ... 0x9fff: // Tile map
             c->memory[addr] = value;
             video.tilemap_write = true;
@@ -369,7 +372,30 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->memory[addr - 0x2000];
 
         case JOYP:
-            return c->memory[addr] | 0xc0;
+            if (j1.btn_on && j1.dpad_on) {
+                uint8_t enc = 0;
+                for (int i = 0; i < 4; i++) {
+                    enc |= (j1.btn[i]) << i;
+                }
+                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc;
+            }
+            else if (j1.btn_on) {
+                uint8_t enc = 0;
+                for (int i = 0; i < 4; i++) {
+                    enc |= (j1.btn[i]) << i;
+                }
+                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc;
+            }
+            else if (j1.dpad_on) {
+                uint8_t enc = 0;
+                for (int i = 0; i < 4; i++) {
+                    enc |= (j1.dpad[i]) << i;
+                }
+                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc;
+            }
+            else {
+                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | 0xf;
+            }
         case SC:
             return c->memory[addr] | 0x7e;
         case TAC:
@@ -697,7 +723,6 @@ uint8_t jr_cond(cpu *c, parameters *p) {
 uint8_t di(cpu *c, parameters *p) {
     c->pc += 1;
     c->ime = false;
-    c->ime_to_be_setted = 0;
     return 4;
 }
 
@@ -1746,8 +1771,8 @@ uint8_t ld_hl_sp_imm8(cpu *c, parameters *p) {
 }
 
 uint8_t halt(cpu *c, parameters *p) {
-    c->pc += 1;
     c->is_halted = true;
+    c->first_halt = true;
     return 4;
 }
 

@@ -1,8 +1,8 @@
 #include "cpu.h"
 #include "apu.h"
 #include "ppu.h"
+#include "input.h"
 #include "opcodes.h"
-#include "raylib.h"
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,7 +34,6 @@ void initialize_cpu_memory(cpu *c) {
     video.tiles_write = true;
     video.need_sprites_reload = true;
 
-    c->memory[JOYP] = 0xcf;
     c->memory[SB] = 0x00;
     c->memory[SC] = 0x7e;
     c->memory[DIV] = 0xac;
@@ -96,6 +95,13 @@ void initialize_cpu_memory(cpu *c) {
     c->memory[WY] = 0x00;
     c->memory[WX] = 0x00;
     c->memory[IE] = 0x00;
+
+    // Initialize Joypad
+    KeyboardKey keys[] = {KEY_D, KEY_A, KEY_W, KEY_S, KEY_L, KEY_K, KEY_BACKSPACE, KEY_ENTER};
+    for (int i = 0; i < 4; i++) {
+        j1.keys_dpad[i] = keys[i];
+        j1.keys_btn[i] = keys[i+4];
+    }
 
     // Initialize WRAM
     for (uint16_t i = 0xc000; i <= 0xdfff; i++) {
@@ -164,17 +170,15 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
             video.draw_screen = true;
         }
 
-        if (video.scan_line >= 153) {
+        if (video.scan_line > 153) {
             video.scan_line = 0;
             video.wy_trigger = false;
             video.window_internal_line = 0;
         }
-
-        if (video.scan_line < 144) {
-            video.is_scan_line = true;
-        }
         if (video.scan_line == c->memory[LYC] && video.lyc_select)
             c->memory[IF] |= 2;
+        if (update_keys())
+            c->memory[IF] |= 16;
     }
 
     if (video.scan_line < 144) {
@@ -184,14 +188,14 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
             video.mode = 2;
             if (video.mode2_select)
                 c->memory[IF] |= 2;
+        } else if (t->scan_line_tick >= (205 - video.mode3_duration) && video.mode != 3) {
+            video.mode3_duration = get_mode3_duration(c);
+            video.mode = 3;
         } else if (t->scan_line_tick < (205 - video.mode3_duration) && video.mode != 0) {
             load_display(c);
             video.mode = 0;
             if (video.mode0_select)
                 c->memory[IF] |= 2;
-        } else if ((t->scan_line_tick >= (205 - video.mode3_duration) && t->scan_line_tick <= 376) && video.mode != 3) {
-            video.mode3_duration = get_mode3_duration(c);
-            video.mode = 3;
         }
     }
 
@@ -290,7 +294,6 @@ void dma_transfer(cpu *c, tick *t) {
     for (int i = 0; i < 160; i++) {
         c->memory[0xfe00 + i] = c->memory[to_transfer + i];
     }
-    //add_ticks(c, t, 640);
 }
 
 uint8_t execute_instruction(cpu *c) {
@@ -447,6 +450,9 @@ uint8_t execute_instruction(cpu *c) {
 }
 
 void execute(cpu *c, tick *t) {
+    if (c->ime == true)
+        run_interrupt(c, t);
+
     if (!c->is_halted) {
         uint8_t ticks = execute_instruction(c);
         add_ticks(c, t, ticks);
@@ -455,7 +461,9 @@ void execute(cpu *c, tick *t) {
         add_ticks(c, t, 4);
         if ((c->memory[IE] & c->memory[IF]) != 0) {
             c->is_halted = false;
+            c->pc += 1;
         }
+        c->first_halt = false;
     }
     if (c->ime_to_be_setted == 1) {
         c->ime_to_be_setted = 2;
@@ -464,8 +472,6 @@ void execute(cpu *c, tick *t) {
         c->ime_to_be_setted = 0;
         c->ime = true;
     }
-    if (c->ime == true)
-        run_interrupt(c, t);
     if (video.dma_transfer) {
         video.dma_transfer = false;
         video.need_sprites_reload = true;
