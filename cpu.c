@@ -48,6 +48,10 @@ void initialize_cpu_memory(cpu *c) {
     audio.ch3.is_active = false;
     audio.ch4.is_active = false;
     audio.ch4.period_value = 8;
+    audio.pan[0] = 0.5f;
+    audio.pan[1] = 0.5f;
+    audio.pan[2] = 0.0f;
+    audio.pan[3] = 0.0f;
     c->memory[NR10] = 0x80;
     c->memory[NR11] = 0xbf;
     c->memory[NR12] = 0xf3;
