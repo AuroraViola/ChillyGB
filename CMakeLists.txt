@@ -14,5 +14,7 @@ add_executable(ChillyGB main.c
         input.h
         apu.h
         apu.c
+        timer.h
+        timer.c
 )
 target_link_libraries(ChillyGB raylib m)

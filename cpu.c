@@ -2,13 +2,14 @@
 #include "apu.h"
 #include "ppu.h"
 #include "input.h"
+#include "timer.h"
 #include "opcodes.h"
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 const uint8_t rst_vec[] = {0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38};
-const uint16_t clock_select[] = {1024, 16, 64, 256};
+const uint16_t clock_tac_shift[] = {0x200, 0x8, 0x20, 0x80};
 
 uint8_t stretch_number(uint8_t num) {
     uint8_t t = (num | (num << 2)) & 0b00110011;
@@ -36,10 +37,10 @@ void initialize_cpu_memory(cpu *c) {
 
     c->memory[SB] = 0x00;
     c->memory[SC] = 0x7e;
-    c->memory[DIV] = 0xac;
-    c->memory[TIMA] = 0x00;
-    c->memory[TMA] = 0x00;
-    c->memory[TAC] = 0xf8;
+    timer1.tima = 0;
+    timer1.tma = 0;
+    timer1.module = 0;
+    timer1.is_tac_on = false;
     c->memory[IF] = 0xe1;
 
     audio.is_on = true;
@@ -91,6 +92,7 @@ void initialize_cpu_memory(cpu *c) {
     c->memory[SCY] = 0x00;
     c->memory[SCX] = 0x00;
     video.scan_line = 0xff;
+    timer1.scanline_timer = 450;
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
     c->memory[BGP] = 0xfc;
@@ -156,69 +158,63 @@ void initialize_cpu_memory(cpu *c) {
     for (uint16_t i = 0; i < 8; i++) {
         c->memory[0x8190 + (i * 2)] = r_tile[i];
     }
+
+    // Initialize internal timer
+    timer1.t_states = 23440324;
 }
 
-void add_ticks(cpu *c, tick *t, uint16_t ticks){
-    t->t_states += ticks;
-    t->scan_line_tick -= ticks;
+void add_ticks(cpu *c, uint16_t ticks) {
+    ticks >>= 2;
+    for (int i = 0; i < ticks; i++) {
+        timer1.scanline_timer -= 4;
+        if (timer1.scanline_timer < 0) {
+            timer1.scanline_timer += 456;
+            video.scan_line++;
+            video.mode3_duration = 0;
+            if (video.scan_line == 144) {
+                video.mode = 1;
+                c->memory[IF] |= 1;
+                if (video.mode1_select)
+                    c->memory[IF] |= 2;
+                video.draw_screen = true;
+            }
 
-    if (t->scan_line_tick < 0) {
-        t->scan_line_tick += 456;
-        video.scan_line++;
-        video.mode3_duration = 0;
-        if (video.scan_line == 144) {
-            video.mode = 1;
-            c->memory[IF] |= 1;
-            if (video.mode1_select)
+            if (video.scan_line > 153) {
+                video.scan_line = 0;
+                video.wy_trigger = false;
+                video.window_internal_line = 0;
+            }
+            if (video.scan_line == c->memory[LYC] && video.lyc_select)
                 c->memory[IF] |= 2;
-            video.draw_screen = true;
+            if (update_keys())
+                c->memory[IF] |= 16;
         }
 
-        if (video.scan_line > 153) {
-            video.scan_line = 0;
-            video.wy_trigger = false;
-            video.window_internal_line = 0;
-        }
-        if (video.scan_line == c->memory[LYC] && video.lyc_select)
-            c->memory[IF] |= 2;
-        if (update_keys())
-            c->memory[IF] |= 16;
-    }
-
-    if (video.scan_line < 144) {
-        if (t->scan_line_tick > 376 && video.mode != 2) {
-            if (video.scan_line == c->memory[WY])
-                video.wy_trigger = true;
-            video.mode = 2;
-            if (video.mode2_select)
-                c->memory[IF] |= 2;
-        } else if (t->scan_line_tick >= (205 - video.mode3_duration) && video.mode != 3) {
-            video.mode3_duration = get_mode3_duration(c);
-            video.mode = 3;
-        } else if (t->scan_line_tick < (205 - video.mode3_duration) && video.mode != 0) {
-            load_display(c);
-            video.mode = 0;
-            if (video.mode0_select)
-                c->memory[IF] |= 2;
-        }
-    }
-
-    if ((c->memory[TAC] & 4) != 0) {
-        t->tima_counter += ticks;
-        if (t->tima_counter > clock_select[c->memory[TAC] & 3]) {
-            t->tima_counter = 0;
-            c->memory[TIMA] += 1;
-            if (c->memory[TIMA] == 0) {
-                c->memory[TIMA] = c->memory[TMA];
-                c->memory[IF] |= 4;
+        if (video.scan_line < 144) {
+            if (timer1.scanline_timer > 376 && video.mode != 2) {
+                if (video.scan_line == c->memory[WY])
+                    video.wy_trigger = true;
+                video.mode = 2;
+                if (video.mode2_select)
+                    c->memory[IF] |= 2;
+            } else if (timer1.scanline_timer >= (205 - video.mode3_duration) && video.mode != 3) {
+                video.mode3_duration = get_mode3_duration(c);
+                video.mode = 3;
+            } else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
+                load_display(c);
+                video.mode = 0;
+                if (video.mode0_select)
+                    c->memory[IF] |= 2;
             }
         }
-    }
 
-    t->divider_register += ticks;
-    if (t->divider_register >= 256) {
-        t->divider_register -= 256;
-        if ((c->memory[DIV] & 16) > ((c->memory[DIV] + 1) & 16)) {
+        uint16_t next_timer = timer1.t_states + 4;
+        if (timer1.reset_timer) {
+            timer1.reset_timer = false;
+            next_timer = 4;
+        }
+
+        if ((timer1.t_states & 0x1000) > (next_timer & 0x1000)) {
             c->apu_div++;
             if (c->apu_div % 2 == 0) {
                 c->sound_lenght = true;
@@ -231,13 +227,31 @@ void add_ticks(cpu *c, tick *t, uint16_t ticks){
                 c->envelope_sweep = true;
                 c->envelope_sweep_pace++;
             }
-            Update_Audio(c);
         }
-        c->memory[DIV] += 1;
+
+        if (timer1.is_tac_on) {
+            if (timer1.delay) {
+                timer1.delay = false;
+                if (timer1.tima == 0) {
+                    timer1.tima = timer1.tma;
+                    c->memory[IF] |= 4;
+                }
+            }
+
+            if ((timer1.t_states & clock_tac_shift[timer1.module]) >
+                (next_timer & clock_tac_shift[timer1.module])) {
+                timer1.tima++;
+                if (timer1.tima == 0) {
+                    timer1.delay = true;
+                }
+            }
+        }
+
+        timer1.t_states = next_timer;
     }
 }
 
-void run_interrupt(cpu *c, tick *t) {
+void run_interrupt(cpu *c) {
     if ((c->memory[IE] & c->memory[IF]) != 0) {
         c->ime = false;
         c->is_halted = false;
@@ -249,7 +263,7 @@ void run_interrupt(cpu *c, tick *t) {
             c->sp--;
             c->memory[c->sp] = (uint8_t)(c->pc);
             c->pc = 0x40;
-            add_ticks(c, t, 20);
+            add_ticks(c, 20);
         }
         else if (((c->memory[IE] & 2) == 2) && ((c->memory[IF] & 2) == 2)) {
             c->memory[IF] &= 0b11111101;
@@ -259,7 +273,7 @@ void run_interrupt(cpu *c, tick *t) {
             c->sp--;
             c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x48;
-            add_ticks(c, t, 20);
+            add_ticks(c, 20);
         }
         else if (((c->memory[IE] & 4) == 4) && ((c->memory[IF] & 4) == 4)) {
             c->memory[IF] &= 0b11111011;
@@ -269,7 +283,7 @@ void run_interrupt(cpu *c, tick *t) {
             c->sp--;
             c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x50;
-            add_ticks(c, t, 20);
+            add_ticks(c, 20);
         }
         else if (((c->memory[IE] & 8) == 8) && ((c->memory[IF] & 8) == 8)) {
             c->memory[IF] &= 0b11110111;
@@ -279,7 +293,7 @@ void run_interrupt(cpu *c, tick *t) {
             c->sp--;
             c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x58;
-            add_ticks(c, t, 20);
+            add_ticks(c, 20);
         }
         else if (((c->memory[IE] & 16) == 16) && ((c->memory[IE] & 16) == 16)) {
             c->memory[IF] &= 0b11101111;
@@ -289,12 +303,12 @@ void run_interrupt(cpu *c, tick *t) {
             c->sp--;
             c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x60;
-            add_ticks(c, t, 20);
+            add_ticks(c, 20);
         }
     }
 }
 
-void dma_transfer(cpu *c, tick *t) {
+void dma_transfer(cpu *c) {
     uint16_t to_transfer = (uint16_t)(c->memory[DMA]) << 8;
     for (int i = 0; i < 160; i++) {
         c->memory[0xfe00 + i] = c->memory[to_transfer + i];
@@ -454,16 +468,16 @@ uint8_t execute_instruction(cpu *c) {
     exit(1);
 }
 
-void execute(cpu *c, tick *t) {
+void execute(cpu *c) {
     if (c->ime == true)
-        run_interrupt(c, t);
+        run_interrupt(c);
 
     if (!c->is_halted) {
         uint8_t ticks = execute_instruction(c);
-        add_ticks(c, t, ticks);
+        add_ticks(c,  ticks);
     }
     else {
-        add_ticks(c, t, 4);
+        add_ticks(c, 4);
         if ((c->memory[IE] & c->memory[IF]) != 0) {
             c->is_halted = false;
             c->pc += 1;
@@ -480,6 +494,6 @@ void execute(cpu *c, tick *t) {
     if (video.dma_transfer) {
         video.dma_transfer = false;
         video.need_sprites_reload = true;
-        dma_transfer(c, t);
+        dma_transfer(c);
     }
 }

@@ -23,7 +23,6 @@ char *strreplace(char *s, const char *s1, const char *s2) {
 int main(void) {
     // Initialize CPU, memory and timer
     cpu c = {};
-    tick t = {.tima_counter = 0, .divider_register = 0, .scan_line_tick = 300, .t_states = 0};
 
     // Initialize Raylib
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -44,13 +43,10 @@ int main(void) {
     Texture2D display = LoadTextureFromImage(display_image);
 
 
-    // Load ROM to Memory
+    // Load Cartridge to Memory
     //char rom_name[256] = "../Roms/HelloWorld.gb";
-    //char rom_name[256] = "../Roms/Private/tellinglys.gb";
     //char rom_name[256] = "../Roms/Private/dmg-acid2.gb";
     //char rom_name[256] = "../Roms/Private/DrMario.gb";
-    //char rom_name[256] = "../Roms/Private/MarioLand.gb";
-    //char rom_name[256] = "../Roms/Private/MarioLand2.gb";
     //char rom_name[256] = "../Roms/Private/PokemonGiallo.gb";
     //char rom_name[256] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[256] = "../Roms/Private/MarioLand.gb";
@@ -58,14 +54,26 @@ int main(void) {
     //char rom_name[256] = "../Roms/Private/gb240p.gb";
     //char rom_name[256] = "../Roms/Private/Spot.gb";
     //char rom_name[256] = "../Roms/Private/bad_apple.gb";
-    char rom_name[256] = "../Roms/Private/20y.gb";
-    //char rom_name[256] = "../Roms/Private/alttoo.gb";
+    //char rom_name[256] = "../Roms/Private/20y.gb";
     //char rom_name[256] = "../Roms/Private/bgbtest.gb";
     //char rom_name[256] = "../Roms/Private/KirbyDreamLand.gb";
-    //char rom_name[256] = "../Roms/Private/winpos.gb";
     //char rom_name[256] = "../Roms/Private/Tetris.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/bits/unused_hwio-GS.gb";
+    //char rom_name[256] = "../Roms/Private/instr_timing.gb";
+    //char rom_name[256] = "../Roms/Private/interrupt_time.gb";
+    char rom_name[256] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/div_write.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/rapid_toggle.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim00.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim00_div_trigger.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim01.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim01_div_trigger.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim10.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim10_div_trigger.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim11.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim11_div_trigger.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tima_reload.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tima_write_reloading.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tma_write_reloading.gb";
     //char rom_name[256] = "../Roms/Private/L2.GB";
     //char rom_name[256] = "../Roms/Private/halt_bug.gb";
     char save_name[256];
@@ -116,15 +124,18 @@ int main(void) {
         }
     }
 
-    initialize_cpu_memory(&c);
 
     // Initialize APU
     InitAudioDevice();
     SetAudioStreamBufferSizeDefault(512);
     load_audio_streams();
 
+    // Initialize Value
+    initialize_cpu_memory(&c);
+
     while(!WindowShouldClose()) {
-        execute(&c, &t);
+        execute(&c);
+        Update_Audio(&c);
 
         if (video.draw_screen == true) {
             video.draw_screen = false;

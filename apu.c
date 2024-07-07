@@ -173,10 +173,10 @@ void Update_CH2(cpu *c) {
 void Update_CH3(cpu *c) {
     audio.ch3.period_value = get_periodvalue(c, NR33, NR34);
     audio.ch3.volume = outputlevels[(c->memory[NR32] & 96) >> 5];
-    create_wave_pattern(c);
     if (audio.ch3.is_triggered) {
         audio.ch3.is_triggered = false;
         audio.ch3.lenght = c->memory[NR31];
+        create_wave_pattern(c);
     }
     if ((c->memory[NR34] & 64) != 0 && c->sound_lenght) {
         if (audio.ch3.lenght < 255)

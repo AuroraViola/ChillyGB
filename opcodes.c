@@ -5,6 +5,7 @@
 #include "cpu.h"
 #include "apu.h"
 #include "ppu.h"
+#include "timer.h"
 #include "input.h"
 
 uint8_t* r8(cpu *c, uint8_t r) {
@@ -204,7 +205,21 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case DIV: // divider register
-            c->memory[addr] = 0;
+            timer1.reset_timer = true;
+            break;
+
+        case TIMA:
+            timer1.tima = value;
+            break;
+        case TMA:
+            timer1.tma = value;
+            break;
+        case TAC: // divider register
+            if ((value & 4) != 0)
+                timer1.is_tac_on = true;
+            else
+                timer1.is_tac_on = false;
+            timer1.module = value & 3;
             break;
 
         case 0x8000 ... 0x97ff: // Tiles
@@ -398,8 +413,14 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             }
         case SC:
             return c->memory[addr] | 0x7e;
+        case DIV:
+            return (timer1.t_states >> 8) & 255;
+        case TIMA:
+            return timer1.tima;
+        case TMA:
+            return timer1.tma;
         case TAC:
-            return c->memory[addr] | 0xf8;
+            return (timer1.is_tac_on << 2) | timer1.module | 0xf8;
         case IF:
             return c->memory[addr] | 0xe0;
         case STAT:
@@ -658,7 +679,7 @@ uint8_t ld_imm16_sp(cpu *c, parameters *p) {
     return 20;
 }
 
-uint8_t inc_r8(cpu *c, parameters *p) { // TODO
+uint8_t inc_r8(cpu *c, parameters *p) {
     c->pc += 1;
     if ((((*r8(c, p->operand_stk_r8) & 0xf) + 1) & 0xf) < (*r8(c, p->operand_stk_r8) & 0xf))
         c->r.reg8[F] |= flagH;
@@ -680,7 +701,7 @@ uint8_t inc_r8(cpu *c, parameters *p) { // TODO
     return 4;
 }
 
-uint8_t dec_r8(cpu *c, parameters *p) { //TODO
+uint8_t dec_r8(cpu *c, parameters *p) {
     c->pc += 1;
     if ((((*r8(c, p->operand_stk_r8) & 0xf) - 1) & 0xf) > (*r8(c, p->operand_stk_r8) & 0xf))
         c->r.reg8[F] |= flagH;

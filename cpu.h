@@ -32,7 +32,6 @@ typedef struct {
     bool is_halted;
     bool first_halt;
 
-
     cartridge cart;
     uint8_t memory[0x10000];
 
@@ -59,17 +58,6 @@ typedef struct {
 
     uint8_t tgt3;
 }parameters;
-
-typedef struct {
-    uint64_t t_states;
-    int32_t scan_line_tick;
-    uint32_t divider_register;
-    uint32_t tima_counter;
-
-    uint32_t div_apu_tick;
-
-    bool is_frame;
-}tick;
 
 enum mem_regs {
     // Joypad
@@ -163,6 +151,6 @@ enum cond {
 };
 
 void initialize_cpu_memory(cpu *c);
-void execute(cpu *c, tick *t);
+void execute(cpu *c);
 
 #endif //CHILLYGB_CPU_H
