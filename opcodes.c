@@ -8,6 +8,8 @@
 #include "timer.h"
 #include "input.h"
 
+const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
+
 uint8_t* r8(cpu *c, uint8_t r) {
     switch (r) {
         case 0:
@@ -209,17 +211,33 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case TIMA:
+            timer1.delay = false;
             timer1.tima = value;
             break;
         case TMA:
             timer1.tma = value;
             break;
         case TAC: // divider register
-            if ((value & 4) != 0)
+            uint8_t next_module = value & 3;
+            if ((value & 4) != 0) {
+                if (timer1.is_tac_on && ((timer1.t_states & clock_tac_shift2[timer1.module]) != 0 && (timer1.t_states & clock_tac_shift2[next_module]) == 0)) {
+                    timer1.tima++;
+                    if (timer1.tima == 0) {
+                        timer1.delay = true;
+                    }
+                }
                 timer1.is_tac_on = true;
-            else
+            }
+            else {
+                if (timer1.is_tac_on && (timer1.t_states & clock_tac_shift2[timer1.module]) != 0) {
+                    timer1.tima++;
+                    if (timer1.tima == 0) {
+                        timer1.delay = true;
+                    }
+                }
                 timer1.is_tac_on = false;
-            timer1.module = value & 3;
+            }
+            timer1.module = next_module;
             break;
 
         case 0x8000 ... 0x97ff: // Tiles
@@ -736,14 +754,15 @@ uint8_t jr_cond(cpu *c, parameters *p) {
         flag = true;
     if (flag) {
         c->pc += (int8_t)p->imm8;
-        return 16;
+        return 12;
     }
-    return 12;
+    return 8;
 }
 
 uint8_t di(cpu *c, parameters *p) {
     c->pc += 1;
     c->ime = false;
+    c->ime_to_be_setted = 0;
     return 4;
 }
 
@@ -1534,8 +1553,8 @@ uint8_t ld_sp_hl(cpu *c, parameters *p) {
 
 uint8_t ei(cpu *c, parameters *p) {
     c->pc += 1;
-    if (c->ime == 0) {
-        c->ime_to_be_setted += 1;
+    if (c->ime_to_be_setted == 0) {
+        c->ime_to_be_setted = 1;
     }
     return 4;
 }

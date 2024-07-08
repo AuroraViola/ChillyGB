@@ -152,5 +152,6 @@ enum cond {
 
 void initialize_cpu_memory(cpu *c);
 void execute(cpu *c);
+void add_ticks(cpu *c, uint16_t ticks);
 
 #endif //CHILLYGB_CPU_H

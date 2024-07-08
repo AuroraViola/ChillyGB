@@ -229,15 +229,13 @@ void add_ticks(cpu *c, uint16_t ticks) {
             }
         }
 
-        if (timer1.is_tac_on) {
-            if (timer1.delay) {
-                timer1.delay = false;
-                if (timer1.tima == 0) {
-                    timer1.tima = timer1.tma;
-                    c->memory[IF] |= 4;
-                }
-            }
+        if (timer1.delay) {
+            timer1.delay = false;
+            timer1.tima = timer1.tma;
+            c->memory[IF] |= 4;
+        }
 
+        if (timer1.is_tac_on) {
             if ((timer1.t_states & clock_tac_shift[timer1.module]) >
                 (next_timer & clock_tac_shift[timer1.module])) {
                 timer1.tima++;
@@ -474,7 +472,7 @@ void execute(cpu *c) {
 
     if (!c->is_halted) {
         uint8_t ticks = execute_instruction(c);
-        add_ticks(c,  ticks);
+        add_ticks(c, ticks);
     }
     else {
         add_ticks(c, 4);

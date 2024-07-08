@@ -54,24 +54,15 @@ int main(void) {
     //char rom_name[256] = "../Roms/Private/gb240p.gb";
     //char rom_name[256] = "../Roms/Private/Spot.gb";
     //char rom_name[256] = "../Roms/Private/bad_apple.gb";
+    //char rom_name[256] = "../Roms/Private/PinballDeluxe.gb";
     //char rom_name[256] = "../Roms/Private/20y.gb";
     //char rom_name[256] = "../Roms/Private/bgbtest.gb";
     //char rom_name[256] = "../Roms/Private/KirbyDreamLand.gb";
     //char rom_name[256] = "../Roms/Private/Tetris.gb";
-    //char rom_name[256] = "../Roms/Private/instr_timing.gb";
+    //char rom_name[256] = "../Roms/Private/02-interrupts.gb";
+    char rom_name[256] = "../Roms/Private/instr_timing.gb";
     //char rom_name[256] = "../Roms/Private/interrupt_time.gb";
-    char rom_name[256] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/div_write.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/rapid_toggle.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim00.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim00_div_trigger.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim01.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim01_div_trigger.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim10.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim10_div_trigger.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim11.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tim11_div_trigger.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tima_reload.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
     //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tima_write_reloading.gb";
     //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tma_write_reloading.gb";
     //char rom_name[256] = "../Roms/Private/L2.GB";
@@ -123,7 +114,6 @@ int main(void) {
             fclose(save);
         }
     }
-
 
     // Initialize APU
     InitAudioDevice();
