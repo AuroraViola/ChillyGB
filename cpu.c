@@ -91,8 +91,8 @@ void initialize_cpu_memory(cpu *c) {
     video.mode = 1;
     c->memory[SCY] = 0x00;
     c->memory[SCX] = 0x00;
-    video.scan_line = 0xff;
-    timer1.scanline_timer = 450;
+    video.scan_line = 0x00;
+    timer1.scanline_timer = 456;
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
     c->memory[BGP] = 0xfc;
@@ -197,7 +197,7 @@ void add_ticks(cpu *c, uint16_t ticks) {
                 video.mode = 2;
                 if (video.mode2_select)
                     c->memory[IF] |= 2;
-            } else if (timer1.scanline_timer >= (205 - video.mode3_duration) && video.mode != 3) {
+            } else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 && video.mode != 3) {
                 video.mode3_duration = get_mode3_duration(c);
                 video.mode = 3;
             } else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
@@ -307,9 +307,11 @@ void run_interrupt(cpu *c) {
 }
 
 void dma_transfer(cpu *c) {
+    video.dma_transfer = 640;
+    video.need_sprites_reload = true;
     uint16_t to_transfer = (uint16_t)(c->memory[DMA]) << 8;
     for (int i = 0; i < 160; i++) {
-        c->memory[0xfe00 + i] = c->memory[to_transfer + i];
+        c->memory[0xfe00 + i] = get_mem(c, (to_transfer+i));
     }
 }
 
@@ -478,20 +480,14 @@ void execute(cpu *c) {
         add_ticks(c, 4);
         if ((c->memory[IE] & c->memory[IF]) != 0) {
             c->is_halted = false;
-            c->pc += 1;
         }
-        c->first_halt = false;
     }
+
     if (c->ime_to_be_setted == 1) {
         c->ime_to_be_setted = 2;
     }
     else if (c->ime_to_be_setted == 2) {
         c->ime_to_be_setted = 0;
         c->ime = true;
-    }
-    if (video.dma_transfer) {
-        video.dma_transfer = false;
-        video.need_sprites_reload = true;
-        dma_transfer(c);
     }
 }

@@ -42,29 +42,30 @@ int main(void) {
     };
     Texture2D display = LoadTextureFromImage(display_image);
 
-
     // Load Cartridge to Memory
-    //char rom_name[256] = "../Roms/HelloWorld.gb";
     //char rom_name[256] = "../Roms/Private/dmg-acid2.gb";
     //char rom_name[256] = "../Roms/Private/DrMario.gb";
     //char rom_name[256] = "../Roms/Private/PokemonGiallo.gb";
-    //char rom_name[256] = "../Roms/Private/PokemonBlue.gb";
+    char rom_name[256] = "../Roms/Private/PokemonBlue.gb";
     //char rom_name[256] = "../Roms/Private/MarioLand.gb";
     //char rom_name[256] = "../Roms/Private/Zelda.gb";
-    //char rom_name[256] = "../Roms/Private/gb240p.gb";
+    //char rom_name[256] = "../Roms/Private/pocket.gb";
     //char rom_name[256] = "../Roms/Private/Spot.gb";
     //char rom_name[256] = "../Roms/Private/bad_apple.gb";
-    //char rom_name[256] = "../Roms/Private/PinballDeluxe.gb";
     //char rom_name[256] = "../Roms/Private/20y.gb";
+    //char rom_name[256] = "../Roms/Private/statcount.gb";
+    //char rom_name[256] = "../Roms/Private/PinballDeluxe.gb";
     //char rom_name[256] = "../Roms/Private/bgbtest.gb";
     //char rom_name[256] = "../Roms/Private/KirbyDreamLand.gb";
     //char rom_name[256] = "../Roms/Private/Tetris.gb";
-    //char rom_name[256] = "../Roms/Private/02-interrupts.gb";
-    char rom_name[256] = "../Roms/Private/instr_timing.gb";
-    //char rom_name[256] = "../Roms/Private/interrupt_time.gb";
+    //char rom_name[256] = "../Roms/Private/cpu_instrs.gb";
+    //char rom_name[256] = "../Roms/Private/11-op a,(hl).gb";
+    //char rom_name[256] = "../Roms/gb-rom-tests/blargg/mem_timing-2/mem_timing.gb";
+    //char rom_name[256] = "../Roms/Private/instr_timing.gb";
     //char rom_name[256] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
     //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tima_write_reloading.gb";
     //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tma_write_reloading.gb";
+    //char rom_name[256] = "../Roms/mooneye-acceptance/jp_timing.gb";
     //char rom_name[256] = "../Roms/Private/L2.GB";
     //char rom_name[256] = "../Roms/Private/halt_bug.gb";
     char save_name[256];

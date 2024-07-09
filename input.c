@@ -23,6 +23,11 @@ bool update_keys() {
     if (IsKeyReleased(KEY_SPACE))
         SetTargetFPS(60);
 
+    if (IsKeyPressed(KEY_B))
+        SetTargetFPS(2);
+    if (IsKeyReleased(KEY_B))
+        SetTargetFPS(60);
+
     for (int i = 0; i < 4; i++) {
         if (IsKeyPressed(j1.keys_dpad[i]))
             return true;

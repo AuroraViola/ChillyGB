@@ -110,7 +110,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     c->cart.bank_select = value & 127;
                     break;
                 // MBC 5
-                case 0x1a ... 0x1e:
+                case 0x19 ... 0x1e:
                     if (addr <= 0x2fff)
                         c->cart.bank_select = value;
                     break;
@@ -203,7 +203,9 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
         case DMA: // OAM DMA transfer
             c->memory[addr] = value;
-            video.dma_transfer = true;
+            dma_transfer(c);
+            video.dma_transfer = 640;
+            video.need_sprites_reload = true;
             break;
 
         case DIV: // divider register
@@ -541,8 +543,9 @@ uint8_t jp(cpu *c, parameters *p) {
 uint8_t ld_r8_imm8(cpu *c, parameters *p) {
     c->pc += 2;
     if (p->operand_stk_r8 == 6) {
+        add_ticks(c, 4);
         set_mem(c, c->r.reg16[HL], p->imm8);
-        return 12;
+        return 8;
     }
     else {
         *r8(c, p->operand_stk_r8) = p->imm8;
@@ -552,14 +555,16 @@ uint8_t ld_r8_imm8(cpu *c, parameters *p) {
 
 uint8_t ld_imm16_a(cpu *c, parameters *p) {
     c->pc += 3;
+    add_ticks(c, 8);
     set_mem(c, p->imm16, c->r.reg8[A]);
-    return 16;
+    return 8;
 }
 
 uint8_t ld_a_imm16(cpu *c, parameters *p) {
     c->pc += 3;
+    add_ticks(c, 8);
     c->r.reg8[A] = get_mem(c, p->imm16);
-    return 16;
+    return 8;
 }
 
 uint8_t cp_a_imm8(cpu *c, parameters *p) {
@@ -699,45 +704,75 @@ uint8_t ld_imm16_sp(cpu *c, parameters *p) {
 
 uint8_t inc_r8(cpu *c, parameters *p) {
     c->pc += 1;
-    if ((((*r8(c, p->operand_stk_r8) & 0xf) + 1) & 0xf) < (*r8(c, p->operand_stk_r8) & 0xf))
-        c->r.reg8[F] |= flagH;
-    else
-        c->r.reg8[F] &= ~flagH;
+    if (p->operand_stk_r8 == 6) {
+        uint8_t mem = get_mem(c, c->r.reg16[HL]);
+        add_ticks(c, 4);
+        set_mem(c, c->r.reg16[HL], (mem + 1));
+        uint8_t mem_next = get_mem(c, c->r.reg16[HL]);
+        add_ticks(c, 4);
 
-    if (p->operand_stk_r8 == 6)
-        set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) + 1));
-    else
+        if ((((mem & 0xf) + 1) & 0xf) < (mem & 0xf))
+            c->r.reg8[F] |= flagH;
+        else
+            c->r.reg8[F] &= ~flagH;
+
+        if (mem_next == 0)
+            c->r.reg8[F] |= flagZ;
+        else
+            c->r.reg8[F] &= ~flagZ;
+    }
+    else {
+        if ((((*r8(c, p->operand_stk_r8) & 0xf) + 1) & 0xf) < (*r8(c, p->operand_stk_r8) & 0xf))
+            c->r.reg8[F] |= flagH;
+        else
+            c->r.reg8[F] &= ~flagH;
+
         *r8(c, p->operand_stk_r8) += 1;
-    c->r.reg8[F] &= ~flagN;
 
-    if (*r8(c, p->operand_stk_r8) == 0)
-        c->r.reg8[F] |= flagZ;
-    else
-        c->r.reg8[F] &= ~flagZ;
-    if (p->operand_stk_r8 == 6)
-        return 12;
+        if (*r8(c, p->operand_stk_r8) == 0)
+            c->r.reg8[F] |= flagZ;
+        else
+            c->r.reg8[F] &= ~flagZ;
+    }
+    c->r.reg8[F] &= ~flagN;
     return 4;
 }
 
 uint8_t dec_r8(cpu *c, parameters *p) {
     c->pc += 1;
-    if ((((*r8(c, p->operand_stk_r8) & 0xf) - 1) & 0xf) > (*r8(c, p->operand_stk_r8) & 0xf))
-        c->r.reg8[F] |= flagH;
-    else
-        c->r.reg8[F] &= ~flagH;
-    if (p->operand_stk_r8 == 6)
-        set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) - 1));
-    else
+    if (p->operand_stk_r8 == 6) {
+        uint8_t mem = get_mem(c, c->r.reg16[HL]);
+        add_ticks(c, 4);
+        set_mem(c, c->r.reg16[HL], (mem - 1));
+        uint8_t mem_next = get_mem(c, c->r.reg16[HL]);
+        add_ticks(c, 4);
+
+        if ((((mem & 0xf) - 1) & 0xf) > (mem & 0xf))
+            c->r.reg8[F] |= flagH;
+        else
+            c->r.reg8[F] &= ~flagH;
+
+        if (mem_next == 0)
+            c->r.reg8[F] |= flagZ;
+        else
+            c->r.reg8[F] &= ~flagZ;
+    }
+    else {
+        if ((((*r8(c, p->operand_stk_r8) & 0xf) - 1) & 0xf) > (*r8(c, p->operand_stk_r8) & 0xf))
+            c->r.reg8[F] |= flagH;
+        else
+            c->r.reg8[F] &= ~flagH;
+
         *r8(c, p->operand_stk_r8) -= 1;
+
+        if (*r8(c, p->operand_stk_r8) == 0)
+            c->r.reg8[F] |= flagZ;
+        else
+            c->r.reg8[F] &= ~flagZ;
+    }
 
     c->r.reg8[F] |= flagN;
 
-    if (*r8(c, p->operand_stk_r8) == 0)
-        c->r.reg8[F] |= flagZ;
-    else
-        c->r.reg8[F] &= ~flagZ;
-    if (p->operand_stk_r8 == 6)
-        return 12;
     return 4;
 }
 
@@ -768,8 +803,9 @@ uint8_t di(cpu *c, parameters *p) {
 
 uint8_t ldh_imm8_a(cpu *c, parameters *p) {
     c->pc += 2;
+    add_ticks(c, 4);
     set_mem(c, (0xff00 | p->imm8), c->r.reg8[A]);
-    return 12;
+    return 8;
 }
 
 uint8_t ldh_c_a(cpu *c, parameters *p) {
@@ -838,8 +874,9 @@ uint8_t pop(cpu *c, parameters *p) {
 
 uint8_t ldh_a_imm8(cpu *c, parameters *p) {
     c->pc += 2;
+    add_ticks(c, 4);
     c->r.reg8[A] = get_mem(c, (0xff00 | p->imm8));
-    return 12;
+    return 8;
 }
 
 uint8_t and_a_r8(cpu *c, parameters *p) {
@@ -949,15 +986,24 @@ uint8_t prefix(cpu *c, parameters *p) {
         // RLC
         case 0x00 ... 0x07:
             if (p->operand_r8 == 6) {
-                if ((get_mem(c, c->r.reg16[HL]) & 128) != 0)
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+
+                if ((mem & 128) != 0)
                     c->r.reg8[F] |= flagC;
                 else
                     c->r.reg8[F] &= ~flagC;
 
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) << 1));
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], mem << 1);
 
                 if ((c->r.reg8[F] & flagC) != 0)
                     set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) | 1));
+
+                if (get_mem(c, c->r.reg16[HL]) == 0)
+                    c->r.reg8[F] |= flagZ;
+                else
+                    c->r.reg8[F] &= ~flagZ;
             }
             else {
                 if ((*r8(c, p->operand_r8) & 128) != 0)
@@ -969,38 +1015,36 @@ uint8_t prefix(cpu *c, parameters *p) {
 
                 if ((c->r.reg8[F] & flagC) != 0)
                     *r8(c, p->operand_r8) |= 1;
-            }
-
-            c->r.reg8[F] &= ~flagN;
-            c->r.reg8[F] &= ~flagH;
-
-            if (p->operand_r8 == 6) {
-                if (get_mem(c, c->r.reg16[HL]) == 0)
-                    c->r.reg8[F] |= flagZ;
-                else
-                    c->r.reg8[F] &= ~flagZ;
-            }
-            else {
                 if (*r8(c, p->operand_r8) == 0)
                     c->r.reg8[F] |= flagZ;
                 else
                     c->r.reg8[F] &= ~flagZ;
             }
-            if (p->operand_r8 == 6)
-                return 16;
+
+            c->r.reg8[F] &= ~flagN;
+            c->r.reg8[F] &= ~flagH;
+
             return 8;
         // RRC
         case 0x08 ... 0x0f:
             if (p->operand_r8 == 6) {
-                if ((get_mem(c, c->r.reg16[HL]) & 1) != 0)
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+
+                if ((mem & 1) != 0)
                     c->r.reg8[F] |= flagC;
                 else
                     c->r.reg8[F] &= ~flagC;
 
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) >> 1));
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], mem >> 1);
 
                 if ((c->r.reg8[F] & flagC) != 0)
                     set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) | 128));
+                if (get_mem(c, c->r.reg16[HL]) == 0)
+                    c->r.reg8[F] |= flagZ;
+                else
+                    c->r.reg8[F] &= ~flagZ;
             }
             else {
                 if ((*r8(c, p->operand_r8) & 1) != 0)
@@ -1012,38 +1056,38 @@ uint8_t prefix(cpu *c, parameters *p) {
 
                 if ((c->r.reg8[F] & flagC) != 0)
                     *r8(c, p->operand_r8) |= 128;
-            }
 
-            c->r.reg8[F] &= ~flagN;
-            c->r.reg8[F] &= ~flagH;
-
-            if (p->operand_r8 == 6) {
-                if (get_mem(c, c->r.reg16[HL]) == 0)
-                    c->r.reg8[F] |= flagZ;
-                else
-                    c->r.reg8[F] &= ~flagZ;
-            }
-            else {
                 if (*r8(c, p->operand_r8) == 0)
                     c->r.reg8[F] |= flagZ;
                 else
                     c->r.reg8[F] &= ~flagZ;
             }
-            if (p->operand_r8 == 6)
-                return 16;
+
+            c->r.reg8[F] &= ~flagN;
+            c->r.reg8[F] &= ~flagH;
+
             return 8;
         // RL
         case 0x10 ... 0x17:
             prevC = c->r.reg8[F] & flagC;
             if (p->operand_r8 == 6) {
-                if ((get_mem(c, c->r.reg16[HL]) & 128) != 0)
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], mem << 1);
+                if (prevC != 0)
+                    set_mem(c, c->r.reg16[HL], get_mem(c, c->r.reg16[HL]) | 1);
+
+                if ((mem & 128) != 0)
                     c->r.reg8[F] |= flagC;
                 else
                     c->r.reg8[F] &= ~flagC;
 
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) << 1));
-                if (prevC != 0)
-                    set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) | 1));
+                if (get_mem(c, c->r.reg16[HL]) == 0)
+                    c->r.reg8[F] |= flagZ;
+                else
+                    c->r.reg8[F] &= ~flagZ;
             }
             else {
                 if ((*r8(c, p->operand_r8) & 128) != 0)
@@ -1054,37 +1098,36 @@ uint8_t prefix(cpu *c, parameters *p) {
                 *r8(c, p->operand_r8) = *r8(c, p->operand_r8) << 1;
                 if (prevC != 0)
                     *r8(c, p->operand_r8) |= 1;
-            }
-
-            c->r.reg8[F] &= ~flagN;
-            c->r.reg8[F] &= ~flagH;
-
-            if (p->operand_r8 == 6) {
-                if (get_mem(c, c->r.reg16[HL]) == 0)
-                    c->r.reg8[F] |= flagZ;
-                else
-                    c->r.reg8[F] &= ~flagZ;
-            }
-            else {
                 if (*r8(c, p->operand_r8) == 0)
                     c->r.reg8[F] |= flagZ;
                 else
                     c->r.reg8[F] &= ~flagZ;
             }
-            if (p->operand_r8 == 6)
-                return 16;
+
+            c->r.reg8[F] &= ~flagN;
+            c->r.reg8[F] &= ~flagH;
+
             return 8;
         // RR
         case 0x18 ... 0x1f:
             prevC = (c->r.reg8[F] >> 4) & 1;;
             if (p->operand_r8 == 6) {
-                if ((get_mem(c, c->r.reg16[HL]) & 1) == 0)
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], mem >> 1);
+                set_mem(c, c->r.reg16[HL], get_mem(c, c->r.reg16[HL]) | (prevC << 7));
+
+                if ((mem & 1) == 0)
                     c->r.reg8[F] &= ~flagC;
                 else
                     c->r.reg8[F] |= flagC;
 
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) >> 1));
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) | (prevC << 7)));
+                if (get_mem(c, c->r.reg16[HL]) == 0)
+                    c->r.reg8[F] |= flagZ;
+                else
+                    c->r.reg8[F] &= ~flagZ;
             }
             else {
                 if ((*r8(c, p->operand_r8) & 1) == 0)
@@ -1093,35 +1136,35 @@ uint8_t prefix(cpu *c, parameters *p) {
                     c->r.reg8[F] |= flagC;
                 *r8(c, p->operand_r8) = *r8(c, p->operand_r8) >> 1;
                 *r8(c, p->operand_r8) |= (prevC << 7);
-            }
 
-            c->r.reg8[F] &= ~flagN;
-            c->r.reg8[F] &= ~flagH;
-
-            if (p->operand_r8 == 6) {
-                if (get_mem(c, c->r.reg16[HL]) == 0)
-                    c->r.reg8[F] |= flagZ;
-                else
-                    c->r.reg8[F] &= ~flagZ;
-            }
-            else {
                 if (*r8(c, p->operand_r8) == 0)
                     c->r.reg8[F] |= flagZ;
                 else
                     c->r.reg8[F] &= ~flagZ;
             }
-            if (p->operand_r8 == 6)
-                return 16;
+
+            c->r.reg8[F] &= ~flagN;
+            c->r.reg8[F] &= ~flagH;
+
             return 8;
         // SLA
         case 0x20 ... 0x27:
             if (p->operand_r8 == 6) {
-                if ((get_mem(c, c->r.reg16[HL]) & 128) == 0)
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], mem << 1);
+
+                if ((mem & 128) == 0)
                     c->r.reg8[F] &= ~flagC;
                 else
                     c->r.reg8[F] |= flagC;
 
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) << 1));
+                if (get_mem(c, c->r.reg16[HL]) == 0)
+                    c->r.reg8[F] |= flagZ;
+                else
+                    c->r.reg8[F] &= ~flagZ;
             }
             else {
                 if ((*r8(c, p->operand_r8) & 128) == 0)
@@ -1130,38 +1173,38 @@ uint8_t prefix(cpu *c, parameters *p) {
                     c->r.reg8[F] |= flagC;
 
                 *r8(c, p->operand_r8) = *r8(c, p->operand_r8) << 1;
-            }
 
-            c->r.reg8[F] &= ~flagN;
-            c->r.reg8[F] &= ~flagH;
-
-            if (p->operand_r8 == 6) {
-                if (get_mem(c, c->r.reg16[HL]) == 0)
-                    c->r.reg8[F] |= flagZ;
-                else
-                    c->r.reg8[F] &= ~flagZ;
-            }
-            else {
                 if (*r8(c, p->operand_r8) == 0)
                     c->r.reg8[F] |= flagZ;
                 else
                     c->r.reg8[F] &= ~flagZ;
             }
-            if (p->operand_r8 == 6)
-                return 16;
+
+            c->r.reg8[F] &= ~flagN;
+            c->r.reg8[F] &= ~flagH;
+
             return 8;
         // SRA
         case 0x28 ... 0x2f:
             if (p->operand_r8 == 6) {
-                if ((get_mem(c, c->r.reg16[HL]) & 1) == 0)
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+
+                if ((mem & 1) == 0)
                     c->r.reg8[F] &= ~flagC;
                 else
                     c->r.reg8[F] |= flagC;
 
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) >> 1));
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], mem >> 1);
                 uint8_t new_val = get_mem(c, c->r.reg16[HL]);
                 new_val |= (new_val & 64) << 1;
                 set_mem(c, c->r.reg16[HL], new_val);
+
+                if (get_mem(c, c->r.reg16[HL]) == 0)
+                    c->r.reg8[F] |= flagZ;
+                else
+                    c->r.reg8[F] &= ~flagZ;
             }
             else {
                 if ((*r8(c, p->operand_r8) & 1) == 0)
@@ -1171,66 +1214,65 @@ uint8_t prefix(cpu *c, parameters *p) {
 
                 *r8(c, p->operand_r8) = *r8(c, p->operand_r8) >> 1;
                 *r8(c, p->operand_r8) |= (*r8(c, p->operand_r8) & 64) << 1;
-            }
 
-            c->r.reg8[F] &= ~flagN;
-            c->r.reg8[F] &= ~flagH;
-            if (p->operand_r8 == 6) {
-                if (get_mem(c, c->r.reg16[HL]) == 0)
-                    c->r.reg8[F] |= flagZ;
-                else
-                    c->r.reg8[F] &= ~flagZ;
-            }
-            else {
                 if (*r8(c, p->operand_r8) == 0)
                     c->r.reg8[F] |= flagZ;
                 else
                     c->r.reg8[F] &= ~flagZ;
             }
-            if (p->operand_r8 == 6)
-                return 16;
+
+            c->r.reg8[F] &= ~flagN;
+            c->r.reg8[F] &= ~flagH;
+
             return 8;
         // SWAP
         case 0x30 ... 0x37:
             if (p->operand_r8 == 6) {
-                uint8_t low = get_mem(c, c->r.reg16[HL]) & 15;
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) >> 4));
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) + (low << 4)));
+                add_ticks(c, 4);
+                uint8_t low = (get_mem(c, c->r.reg16[HL]) & 15) << 4;
+                uint8_t high = get_mem(c, c->r.reg16[HL]) >> 4;
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], (high | low));
+
+                if (get_mem(c, c->r.reg16[HL]) == 0)
+                    c->r.reg8[F] |= flagZ;
+                else
+                    c->r.reg8[F] &= ~flagZ;
             }
             else {
                 uint8_t low = *r8(c, p->operand_r8) & 15;
                 *r8(c, p->operand_r8) = *r8(c, p->operand_r8) >> 4;
                 *r8(c, p->operand_r8) += low << 4;
-            }
-            c->r.reg8[F] &= ~flagN;
-            c->r.reg8[F] &= ~flagH;
-            c->r.reg8[F] &= ~flagC;
-            if (p->operand_r8 == 6) {
-                if (get_mem(c, c->r.reg16[HL]) == 0)
-                    c->r.reg8[F] |= flagZ;
-                else
-                    c->r.reg8[F] &= ~flagZ;
-            }
-            else {
+
                 if (*r8(c, p->operand_r8) == 0)
                     c->r.reg8[F] |= flagZ;
                 else
                     c->r.reg8[F] &= ~flagZ;
             }
-            if (p->operand_r8 == 6)
-                return 16;
+            c->r.reg8[F] &= ~flagN;
+            c->r.reg8[F] &= ~flagH;
+            c->r.reg8[F] &= ~flagC;
+
             return 8;
         // SRL
         case 0x38 ... 0x3f:
             c->r.reg8[F] &= ~flagN;
             c->r.reg8[F] &= ~flagH;
             if (p->operand_r8 == 6) {
-                if ((get_mem(c, c->r.reg16[HL]) & 1) == 0)
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], mem >> 1);
+
+                if ((mem & 1) == 0)
                     c->r.reg8[F] &= ~flagC;
                 else
                     c->r.reg8[F] |= flagC;
 
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) >> 1));
+                if (get_mem(c, c->r.reg16[HL]) == 0)
+                    c->r.reg8[F] |= flagZ;
+                else
+                    c->r.reg8[F] &= ~flagZ;
             }
             else {
                 if ((*r8(c, p->operand_r8) & 1) == 0)
@@ -1238,28 +1280,20 @@ uint8_t prefix(cpu *c, parameters *p) {
                 else
                     c->r.reg8[F] |= flagC;
                 *r8(c, p->operand_r8) = *r8(c, p->operand_r8) >> 1;
-            }
 
-            if (p->operand_r8 == 6) {
-                if (get_mem(c, c->r.reg16[HL]) == 0)
-                    c->r.reg8[F] |= flagZ;
-                else
-                    c->r.reg8[F] &= ~flagZ;
-            }
-            else {
                 if (*r8(c, p->operand_r8) == 0)
                     c->r.reg8[F] |= flagZ;
                 else
                     c->r.reg8[F] &= ~flagZ;
             }
-            if (p->operand_r8 == 6)
-                return 16;
             return 8;
         // BIT
         case 0x40 ... 0x7f:
             uint8_t iszero;
-            if (p->operand_r8 == 6)
+            if (p->operand_r8 == 6) {
+                add_ticks(c, 4);
                 iszero = (get_mem(c, c->r.reg16[HL]) >> b3) & 1;
+            }
             else
                 iszero = (*r8(c, p->operand_r8) >> b3) & 1;
             if (iszero == 0)
@@ -1268,26 +1302,28 @@ uint8_t prefix(cpu *c, parameters *p) {
                 c->r.reg8[F] &= ~flagZ;
             c->r.reg8[F] &= ~flagN;
             c->r.reg8[F] |= flagH;
-            if (p->operand_r8 == 6)
-                return 12;
             return 8;
         // RES
         case 0x80 ... 0xbf:
-            if (p->operand_r8 == 6)
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) & ~(1 << b3)));
+            if (p->operand_r8 == 6) {
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], (mem & ~(1 << b3)));
+            }
             else
                 *r8(c, p->operand_r8) &= ~(1 << b3);
-            if (p->operand_r8 == 6)
-                return 16;
             return 8;
         // SET
         case 0xc0 ... 0xff:
-            if (p->operand_r8 == 6)
-                set_mem(c, c->r.reg16[HL], (get_mem(c, c->r.reg16[HL]) | 1 << b3));
+            if (p->operand_r8 == 6) {
+                add_ticks(c, 4);
+                uint8_t mem = get_mem(c, c->r.reg16[HL]);
+                add_ticks(c, 4);
+                set_mem(c, c->r.reg16[HL], (mem | 1 << b3));
+            }
             else
                 *r8(c, p->operand_r8) |= (1 << b3);
-            if (p->operand_r8 == 6)
-                return 16;
             return 8;
     }
 }
@@ -1674,7 +1710,11 @@ uint8_t sub_a_r8(cpu *c, parameters *p) {
 uint8_t sbc_a_r8(cpu *c, parameters *p) {
     c->pc += 1;
     uint8_t carry = (c->r.reg8[F] >> 4) & 1;
-    uint16_t temp = c->r.reg8[A] - *r8(c, p->operand_r8) - carry;
+    uint16_t temp;
+    if (p->operand_r8 == 6)
+        temp = c->r.reg8[A] - get_mem(c, c->r.reg16[HL]) - carry;
+    else
+        temp = c->r.reg8[A] - *r8(c, p->operand_r8) - carry;
     c->r.reg8[F] |= flagN;
 
     if (temp > 255)
@@ -1811,8 +1851,8 @@ uint8_t ld_hl_sp_imm8(cpu *c, parameters *p) {
 }
 
 uint8_t halt(cpu *c, parameters *p) {
+    c->pc += 1;
     c->is_halted = true;
-    c->first_halt = true;
     return 4;
 }
 

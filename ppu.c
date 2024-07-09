@@ -205,7 +205,7 @@ void load_sprite_displays() {
 
 uint16_t get_mode3_duration(cpu *c) {
     uint16_t duration = c->memory[SCX] % 8;
-    if (c->memory[WX] < 167 && video.window_enable)
+    if (c->memory[WX] < 167 && video.window_enable && video.wy_trigger)
         duration += 6;
     if (video.obj_enable) {
         int y = video.scan_line;
