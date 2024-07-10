@@ -3,22 +3,11 @@
 #include "ppu.h"
 #include "apu.h"
 #include "input.h"
+#include "cartridge.h"
 #include <stdio.h>
 #include <string.h>
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
-
-char *strreplace(char *s, const char *s1, const char *s2) {
-    char *p = strstr(s, s1);
-    if (p != NULL) {
-        size_t len1 = strlen(s1);
-        size_t len2 = strlen(s2);
-        if (len1 != len2)
-            memmove(p + len2, p + len1, strlen(p + len1) + 1);
-        memcpy(p, s2, len2);
-    }
-    return s;
-}
 
 int main(void) {
     // Initialize CPU, memory and timer
@@ -43,78 +32,9 @@ int main(void) {
     Texture2D display = LoadTextureFromImage(display_image);
 
     // Load Cartridge to Memory
-    //char rom_name[256] = "../Roms/Private/dmg-acid2.gb";
-    //char rom_name[256] = "../Roms/Private/DrMario.gb";
-    //char rom_name[256] = "../Roms/Private/PokemonGiallo.gb";
-    char rom_name[256] = "../Roms/Private/PokemonBlue.gb";
-    //char rom_name[256] = "../Roms/Private/MarioLand.gb";
-    //char rom_name[256] = "../Roms/Private/Zelda.gb";
-    //char rom_name[256] = "../Roms/Private/pocket.gb";
-    //char rom_name[256] = "../Roms/Private/Spot.gb";
-    //char rom_name[256] = "../Roms/Private/bad_apple.gb";
-    //char rom_name[256] = "../Roms/Private/20y.gb";
-    //char rom_name[256] = "../Roms/Private/statcount.gb";
-    //char rom_name[256] = "../Roms/Private/PinballDeluxe.gb";
-    //char rom_name[256] = "../Roms/Private/bgbtest.gb";
-    //char rom_name[256] = "../Roms/Private/KirbyDreamLand.gb";
-    //char rom_name[256] = "../Roms/Private/Tetris.gb";
-    //char rom_name[256] = "../Roms/Private/cpu_instrs.gb";
-    //char rom_name[256] = "../Roms/Private/11-op a,(hl).gb";
-    //char rom_name[256] = "../Roms/gb-rom-tests/blargg/mem_timing-2/mem_timing.gb";
-    //char rom_name[256] = "../Roms/Private/instr_timing.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/boot_hwio-dmgABCmgb.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tima_write_reloading.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/timer/tma_write_reloading.gb";
-    //char rom_name[256] = "../Roms/mooneye-acceptance/jp_timing.gb";
-    //char rom_name[256] = "../Roms/Private/L2.GB";
-    //char rom_name[256] = "../Roms/Private/halt_bug.gb";
-    char save_name[256];
-    strncpy(save_name, rom_name, 50);
-    strreplace(save_name, ".gb", ".sv");
-
-    FILE *cartridge = fopen(rom_name, "r");
-
-    fread(&c.cart.data[0], 0x4000, 1, cartridge);
-
-    c.cart.type = c.cart.data[0][0x0147];
-    c.cart.banks = (2 << c.cart.data[0][0x0148]);
-
-    c.cart.banks_ram = 0;
-    if (c.cart.data[0][0x0149] == 2) {
-        c.cart.banks_ram = 1;
-    }
-    else if (c.cart.data[0][0x0149] == 3) {
-        c.cart.banks_ram = 4;
-    }
-    else if (c.cart.data[0][0x0149] == 4) {
-        c.cart.banks_ram = 16;
-    }
-    else if (c.cart.data[0][0x0149] == 5) {
-        c.cart.banks_ram = 8;
-    }
-    c.cart.bank_select_ram = 0;
-    c.cart.ram_enable = false;
-
-    for (int i = 1; i < c.cart.banks; i++)
-        fread(&c.cart.data[i], 0x4000, 1, cartridge);
-    c.cart.bank_select = 1;
-    c.cart.bank_select_ram = 0;
-    fclose(cartridge);
-
-    if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
-        FILE *save = fopen(save_name, "r");
-        if (save != NULL) {
-            if (c.cart.banks_ram == 1)
-                fread(&c.cart.ram, 0x2000, 1, save);
-            else if (c.cart.banks_ram == 4)
-                fread(&c.cart.ram, 0x8000, 1, save);
-            else if (c.cart.banks_ram == 8)
-                fread(&c.cart.ram, 0x10000, 1, save);
-            else if (c.cart.banks_ram == 16)
-                fread(&c.cart.ram, 0x20000, 1, save);
-            fclose(save);
-        }
-    }
+    char rom_name[256];
+    strcpy(rom_name, "../Roms/Private/Zelda.gb");
+    load_game(&c.cart, rom_name);
 
     // Initialize APU
     InitAudioDevice();
@@ -165,19 +85,7 @@ int main(void) {
         }
     }
 
-    if (c.cart.type == 3 || c.cart.type == 0x13 || c.cart.type == 0x1b) {
-        FILE *save = fopen(save_name, "w");
-        if (c.cart.banks_ram == 1)
-            fwrite(&c.cart.ram, 0x2000, 1, save);
-        else if (c.cart.banks_ram == 4)
-            fwrite(&c.cart.ram, 0x8000, 1, save);
-        else if (c.cart.banks_ram == 8)
-            fwrite(&c.cart.ram, 0x10000, 1, save);
-        else if (c.cart.banks_ram == 16)
-            fwrite(&c.cart.ram, 0x20000, 1, save);
-        fclose(save);
-    }
-
+    save_game(&c.cart, rom_name);
     CloseWindow();
 
     return 0;
