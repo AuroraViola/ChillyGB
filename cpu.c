@@ -307,8 +307,6 @@ void run_interrupt(cpu *c) {
 }
 
 void dma_transfer(cpu *c) {
-    video.dma_transfer = 640;
-    video.need_sprites_reload = true;
     uint16_t to_transfer = (uint16_t)(c->memory[DMA]) << 8;
     for (int i = 0; i < 160; i++) {
         c->memory[0xfe00 + i] = get_mem(c, (to_transfer+i));
