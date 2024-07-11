@@ -25,6 +25,7 @@ void initialize_cpu_memory(cpu *c) {
     c->r.reg8[E] = 0xd8;
     c->r.reg8[F] = 0xb0;
     c->r.reg8[H] = 0x01;
+    c->r.reg8[L] = 0x4d;
     c->pc = 0x100;
     c->sp = 0xfffe;
     c->ime = false;
