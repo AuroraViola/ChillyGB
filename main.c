@@ -33,8 +33,6 @@ int main(void) {
 
     // Load Cartridge to Memory
     char rom_name[256];
-    strcpy(rom_name, "../Roms/Private/Zelda.gb");
-    load_game(&c.cart, rom_name);
 
     // Initialize APU
     InitAudioDevice();
@@ -42,34 +40,21 @@ int main(void) {
     load_audio_streams();
 
     // Initialize Value
-    initialize_cpu_memory(&c);
 
+    bool rom_loaded = false;
     while(!WindowShouldClose()) {
-        execute(&c);
-        Update_Audio(&c);
-
-        if (video.draw_screen == true) {
-            video.draw_screen = false;
-            for (int i = 0; i < 144; i++) {
-                for (int j = 0; j < 160; j++) {
-                    switch (video.display[i][j]) {
-                        case 0:
-                            pixels[i][j] = (Color) {185, 237, 186, 255};
-                            break;
-                        case 1:
-                            pixels[i][j] = (Color) {118, 196, 123, 255};
-                            break;
-                        case 2:
-                            pixels[i][j] = (Color) {49, 106, 64, 255};
-                            break;
-                        case 3:
-                            pixels[i][j] = (Color) {10, 38, 16, 255};
-                            break;
-                    }
-                }
+        if (IsFileDropped()) {
+            FilePathList droppedFiles = LoadDroppedFiles();
+            if ((int) droppedFiles.count == 1) {
+                rom_loaded = true;
+                save_game(&c.cart, rom_name);
+                strcpy(rom_name, droppedFiles.paths[0]);
+                load_game(&c.cart, rom_name);
+                initialize_cpu_memory(&c);
             }
-            UpdateTexture(display, pixels);
-            // Draw
+            UnloadDroppedFiles(droppedFiles);
+        }
+        if (!rom_loaded) {
             float scale = MIN((float) GetScreenWidth() / 160, (float) GetScreenHeight() / 144);
             BeginDrawing();
                 ClearBackground(BLACK);
@@ -77,11 +62,50 @@ int main(void) {
                                (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
                                             (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+                float fontsize = 7 * scale;
+                int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
+                DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, GetScreenHeight()/2-fontsize/2, fontsize, (Color) {49, 106, 64, 255});
             EndDrawing();
-            uint16_t fps = GetFPS();
-            char str[40];
-            sprintf(str, "ChillyGB - %d FPS", fps);
-            SetWindowTitle(str);
+        }
+        else {
+            execute(&c);
+            Update_Audio(&c);
+
+            if (video.draw_screen == true) {
+                video.draw_screen = false;
+                for (int i = 0; i < 144; i++) {
+                    for (int j = 0; j < 160; j++) {
+                        switch (video.display[i][j]) {
+                            case 0:
+                                pixels[i][j] = (Color) {185, 237, 186, 255};
+                                break;
+                            case 1:
+                                pixels[i][j] = (Color) {118, 196, 123, 255};
+                                break;
+                            case 2:
+                                pixels[i][j] = (Color) {49, 106, 64, 255};
+                                break;
+                            case 3:
+                                pixels[i][j] = (Color) {10, 38, 16, 255};
+                                break;
+                        }
+                    }
+                }
+                UpdateTexture(display, pixels);
+                // Draw
+                float scale = MIN((float) GetScreenWidth() / 160, (float) GetScreenHeight() / 144);
+                BeginDrawing();
+                    ClearBackground(BLACK);
+                    DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
+                                   (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
+                                                (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
+                                                (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+                EndDrawing();
+                uint16_t fps = GetFPS();
+                char str[60];
+                sprintf(str, "ChillyGB - %d FPS - %.1fx", fps, (float)(fps)/60);
+                SetWindowTitle(str);
+            }
         }
     }
 
