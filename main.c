@@ -31,15 +31,12 @@ int main(void) {
     };
     Texture2D display = LoadTextureFromImage(display_image);
 
-    // Load Cartridge to Memory
     char rom_name[256];
 
     // Initialize APU
     InitAudioDevice();
     SetAudioStreamBufferSizeDefault(512);
     load_audio_streams();
-
-    // Initialize Value
 
     bool rom_loaded = false;
     while(!WindowShouldClose()) {
