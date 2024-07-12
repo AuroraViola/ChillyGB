@@ -95,6 +95,10 @@ void initialize_cpu_memory(cpu *c) {
     video.window_enable = false;
     video.window_tilemap = false;
     video.is_on = true;
+    video.lyc_select = false;
+    video.mode2_select = false;
+    video.mode0_select = false;
+    video.mode1_select = false;
     video.mode = 1;
     c->memory[SCY] = 0x00;
     c->memory[SCX] = 0x00;
@@ -173,45 +177,48 @@ void initialize_cpu_memory(cpu *c) {
 void add_ticks(cpu *c, uint16_t ticks) {
     ticks >>= 2;
     for (int i = 0; i < ticks; i++) {
-        timer1.scanline_timer -= 4;
-        if (timer1.scanline_timer < 0) {
-            timer1.scanline_timer += 456;
-            video.scan_line++;
-            video.mode3_duration = 0;
-            if (video.scan_line == 144) {
-                video.mode = 1;
-                c->memory[IF] |= 1;
-                if (video.mode1_select)
+        if (video.is_on) {
+            timer1.scanline_timer -= 4;
+            if (timer1.scanline_timer < 0) {
+                timer1.scanline_timer += 456;
+                video.scan_line++;
+                video.mode3_duration = 0;
+                if (video.scan_line == 144) {
+                    video.mode = 1;
+                    c->memory[IF] |= 1;
+                    if (video.mode1_select || video.mode2_select)
+                        c->memory[IF] |= 2;
+                    video.draw_screen = true;
+                }
+
+                if (video.scan_line > 153) {
+                    video.scan_line = 0;
+                    video.wy_trigger = false;
+                    video.window_internal_line = 0;
+                }
+                if (video.scan_line == c->memory[LYC] && video.lyc_select)
                     c->memory[IF] |= 2;
-                video.draw_screen = true;
+                if (update_keys())
+                    c->memory[IF] |= 16;
             }
 
-            if (video.scan_line > 153) {
-                video.scan_line = 0;
-                video.wy_trigger = false;
-                video.window_internal_line = 0;
-            }
-            if (video.scan_line == c->memory[LYC] && video.lyc_select)
-                c->memory[IF] |= 2;
-            if (update_keys())
-                c->memory[IF] |= 16;
-        }
-
-        if (video.scan_line < 144) {
-            if (timer1.scanline_timer > 376 && video.mode != 2) {
-                if (video.scan_line == c->memory[WY])
-                    video.wy_trigger = true;
-                video.mode = 2;
-                if (video.mode2_select)
-                    c->memory[IF] |= 2;
-            } else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 && video.mode != 3) {
-                video.mode3_duration = get_mode3_duration(c);
-                video.mode = 3;
-            } else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
-                load_display(c);
-                video.mode = 0;
-                if (video.mode0_select)
-                    c->memory[IF] |= 2;
+            if (video.scan_line < 144) {
+                if (timer1.scanline_timer > 376 && video.mode != 2) {
+                    if (video.scan_line == c->memory[WY])
+                        video.wy_trigger = true;
+                    video.mode = 2;
+                    if (video.mode2_select)
+                        c->memory[IF] |= 2;
+                } else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 &&
+                           video.mode != 3) {
+                    video.mode3_duration = get_mode3_duration(c);
+                    video.mode = 3;
+                } else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
+                    load_display(c);
+                    video.mode = 0;
+                    if (video.mode0_select)
+                        c->memory[IF] |= 2;
+                }
             }
         }
 
@@ -469,8 +476,8 @@ uint8_t execute_instruction(cpu *c) {
         case 0x10:
             return stop(c, &p);
     }
-    printf("%x opcode non implementato", opcode);
-    exit(1);
+    printf("%x opcode not implemented", opcode);
+    return 0;
 }
 
 void execute(cpu *c) {

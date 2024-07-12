@@ -38,23 +38,23 @@ void reset_apu_regs(cpu *c) {
     audio.ch3.is_active = false;
     audio.ch4.is_active = false;
     c->memory[NR10] = 0x80;
-    c->memory[NR11] = 0x00;
+    c->memory[NR11] &= 0x3f;
     c->memory[NR12] = 0x00;
     c->memory[NR13] = 0x00;
     c->memory[NR14] = 0xb8;
 
-    c->memory[NR21] = 0x00;
+    c->memory[NR21] &= 0x3f;
     c->memory[NR22] = 0x00;
     c->memory[NR23] = 0x00;
     c->memory[NR24] = 0xb8;
 
     c->memory[NR30] = 0x7f;
-    c->memory[NR31] = 0x00;
+    //c->memory[NR31] = 0x00;
     c->memory[NR32] = 0x00;
     c->memory[NR33] = 0x00;
     c->memory[NR34] = 0xb8;
 
-    c->memory[NR41] = 0xc0;
+    //c->memory[NR41] = 0xc0;
     c->memory[NR42] = 0x00;
     c->memory[NR43] = 0x00;
     c->memory[NR44] = 0xbf;
@@ -112,7 +112,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 // MBC 5
                 case 0x19 ... 0x1e:
                     if (addr <= 0x2fff)
-                        c->cart.bank_select = value;
+                        c->cart.bank_select = value & (c->cart.banks-1);
                     break;
                 default:
                     break;
@@ -122,7 +122,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             switch (c->cart.type) {
                 // MBC 1
                 case 2 ... 3:
-                    if (c->cart.banks > 1) {
+                    if (c->cart.banks_ram > 1) {
                         if (value >= 0 && value <= 3) {
                             c->cart.bank_select_ram = value;
                         }
@@ -130,7 +130,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     break;
                 // MBC 3
                 case 0x12 ... 0x13:
-                    if (c->cart.banks > 1) {
+                    if (c->cart.banks_ram > 1) {
                         if (value >= 0 && value <= 3) {
                             c->cart.bank_select_ram = value;
                         }
@@ -138,7 +138,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     break;
                 // MBC3 Timer
                 case 0x0f ... 0x10:
-                    if (c->cart.banks > 1) {
+                    if (c->cart.banks_ram > 1) {
                         if (value >= 0 && value <= 3) {
                             c->cart.bank_select_ram = value;
                         }
@@ -149,7 +149,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     break;
                 // MBC 5
                 case 0x1a ... 0x1b: case 0x1d ... 0x1e:
-                    if (c->cart.banks > 1) {
+                    if (c->cart.banks_ram > 1) {
                         if (value >= 0 && value <= 16) {
                             c->cart.bank_select_ram = value;
                         }
@@ -188,13 +188,14 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 j1.btn_on = false;
 
         case LYC:
-            if (video.scan_line == value && video.lyc_select)
+            if (video.scan_line == value && video.lyc_select && video.is_on)
                 c->memory[IF] |= 2;
             c->memory[addr] = value;
             break;
 
         case STAT: // STAT Interrupt
-            c->memory[IF] |= 2;
+            if (video.is_on)
+                c->memory[IF] |= 2;
             video.lyc_select = (value >> 6) & 1;
             video.mode2_select = (value >> 5) & 1;
             video.mode1_select = (value >> 4) & 1;
@@ -271,6 +272,10 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 video.window_enable = false;
             video.window_tilemap = (value >> 6) & 1;
             video.is_on = (value >> 7) & 1;
+            if (!video.is_on) {
+                video.mode = 0;
+                video.scan_line = 0;
+            }
 
             video.need_bg_wn_reload = true;
             video.tiles_write = true;
@@ -278,7 +283,14 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             video.need_sprites_reload = true;
             break;
 
-        case NR10: case NR11: case NR12: case NR13:
+        case NR11:
+            audio.ch1.lenght = value & 0x3f;
+            if (audio.is_on)
+                c->memory[addr] = value;
+            else
+                c->memory[addr] = value & 0x3f;
+            break;
+        case NR10: case NR12: case NR13:
             if (audio.is_on)
                 c->memory[addr] = value;
             break;
@@ -292,7 +304,14 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
 
-        case NR21: case NR22: case NR23:
+        case NR21:
+            audio.ch2.lenght = value & 0x3f;
+            if (audio.is_on)
+                c->memory[addr] = value;
+            else
+                c->memory[addr] = value & 0x3f;
+            break;
+        case NR22: case NR23:
             if (audio.is_on)
                 c->memory[addr] = value;
             break;
@@ -306,7 +325,12 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
 
-        case NR30: case NR31: case NR32: case NR33:
+        case NR31:
+            audio.ch3.lenght = value;
+            c->memory[addr] = value;
+            break;
+
+        case NR30: case NR32: case NR33:
             if (audio.is_on)
                 c->memory[addr] = value;
             break;
@@ -320,7 +344,12 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
 
-        case NR41: case NR42: case NR43:
+        case NR41:
+            audio.ch4.lenght = value & 0x3f;
+            c->memory[addr] = value;
+            break;
+
+        case NR42: case NR43:
             if (audio.is_on)
                 c->memory[addr] = value;
             break;
@@ -400,7 +429,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                     return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
                 }
             }
-            return 0;
+            return 255;
         case 0xfea0 ... 0xfeff:
             return 0;
         case 0xe000 ... 0xfdff:
@@ -444,7 +473,10 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case IF:
             return c->memory[addr] | 0xe0;
         case STAT:
-            return video.mode | ((video.scan_line == c->memory[LYC]) << 2) | (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
+            if (video.is_on)
+                return video.mode | ((video.scan_line == c->memory[LYC]) << 2) | (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
+            else
+                return (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
 
         case LY:
             return video.scan_line;

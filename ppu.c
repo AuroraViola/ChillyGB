@@ -308,10 +308,6 @@ void load_display(cpu *c) {
         }
     }
     else {
-        for (uint8_t y = 0; y < 144; y++) {
-            for (uint8_t x = 0; x < 160; x++) {
-                video.display[y][x] = 0;
-            }
-        }
+        memset(video.display, 0, 160*144*sizeof(uint8_t));
     }
 }

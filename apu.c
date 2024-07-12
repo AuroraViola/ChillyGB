@@ -8,7 +8,6 @@
 channels audio;
 
 uint8_t outputlevels[] = {4, 0, 1, 2};
-uint8_t divtable[] = {8, 16, 32, 48, 64, 80, 96, 112};
 
 void load_audio_streams() {
     audio.ch1.stream = LoadAudioStream(44100, 16, 1);
@@ -101,14 +100,13 @@ void Update_CH1(cpu *c) {
     audio.ch1.period_value = get_periodvalue(c, NR13, NR14);
     if (audio.ch1.is_triggered) {
         audio.ch1.is_triggered = false;
-        audio.ch1.lenght = get_lenght(c, NR11);
         audio.ch1.wave_duty = get_wave_duty(c, NR11);
         audio.ch1.volume = get_volume(c, NR12);
         audio.ch1.sweep_pace = (c->memory[NR12] & 7);
         audio.ch1.env_dir = (c->memory[NR12] & 8);
     }
     if ((c->memory[NR14] & 64) != 0 && c->sound_lenght) {
-        if (audio.ch1.lenght < 64)
+        if (audio.ch1.lenght < 63)
             audio.ch1.lenght += 1;
         else
             audio.ch1.is_active = false;
@@ -145,14 +143,13 @@ void Update_CH2(cpu *c) {
     audio.ch2.period_value = get_periodvalue(c, NR23, NR24);
     if (audio.ch2.is_triggered) {
         audio.ch2.is_triggered = false;
-        audio.ch2.lenght = get_lenght(c, NR21);
         audio.ch2.wave_duty = get_wave_duty(c, NR21);
         audio.ch2.volume = get_volume(c, NR22);
         audio.ch2.sweep_pace = (c->memory[NR22] & 7);
         audio.ch2.env_dir = (c->memory[NR22] & 8);
     }
     if ((c->memory[NR24] & 64) != 0 && c->sound_lenght) {
-        if (audio.ch2.lenght < 64)
+        if (audio.ch2.lenght < 63)
             audio.ch2.lenght += 1;
         else
             audio.ch2.is_active = false;
@@ -175,7 +172,6 @@ void Update_CH3(cpu *c) {
     audio.ch3.volume = outputlevels[(c->memory[NR32] & 96) >> 5];
     if (audio.ch3.is_triggered) {
         audio.ch3.is_triggered = false;
-        audio.ch3.lenght = c->memory[NR31];
         create_wave_pattern(c);
     }
     if ((c->memory[NR34] & 64) != 0 && c->sound_lenght) {
@@ -202,14 +198,13 @@ void Update_CH4(cpu *c) {
 
     if (audio.ch4.is_triggered) {
         audio.ch4.is_triggered = false;
-        audio.ch4.lenght = get_lenght(c, NR41);
         audio.ch4.volume = get_volume(c, NR42);
         audio.ch4.sweep_pace = (c->memory[NR42] & 7);
         audio.ch4.env_dir = (c->memory[NR42] & 8);
         audio.ch4.lfsr = 0;
     }
     if ((c->memory[NR44] & 64) != 0 && c->sound_lenght) {
-        if (audio.ch4.lenght < 64)
+        if (audio.ch4.lenght < 63)
             audio.ch4.lenght += 1;
         else {
             audio.ch4.is_active = false;

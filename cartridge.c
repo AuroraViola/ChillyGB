@@ -33,7 +33,6 @@ void save_game(cartridge *cart, char rom_name[256]) {
 void load_game(cartridge *cart, char rom_name[256]) {
     char save_name[256];
     get_save_name(rom_name, save_name);
-    printf("%s\n%s\n", rom_name, save_name);
 
     FILE *file = fopen(rom_name, "r");
     fread(cart->data[0], 0x4000, 1, file);

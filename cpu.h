@@ -21,6 +21,8 @@ typedef struct {
     uint8_t bank_select_ram;
     bool ram_enable;
 
+    bool mbc1mode;
+
 }cartridge;
 
 typedef struct {
