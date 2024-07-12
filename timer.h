@@ -14,6 +14,7 @@ typedef struct {
     bool reset_timer;
 
     int32_t scanline_timer;
+    int32_t lcdoff_timer;
 }timer;
 
 extern timer timer1;

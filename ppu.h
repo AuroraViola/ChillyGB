@@ -61,6 +61,7 @@ typedef struct {
     bool mode0_select;
     bool mode1_select;
     bool mode2_select;
+    bool ly_eq_lyc;
 }ppu;
 
 extern ppu video;

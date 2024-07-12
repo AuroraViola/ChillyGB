@@ -105,21 +105,30 @@ int main(void) {
                         PauseAudioStream(audio.ch4.stream);
                     }
                     video.draw_screen = false;
-                    for (int i = 0; i < 144; i++) {
-                        for (int j = 0; j < 160; j++) {
-                            switch (video.display[i][j]) {
-                                case 0:
-                                    pixels[i][j] = (Color) {185, 237, 186, 255};
-                                    break;
-                                case 1:
-                                    pixels[i][j] = (Color) {118, 196, 123, 255};
-                                    break;
-                                case 2:
-                                    pixels[i][j] = (Color) {49, 106, 64, 255};
-                                    break;
-                                case 3:
-                                    pixels[i][j] = (Color) {10, 38, 16, 255};
-                                    break;
+                    if (video.is_on) {
+                        for (int i = 0; i < 144; i++) {
+                            for (int j = 0; j < 160; j++) {
+                                switch (video.display[i][j]) {
+                                    case 0:
+                                        pixels[i][j] = (Color) {185, 237, 186, 255};
+                                        break;
+                                    case 1:
+                                        pixels[i][j] = (Color) {118, 196, 123, 255};
+                                        break;
+                                    case 2:
+                                        pixels[i][j] = (Color) {49, 106, 64, 255};
+                                        break;
+                                    case 3:
+                                        pixels[i][j] = (Color) {10, 38, 16, 255};
+                                        break;
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        for (int i = 0; i < 144; i++) {
+                            for (int j = 0; j < 160; j++) {
+                                pixels[i][j] = (Color) {200, 237, 186, 255};
                             }
                         }
                     }

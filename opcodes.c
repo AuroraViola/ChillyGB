@@ -49,12 +49,10 @@ void reset_apu_regs(cpu *c) {
     c->memory[NR24] = 0xb8;
 
     c->memory[NR30] = 0x7f;
-    //c->memory[NR31] = 0x00;
     c->memory[NR32] = 0x00;
     c->memory[NR33] = 0x00;
     c->memory[NR34] = 0xb8;
 
-    //c->memory[NR41] = 0xc0;
     c->memory[NR42] = 0x00;
     c->memory[NR43] = 0x00;
     c->memory[NR44] = 0xbf;
@@ -188,8 +186,16 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 j1.btn_on = false;
 
         case LYC:
-            if (video.scan_line == value && video.lyc_select && video.is_on)
-                c->memory[IF] |= 2;
+            if (video.is_on) {
+                if (value == video.scan_line) {
+                    video.ly_eq_lyc = true;
+                    if (video.lyc_select)
+                        c->memory[IF] |= 2;
+                }
+                else {
+                    video.ly_eq_lyc = false;
+                }
+            }
             c->memory[addr] = value;
             break;
 
@@ -271,10 +277,25 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             else
                 video.window_enable = false;
             video.window_tilemap = (value >> 6) & 1;
+
+            bool prev_is_on = video.is_on;
             video.is_on = (value >> 7) & 1;
-            if (!video.is_on) {
+            // PPU turned OFF
+            if (!video.is_on && prev_is_on) {
                 video.mode = 0;
                 video.scan_line = 0;
+                timer1.scanline_timer = 456;
+                timer1.lcdoff_timer += 69768;
+            }
+            // PPU turned ON
+            else if (video.is_on && !prev_is_on) {
+                if (c->memory[LYC] == video.scan_line) {
+                    video.ly_eq_lyc = true;
+                    if (video.lyc_select)
+                        c->memory[IF] |= 2;
+                }
+                else
+                    video.ly_eq_lyc = false;
             }
 
             video.need_bg_wn_reload = true;
@@ -474,9 +495,9 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->memory[addr] | 0xe0;
         case STAT:
             if (video.is_on)
-                return video.mode | ((video.scan_line == c->memory[LYC]) << 2) | (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
+                return video.mode | (video.ly_eq_lyc << 2) | (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
             else
-                return (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
+                return (video.ly_eq_lyc << 2) | (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
 
         case LY:
             return video.scan_line;

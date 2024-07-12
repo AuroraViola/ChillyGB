@@ -196,29 +196,47 @@ void add_ticks(cpu *c, uint16_t ticks) {
                     video.wy_trigger = false;
                     video.window_internal_line = 0;
                 }
-                if (video.scan_line == c->memory[LYC] && video.lyc_select)
+
+                video.ly_eq_lyc = (video.scan_line == c->memory[LYC]);
+                if (video.lyc_select & video.ly_eq_lyc)
                     c->memory[IF] |= 2;
+
                 if (update_keys())
                     c->memory[IF] |= 16;
             }
 
             if (video.scan_line < 144) {
+                // Mode 2
                 if (timer1.scanline_timer > 376 && video.mode != 2) {
                     if (video.scan_line == c->memory[WY])
                         video.wy_trigger = true;
                     video.mode = 2;
                     if (video.mode2_select)
                         c->memory[IF] |= 2;
-                } else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 &&
+                }
+                // Mode 3
+                else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 &&
                            video.mode != 3) {
                     video.mode3_duration = get_mode3_duration(c);
                     video.mode = 3;
-                } else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
+                }
+                // Mode 0
+                else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
                     load_display(c);
                     video.mode = 0;
                     if (video.mode0_select)
                         c->memory[IF] |= 2;
                 }
+            }
+        }
+        else {
+            timer1.lcdoff_timer -= 4;
+            if (timer1.lcdoff_timer < 0) {
+                timer1.lcdoff_timer += 69768;
+                load_display(c);
+                video.draw_screen = true;
+                if (update_keys())
+                    c->memory[IF] |= 16;
             }
         }
 
