@@ -189,8 +189,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             if (video.is_on) {
                 if (value == video.scan_line) {
                     video.ly_eq_lyc = true;
-                    if (video.lyc_select)
-                        c->memory[IF] |= 2;
                 }
                 else {
                     video.ly_eq_lyc = false;
@@ -200,8 +198,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case STAT: // STAT Interrupt
-            if (video.is_on)
-                c->memory[IF] |= 2;
+            c->memory[IF] |= 2;
             video.lyc_select = (value >> 6) & 1;
             video.mode2_select = (value >> 5) & 1;
             video.mode1_select = (value >> 4) & 1;
@@ -286,6 +283,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 video.scan_line = 0;
                 timer1.scanline_timer = 456;
                 timer1.lcdoff_timer += 69768;
+                load_display(c);
             }
             // PPU turned ON
             else if (video.is_on && !prev_is_on) {

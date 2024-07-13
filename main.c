@@ -2,6 +2,9 @@
 #include "cpu.h"
 #include "ppu.h"
 #include "apu.h"
+#include "timer.h"
+#include "opcodes.h"
+#include "debug.h"
 #include "input.h"
 #include "cartridge.h"
 #include <stdio.h>
@@ -12,6 +15,7 @@
 typedef enum EmuModes{
     MENU = 0,
     GAME,
+    DEBUG,
 }EmuModes;
 
 int main(void) {
@@ -47,6 +51,8 @@ int main(void) {
     load_audio_streams();
 
     float scale;
+
+    char instructions[20][50];
 
     bool game_started = false;
     while(!WindowShouldClose()) {
@@ -104,6 +110,13 @@ int main(void) {
                         PauseAudioStream(audio.ch3.stream);
                         PauseAudioStream(audio.ch4.stream);
                     }
+                    if (IsKeyPressed(KEY_F3)) {
+                        emulator_mode = DEBUG;
+                        PauseAudioStream(audio.ch1.stream);
+                        PauseAudioStream(audio.ch2.stream);
+                        PauseAudioStream(audio.ch3.stream);
+                        PauseAudioStream(audio.ch4.stream);
+                    }
                     video.draw_screen = false;
                     if (video.is_on) {
                         for (int i = 0; i < 144; i++) {
@@ -145,6 +158,93 @@ int main(void) {
                     sprintf(str, "ChillyGB - %d FPS - %.1fx", fps, (float)(fps)/60);
                     SetWindowTitle(str);
                 }
+                break;
+
+            case DEBUG:
+                decode_instructions(&c, instructions);
+                if (IsKeyDown(KEY_F)) {
+                    for (int i = 0; i < 50; i++) {
+                        execute(&c);
+                        Update_Audio(&c);
+                    }
+                }
+                if (IsKeyPressed(KEY_N)) {
+                    execute(&c);
+                    Update_Audio(&c);
+                    decode_instructions(&c, instructions);
+                }
+                if (IsKeyPressed(KEY_R)) {
+                    initialize_cpu_memory(&c);
+                }
+
+                if (IsKeyPressed(KEY_F3)) {
+                    emulator_mode = GAME;
+                    ResumeAudioStream(audio.ch1.stream);
+                    ResumeAudioStream(audio.ch2.stream);
+                    ResumeAudioStream(audio.ch3.stream);
+                    ResumeAudioStream(audio.ch4.stream);
+                }
+                if (video.is_on) {
+                    for (int i = 0; i < 144; i++) {
+                        for (int j = 0; j < 160; j++) {
+                            int alpha = 255;
+                            int red = 0;
+                            if (i == video.scan_line)
+                                alpha = 127;
+                            if (i == c.memory[LYC])
+                                red = 20;
+                            switch (video.display[i][j]) {
+                                case 0:
+                                    pixels[i][j] = (Color) {185+red, 237, 186, alpha};
+                                    break;
+                                case 1:
+                                    pixels[i][j] = (Color) {118+red, 196, 123, alpha};
+                                    break;
+                                case 2:
+                                    pixels[i][j] = (Color) {49+red, 106, 64, alpha};
+                                    break;
+                                case 3:
+                                    pixels[i][j] = (Color) {10+red, 38, 16, alpha};
+                                    break;
+                            }
+                        }
+                    }
+                }
+                else {
+                    for (int i = 0; i < 144; i++) {
+                        for (int j = 0; j < 160; j++) {
+                            pixels[i][j] = (Color) {200, 237, 186, 255};
+                        }
+                    }
+                }
+                UpdateTexture(display, pixels);
+                BeginDrawing();
+                ClearBackground(BLACK);
+                    DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
+                                   (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
+                                                (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
+                                                (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+                    DrawText(TextFormat("AF: %04X", c.r.reg16[AF]), 0, 24*0, 30, WHITE);
+                    DrawText(TextFormat("BC: %04X", c.r.reg16[BC]), 0, 24*1, 30, WHITE);
+                    DrawText(TextFormat("DE: %04X", c.r.reg16[DE]), 0, 24*2, 30, WHITE);
+                    DrawText(TextFormat("HL: %04X", c.r.reg16[HL]), 0, 24*3, 30, WHITE);
+                    DrawText(TextFormat("SP: %04X", c.sp), 0, 24*4, 30, WHITE);
+                    DrawText(TextFormat("PC: %04X", c.pc), 0, 24*5, 30, WHITE);
+                    DrawText(TextFormat("IME: %i", c.ime), 160, 24*0, 30, WHITE);
+
+                    DrawText(TextFormat("LY: %i", get_mem(&c, LY)), 0, 24*7, 30, WHITE);
+                    DrawText(TextFormat("LYC: %i", get_mem(&c, LYC)), 0, 24*8, 30, WHITE);
+                    DrawText(TextFormat("PPU mode: %i", video.mode), 0, 24*9, 30, WHITE);
+                    DrawText(TextFormat("STAT: %08b", get_mem(&c, STAT)), 0, 24*10, 30, WHITE);
+                    DrawText(TextFormat("IE: %08b", get_mem(&c, IE)), 0, 24*11, 30, WHITE);
+                    DrawText(TextFormat("IF: %08b", get_mem(&c, IF)), 0, 24*12, 30, WHITE);
+
+                    for (int i = 0; i < 20; i++) {
+                        DrawText(TextFormat("%s", instructions[i]), GetScreenWidth()-400, 28*i, 30, WHITE);
+                    }
+
+                EndDrawing();
+                SetWindowTitle("ChilliGB - Debug");
                 break;
         }
 

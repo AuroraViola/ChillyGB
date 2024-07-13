@@ -174,11 +174,29 @@ void initialize_cpu_memory(cpu *c) {
     timer1.t_states = 23440324;
 }
 
+bool is_stat_condition(cpu *c) {
+    if (video.ly_eq_lyc && video.lyc_select) {
+        return true;
+    }
+    else if (video.mode == 0 && video.mode0_select) {
+        return true;
+    }
+    else if (video.mode == 1 && video.mode1_select) {
+        return true;
+    }
+    else if (video.mode == 2 && video.mode2_select) {
+        return true;
+    }
+    return false;
+
+}
+
 void add_ticks(cpu *c, uint16_t ticks) {
     ticks >>= 2;
     for (int i = 0; i < ticks; i++) {
         if (video.is_on) {
             timer1.scanline_timer -= 4;
+            bool prev_stat = is_stat_condition(c);
             if (timer1.scanline_timer < 0) {
                 timer1.scanline_timer += 456;
                 video.scan_line++;
@@ -186,7 +204,7 @@ void add_ticks(cpu *c, uint16_t ticks) {
                 if (video.scan_line == 144) {
                     video.mode = 1;
                     c->memory[IF] |= 1;
-                    if (video.mode1_select || video.mode2_select)
+                    if (video.mode2_select && !prev_stat)
                         c->memory[IF] |= 2;
                     video.draw_screen = true;
                 }
@@ -198,8 +216,6 @@ void add_ticks(cpu *c, uint16_t ticks) {
                 }
 
                 video.ly_eq_lyc = (video.scan_line == c->memory[LYC]);
-                if (video.lyc_select & video.ly_eq_lyc)
-                    c->memory[IF] |= 2;
 
                 if (update_keys())
                     c->memory[IF] |= 16;
@@ -211,8 +227,6 @@ void add_ticks(cpu *c, uint16_t ticks) {
                     if (video.scan_line == c->memory[WY])
                         video.wy_trigger = true;
                     video.mode = 2;
-                    if (video.mode2_select)
-                        c->memory[IF] |= 2;
                 }
                 // Mode 3
                 else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 &&
@@ -224,10 +238,10 @@ void add_ticks(cpu *c, uint16_t ticks) {
                 else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
                     load_display(c);
                     video.mode = 0;
-                    if (video.mode0_select)
-                        c->memory[IF] |= 2;
                 }
             }
+            if (is_stat_condition(c) && !prev_stat)
+                c->memory[IF] |= 2;
         }
         else {
             timer1.lcdoff_timer -= 4;
@@ -285,56 +299,31 @@ void run_interrupt(cpu *c) {
     if ((c->memory[IE] & c->memory[IF]) != 0) {
         c->ime = false;
         c->is_halted = false;
+        c->sp--;
+        c->memory[c->sp] = (uint8_t)(c->pc >> 8);
+        c->sp--;
+        c->memory[c->sp] = (uint8_t)(c->pc);
         if (((c->memory[IE] & 1) == 1) && ((c->memory[IF] & 1) == 1)) {
             c->memory[IF] &= 0b11111110;
-            c->ime = false;
-            c->sp--;
-            c->memory[c->sp] = (uint8_t)(c->pc >> 8);
-            c->sp--;
-            c->memory[c->sp] = (uint8_t)(c->pc);
             c->pc = 0x40;
-            add_ticks(c, 20);
         }
         else if (((c->memory[IE] & 2) == 2) && ((c->memory[IF] & 2) == 2)) {
             c->memory[IF] &= 0b11111101;
-            c->ime = false;
-            c->sp--;
-            c->memory[c->sp] = (uint8_t) (c->pc >> 8);
-            c->sp--;
-            c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x48;
-            add_ticks(c, 20);
         }
         else if (((c->memory[IE] & 4) == 4) && ((c->memory[IF] & 4) == 4)) {
             c->memory[IF] &= 0b11111011;
-            c->ime = false;
-            c->sp--;
-            c->memory[c->sp] = (uint8_t) (c->pc >> 8);
-            c->sp--;
-            c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x50;
-            add_ticks(c, 20);
         }
         else if (((c->memory[IE] & 8) == 8) && ((c->memory[IF] & 8) == 8)) {
             c->memory[IF] &= 0b11110111;
-            c->ime = false;
-            c->sp--;
-            c->memory[c->sp] = (uint8_t) (c->pc >> 8);
-            c->sp--;
-            c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x58;
-            add_ticks(c, 20);
         }
         else if (((c->memory[IE] & 16) == 16) && ((c->memory[IE] & 16) == 16)) {
             c->memory[IF] &= 0b11101111;
-            c->ime = false;
-            c->sp--;
-            c->memory[c->sp] = (uint8_t) (c->pc >> 8);
-            c->sp--;
-            c->memory[c->sp] = (uint8_t) (c->pc);
             c->pc = 0x60;
-            add_ticks(c, 20);
         }
+        add_ticks(c, 20);
     }
 }
 
