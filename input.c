@@ -4,18 +4,18 @@
 #include "raylib.h"
 #include <stdint.h>
 
-joypad j1;
+joypad joypad1;
 
 bool update_keys() {
     for (int i = 0; i < 4; i++) {
-        if (IsKeyDown(j1.keys_dpad[i]))
-            j1.dpad[i] = 0;
+        if (IsKeyDown(joypad1.keys_dpad[i]))
+            joypad1.dpad[i] = 0;
         else
-            j1.dpad[i] = 1;
-        if (IsKeyDown(j1.keys_btn[i]))
-            j1.btn[i] = 0;
+            joypad1.dpad[i] = 1;
+        if (IsKeyDown(joypad1.keys_btn[i]))
+            joypad1.btn[i] = 0;
         else
-            j1.btn[i] = 1;
+            joypad1.btn[i] = 1;
     }
 
     if (IsKeyPressed(KEY_SPACE))
@@ -29,9 +29,9 @@ bool update_keys() {
         SetTargetFPS(60);
 
     for (int i = 0; i < 4; i++) {
-        if (IsKeyPressed(j1.keys_dpad[i]))
+        if (IsKeyPressed(joypad1.keys_dpad[i]))
             return true;
-        if (IsKeyPressed(j1.keys_btn[i]))
+        if (IsKeyPressed(joypad1.keys_btn[i]))
             return true;
     }
     return false;

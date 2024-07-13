@@ -177,13 +177,13 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
         case JOYP:
             if (((value >> 4) & 1) == 0)
-                j1.dpad_on = true;
+                joypad1.dpad_on = true;
             else
-                j1.dpad_on = false;
+                joypad1.dpad_on = false;
             if (((value >> 5) & 1) == 0)
-                j1.btn_on = true;
+                joypad1.btn_on = true;
             else
-                j1.btn_on = false;
+                joypad1.btn_on = false;
 
         case LYC:
             if (video.is_on) {
@@ -455,29 +455,29 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->memory[addr - 0x2000];
 
         case JOYP:
-            if (j1.btn_on && j1.dpad_on) {
+            if (joypad1.btn_on && joypad1.dpad_on) {
                 uint8_t enc = 0;
                 for (int i = 0; i < 4; i++) {
-                    enc |= (j1.btn[i]) << i;
+                    enc |= (joypad1.btn[i]) << i;
                 }
-                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc | 0xc0;
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | enc | 0xc0;
             }
-            else if (j1.btn_on) {
+            else if (joypad1.btn_on) {
                 uint8_t enc = 0;
                 for (int i = 0; i < 4; i++) {
-                    enc |= (j1.btn[i]) << i;
+                    enc |= (joypad1.btn[i]) << i;
                 }
-                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc | 0xc0;
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | enc | 0xc0;
             }
-            else if (j1.dpad_on) {
+            else if (joypad1.dpad_on) {
                 uint8_t enc = 0;
                 for (int i = 0; i < 4; i++) {
-                    enc |= (j1.dpad[i]) << i;
+                    enc |= (joypad1.dpad[i]) << i;
                 }
-                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | enc | 0xc0;
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | enc | 0xc0;
             }
             else {
-                return (j1.dpad_on << 4) | (j1.dpad_on << 5) | 0xcf;
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | 0xcf;
             }
         case SC:
             return c->memory[addr] | 0x7e;
@@ -1902,7 +1902,6 @@ uint8_t ld_hl_sp_imm8(cpu *c, parameters *p) {
 }
 
 uint8_t halt(cpu *c, parameters *p) {
-    c->pc += 1;
     c->is_halted = true;
     return 4;
 }

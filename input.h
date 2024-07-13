@@ -26,7 +26,7 @@ enum buttons {
     BUTTON_START = 3
 };
 
-extern joypad j1;
+extern joypad joypad1;
 bool update_keys();
 
 #endif //CHILLYGB_INPUT_H

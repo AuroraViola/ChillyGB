@@ -10,6 +10,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+
+#include "style_dark.h"
+
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
 typedef enum EmuModes{
@@ -26,6 +31,8 @@ int main(void) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*4, 144*4, "ChillyGB");
     SetExitKey(KEY_NULL);
+    GuiLoadStyleDark();
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 32);
     SetWindowMinSize(160, 144);
     SetTargetFPS(60);
     Color pixels[144][160] = { 0 };
@@ -52,9 +59,39 @@ int main(void) {
 
     float scale;
 
-    char instructions[20][50];
+    int ff_speed = 50;
+
+    char instructions[30][50];
+    Vector2 MousePosition = { 0 };
+    Vector2 panOffset = MousePosition;
+
+
+    Vector2 DisplayOffset = {-664, 24};
+    bool DisplayBoxActive = true;
+    bool DisplayBoxDrag = false;
+
+    Vector2 RegistersOffset = {24, 24};
+    bool RegistersBoxActive = true;
+    bool RegistersBoxDrag = false;
+
+    Vector2 InstructionsOffset = {280, 24};
+    bool InstructionsBoxActive = false;
+    bool InstructionsBoxDrag = false;
+
+    Vector2 PPUInfoOffset = {24, 300};
+    bool PPUInfoBoxActive = false;
+    bool PPUInfoBoxDrag = false;
+
+    Vector2 IntrInfoOffset = {24, 364};
+    bool IntrInfoBoxActive = false;
+    bool IntrInfoBoxDrag = false;
+
+    Vector2 CartInfoOffset = {24, 428};
+    bool CartInfoBoxActive = false;
+    bool CartInfoBoxDrag = false;
 
     bool game_started = false;
+
     while(!WindowShouldClose()) {
         if (IsFileDropped()) {
             FilePathList droppedFiles = LoadDroppedFiles();
@@ -161,18 +198,96 @@ int main(void) {
                 break;
 
             case DEBUG:
+                Vector2 TopRightAnchor = {GetScreenWidth(), 0};
+                MousePosition = GetMousePosition();
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !DisplayBoxDrag && !RegistersBoxDrag && !InstructionsBoxDrag && !PPUInfoBoxDrag && !CartInfoBoxDrag && !IntrInfoBoxDrag) {
+                    if (CheckCollisionPointRec(MousePosition, (Rectangle){ IntrInfoOffset.x, IntrInfoOffset.y, 250, 24 })) {
+                        IntrInfoBoxDrag = true;
+                    }
+                    else if (CheckCollisionPointRec(MousePosition, (Rectangle){ CartInfoOffset.x, CartInfoOffset.y, 250, 24 })) {
+                        CartInfoBoxDrag = true;
+                    }
+                    else if (CheckCollisionPointRec(MousePosition, (Rectangle){ PPUInfoOffset.x, PPUInfoOffset.y, 250, 24 })) {
+                        PPUInfoBoxDrag = true;
+                    }
+                    else if (CheckCollisionPointRec(MousePosition, (Rectangle){ InstructionsOffset.x, InstructionsOffset.y, 350, 24 })) {
+                        InstructionsBoxDrag = true;
+                    }
+                    else if (CheckCollisionPointRec(MousePosition, (Rectangle){ RegistersOffset.x, RegistersOffset.y, 176, 24 })) {
+                        RegistersBoxDrag = true;
+                    }
+                    else if (CheckCollisionPointRec(MousePosition, (Rectangle){ TopRightAnchor.x-1 + DisplayOffset.x, DisplayOffset.y, 642, 24 })) {
+                        DisplayBoxDrag = true;
+                    }
+                }
+
+                if (DisplayBoxDrag) {
+                    DisplayOffset.x += (MousePosition.x - panOffset.x);
+                    DisplayOffset.y += (MousePosition.y - panOffset.y);
+
+                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                        DisplayBoxDrag = false;
+                    }
+                }
+
+                else if (RegistersBoxDrag) {
+                    RegistersOffset.x += (MousePosition.x - panOffset.x);
+                    RegistersOffset.y += (MousePosition.y - panOffset.y);
+
+                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                        RegistersBoxDrag = false;
+                    }
+                }
+
+                else if (InstructionsBoxDrag) {
+                    InstructionsOffset.x += (MousePosition.x - panOffset.x);
+                    InstructionsOffset.y += (MousePosition.y - panOffset.y);
+
+                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                        InstructionsBoxDrag = false;
+                    }
+                }
+                else if (PPUInfoBoxDrag) {
+                    PPUInfoOffset.x += (MousePosition.x - panOffset.x);
+                    PPUInfoOffset.y += (MousePosition.y - panOffset.y);
+
+                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                        PPUInfoBoxDrag = false;
+                    }
+                }
+                else if (CartInfoBoxDrag) {
+                    CartInfoOffset.x += (MousePosition.x - panOffset.x);
+                    CartInfoOffset.y += (MousePosition.y - panOffset.y);
+
+                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                        CartInfoBoxDrag = false;
+                    }
+                }
+                else if (IntrInfoBoxDrag) {
+                    IntrInfoOffset.x += (MousePosition.x - panOffset.x);
+                    IntrInfoOffset.y += (MousePosition.y - panOffset.y);
+
+                    if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+                        IntrInfoBoxDrag = false;
+                    }
+                }
+                panOffset = MousePosition;
+                debugtexts texts;
+                generate_texts(&c, &texts);
                 decode_instructions(&c, instructions);
+
                 if (IsKeyDown(KEY_F)) {
-                    for (int i = 0; i < 50; i++) {
+                    for (int i = 0; i < ff_speed; i++) {
                         execute(&c);
                         Update_Audio(&c);
                     }
                 }
+
                 if (IsKeyPressed(KEY_N)) {
                     execute(&c);
                     Update_Audio(&c);
-                    decode_instructions(&c, instructions);
                 }
+
                 if (IsKeyPressed(KEY_R)) {
                     initialize_cpu_memory(&c);
                 }
@@ -184,6 +299,7 @@ int main(void) {
                     ResumeAudioStream(audio.ch3.stream);
                     ResumeAudioStream(audio.ch4.stream);
                 }
+
                 if (video.is_on) {
                     for (int i = 0; i < 144; i++) {
                         for (int j = 0; j < 160; j++) {
@@ -219,33 +335,72 @@ int main(void) {
                 }
                 UpdateTexture(display, pixels);
                 BeginDrawing();
-                ClearBackground(BLACK);
-                    DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
-                                   (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
-                                                (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
-                                                (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
-                    DrawText(TextFormat("AF: %04X", c.r.reg16[AF]), 0, 24*0, 30, WHITE);
-                    DrawText(TextFormat("BC: %04X", c.r.reg16[BC]), 0, 24*1, 30, WHITE);
-                    DrawText(TextFormat("DE: %04X", c.r.reg16[DE]), 0, 24*2, 30, WHITE);
-                    DrawText(TextFormat("HL: %04X", c.r.reg16[HL]), 0, 24*3, 30, WHITE);
-                    DrawText(TextFormat("SP: %04X", c.sp), 0, 24*4, 30, WHITE);
-                    DrawText(TextFormat("PC: %04X", c.pc), 0, 24*5, 30, WHITE);
-                    DrawText(TextFormat("IME: %i", c.ime), 160, 24*0, 30, WHITE);
-
-                    DrawText(TextFormat("LY: %i", get_mem(&c, LY)), 0, 24*7, 30, WHITE);
-                    DrawText(TextFormat("LYC: %i", get_mem(&c, LYC)), 0, 24*8, 30, WHITE);
-                    DrawText(TextFormat("PPU mode: %i", video.mode), 0, 24*9, 30, WHITE);
-                    DrawText(TextFormat("LCDC: %08b", get_mem(&c, LCDC)), 0, 24*10, 30, WHITE);
-                    DrawText(TextFormat("STAT: %08b", get_mem(&c, STAT)), 0, 24*11, 30, WHITE);
-                    DrawText(TextFormat("IE: %08b", get_mem(&c, IE)), 0, 24*12, 30, WHITE);
-                    DrawText(TextFormat("IF: %08b", get_mem(&c, IF)), 0, 24*13, 30, WHITE);
-
-                    for (int i = 0; i < 20; i++) {
-                        DrawText(TextFormat("%s", instructions[i]), GetScreenWidth()-400, 28*i, 30, WHITE);
+                    ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
+                    if (DisplayBoxActive) {
+                        DisplayBoxActive = !GuiWindowBox((Rectangle){ TopRightAnchor.x-1 + DisplayOffset.x, DisplayOffset.y, 642, 601 }, "Display");
+                        DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
+                                       (Rectangle) {(TopRightAnchor.x + DisplayOffset.x),
+                                                    DisplayOffset.y+24,
+                                                    (float) 160 * 4, (float) 144 * 4},
+                                       (Vector2) {0, 0}, 0.0f, WHITE);
                     }
+                    else
+                        DisplayBoxActive = GuiWindowBox((Rectangle){ TopRightAnchor.x-1 + DisplayOffset.x, DisplayOffset.y, 642, 0 }, "Display");
+
+                    if (RegistersBoxActive) {
+                        RegistersBoxActive = !GuiWindowBox((Rectangle){ RegistersOffset.x, RegistersOffset.y, 176, 258 }, "Registers");
+                        GuiLabel((Rectangle){ RegistersOffset.x + 8, RegistersOffset.y + 32, 120, 24 }, texts.AFtext);
+                        GuiLabel((Rectangle){ RegistersOffset.x + 8, RegistersOffset.y + 64, 120, 24 }, texts.BCtext);
+                        GuiLabel((Rectangle){ RegistersOffset.x + 8, RegistersOffset.y + 96, 120, 24 }, texts.DEtext);
+                        GuiLabel((Rectangle){ RegistersOffset.x + 8, RegistersOffset.y + 128, 120, 24 }, texts.HLtext);
+                        GuiLabel((Rectangle){ RegistersOffset.x + 8, RegistersOffset.y + 160, 120, 24 }, texts.SPtext);
+                        GuiLabel((Rectangle){ RegistersOffset.x + 8, RegistersOffset.y + 192, 120, 24 }, texts.PCtext);
+                        GuiLabel((Rectangle){ RegistersOffset.x + 8, RegistersOffset.y + 224, 120, 24 }, texts.IMEtext);
+                    }
+                    else
+                        RegistersBoxActive = GuiWindowBox((Rectangle){ RegistersOffset.x, RegistersOffset.y, 176, 0 }, "Registers");
+
+                    if (InstructionsBoxActive) {
+                        InstructionsBoxActive = !GuiWindowBox((Rectangle){ InstructionsOffset.x, InstructionsOffset.y, 350, 670 }, "Instructions");
+                        for (int i = 0; i < 20; i++) {
+                            GuiLabel((Rectangle){ InstructionsOffset.x + 5, InstructionsOffset.y + (32 * (i+1)), 340, 24 }, instructions[i]);
+                        }
+                    }
+                    else
+                        InstructionsBoxActive = GuiWindowBox((Rectangle){ InstructionsOffset.x, InstructionsOffset.y, 350, 0 }, "Instructions");
+
+                    if (PPUInfoBoxActive) {
+                        PPUInfoBoxActive = !GuiWindowBox((Rectangle){ PPUInfoOffset.x, PPUInfoOffset.y, 250, 200 }, "PPU State");
+                        GuiLabel((Rectangle){ PPUInfoOffset.x + 8, PPUInfoOffset.y + 32, 250, 24 }, texts.LYtext);
+                        GuiLabel((Rectangle){ PPUInfoOffset.x + 8, PPUInfoOffset.y + 64, 250, 24 }, texts.LYCtext);
+                        GuiLabel((Rectangle){ PPUInfoOffset.x + 8, PPUInfoOffset.y + 96, 250, 24 }, texts.PPUMode);
+                        GuiLabel((Rectangle){ PPUInfoOffset.x + 8, PPUInfoOffset.y + 128, 250, 24 }, texts.LCDCtext);
+                        GuiLabel((Rectangle){ PPUInfoOffset.x + 8, PPUInfoOffset.y + 160, 250, 24 }, texts.STATtext);
+                    }
+                    else
+                        PPUInfoBoxActive = GuiWindowBox((Rectangle){ PPUInfoOffset.x, PPUInfoOffset.y, 250, 0 }, "PPU State");
+
+                    if (CartInfoBoxActive) {
+                        CartInfoBoxActive = !GuiWindowBox((Rectangle) {CartInfoOffset.x, CartInfoOffset.y, 250, 130}, "Cartridge state");
+                        GuiLabel((Rectangle) {CartInfoOffset.x + 8, CartInfoOffset.y + 32, 250, 24}, texts.BANKtext);
+                        GuiLabel((Rectangle) {CartInfoOffset.x + 8, CartInfoOffset.y + 64, 250, 24}, texts.RAMBANKtext);
+                        GuiLabel((Rectangle) {CartInfoOffset.x + 8, CartInfoOffset.y + 96, 250, 24}, texts.RAMENtext);
+                    }
+                    else
+                        CartInfoBoxActive = GuiWindowBox((Rectangle) {CartInfoOffset.x, CartInfoOffset.y, 250, 0}, "Cartridge state");
+
+                    if (IntrInfoBoxActive) {
+                        IntrInfoBoxActive = !GuiWindowBox((Rectangle) {IntrInfoOffset.x, IntrInfoOffset.y, 250, 130}, "Interrupts state");
+                        GuiLabel((Rectangle) {IntrInfoOffset.x + 8, IntrInfoOffset.y + 32, 250, 24}, texts.IEtext);
+                        GuiLabel((Rectangle) {IntrInfoOffset.x + 8, IntrInfoOffset.y + 64, 250, 24}, texts.IFtext);
+                        GuiLabel((Rectangle) {IntrInfoOffset.x + 8, IntrInfoOffset.y + 96, 250, 24}, texts.IMEtext);
+                    }
+                    else
+                        IntrInfoBoxActive = GuiWindowBox((Rectangle) {IntrInfoOffset.x, IntrInfoOffset.y, 250, 0}, "Interrupts state");
+
 
                 EndDrawing();
-                SetWindowTitle("ChilliGB - Debug");
+                SetWindowTitle("ChillyGB - Debug");
                 break;
         }
 

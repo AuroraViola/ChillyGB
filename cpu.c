@@ -116,8 +116,8 @@ void initialize_cpu_memory(cpu *c) {
     // Initialize Joypad
     KeyboardKey keys[] = {KEY_D, KEY_A, KEY_W, KEY_S, KEY_L, KEY_K, KEY_BACKSPACE, KEY_ENTER};
     for (int i = 0; i < 4; i++) {
-        j1.keys_dpad[i] = keys[i];
-        j1.keys_btn[i] = keys[i+4];
+        joypad1.keys_dpad[i] = keys[i];
+        joypad1.keys_btn[i] = keys[i+4];
     }
 
     // Initialize WRAM
@@ -209,10 +209,11 @@ void add_ticks(cpu *c, uint16_t ticks) {
                     video.draw_screen = true;
                 }
 
-                if (video.scan_line > 153) {
+                if (video.scan_line > 152) {
                     video.scan_line = 0;
                     video.wy_trigger = false;
                     video.window_internal_line = 0;
+                    timer1.scanline_timer += 456;
                 }
 
                 video.ly_eq_lyc = (video.scan_line == c->memory[LYC]);
@@ -498,6 +499,7 @@ void execute(cpu *c) {
     else {
         add_ticks(c, 4);
         if ((c->memory[IE] & c->memory[IF]) != 0) {
+            c->pc++;
             c->is_halted = false;
         }
     }

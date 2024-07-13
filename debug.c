@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include "debug.h"
 #include "cpu.h"
 #include "opcodes.h"
+#include "ppu.h"
 
 const uint8_t rst_vec_1[] = {0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38};
 const char r8_1[][5] = {"B", "c", "d", "e", "h", "l", "[hl]", "a"};
@@ -8,6 +10,32 @@ const char r16_1[][3] = {"bc", "de", "hl", "sp"};
 const char r16stk_1[][3] = {"bc", "de", "hl", "af"};
 const char r16mem_1[][4] = {"bc", "de", "hl+", "hl-"};
 const char cond_1[][4] = {"nz", "z", "nc", "c"};
+
+void generate_texts(cpu *c, debugtexts *texts) {
+    sprintf(texts->AFtext, "AF: %04X", c->r.reg16[AF]);
+    sprintf(texts->BCtext, "BC: %04X", c->r.reg16[BC]);
+    sprintf(texts->DEtext, "DE: %04X", c->r.reg16[DE]);
+    sprintf(texts->HLtext, "HL: %04X", c->r.reg16[HL]);
+    sprintf(texts->SPtext, "SP: %04X", c->sp);
+    sprintf(texts->PCtext, "PC: %04X", c->pc);
+    if (c->ime)
+        sprintf(texts->IMEtext, "IME: ON");
+    else
+        sprintf(texts->IMEtext, "IME: OFF");
+
+    sprintf(texts->LYtext, "LY: %i", get_mem(c, LY));
+    sprintf(texts->LYCtext, "LYC: %i", get_mem(c, LYC));
+    sprintf(texts->PPUMode, "PPU Mode: %i", video.mode);
+    sprintf(texts->LCDCtext, "LCDC: %08b", get_mem(c, LCDC));
+    sprintf(texts->STATtext, "STAT: %08b", get_mem(c, STAT));
+
+    sprintf(texts->IEtext, "IE: %08b", get_mem(c, IE));
+    sprintf(texts->IFtext, "IF: %08b", get_mem(c, IF));
+
+    sprintf(texts->BANKtext, "Bank: %i", c->cart.bank_select);
+    sprintf(texts->RAMBANKtext, "Ram Bank: %i", c->cart.bank_select_ram);
+    sprintf(texts->RAMENtext, "Ram En: %i", c->cart.ram_enable);
+}
 
 int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
     parameters p = {};
@@ -83,10 +111,10 @@ int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
             sprintf(instruction, "%04X: LD [$%04X], SP", v_pc, p.imm16);
             return 3;
         case 0x20: case 0x30: case 0x28: case 0x38:
-            sprintf(instruction, "%04X: JR %s $%04X", v_pc, cond_1[p.condition], (v_pc + (int8_t)(p.imm8)));
+            sprintf(instruction, "%04X: JR %s $%04X", v_pc, cond_1[p.condition], ((v_pc + (int8_t)(p.imm8)) + 2));
             return 2;
         case 0x18:
-            sprintf(instruction, "%04X: JR $%04X", v_pc, (v_pc + (int8_t)(p.imm8)));
+            sprintf(instruction, "%04X: JR $%04X", v_pc, ((v_pc + (int8_t)(p.imm8)) + 2));
             return 2;
         case 0xf3:
             sprintf(instruction, "%04X: DI", v_pc);
@@ -224,9 +252,9 @@ int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
 }
 
 
-void decode_instructions(cpu *c, char instruction[20][50]) {
+void decode_instructions(cpu *c, char instruction[30][50]) {
     uint16_t virtual_pc = c->pc;
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 30; i++) {
         virtual_pc += decode_instruction(c, virtual_pc, instruction[i]);
     }
 }
