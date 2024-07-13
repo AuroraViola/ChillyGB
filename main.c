@@ -235,9 +235,10 @@ int main(void) {
                     DrawText(TextFormat("LY: %i", get_mem(&c, LY)), 0, 24*7, 30, WHITE);
                     DrawText(TextFormat("LYC: %i", get_mem(&c, LYC)), 0, 24*8, 30, WHITE);
                     DrawText(TextFormat("PPU mode: %i", video.mode), 0, 24*9, 30, WHITE);
-                    DrawText(TextFormat("STAT: %08b", get_mem(&c, STAT)), 0, 24*10, 30, WHITE);
-                    DrawText(TextFormat("IE: %08b", get_mem(&c, IE)), 0, 24*11, 30, WHITE);
-                    DrawText(TextFormat("IF: %08b", get_mem(&c, IF)), 0, 24*12, 30, WHITE);
+                    DrawText(TextFormat("LCDC: %08b", get_mem(&c, LCDC)), 0, 24*10, 30, WHITE);
+                    DrawText(TextFormat("STAT: %08b", get_mem(&c, STAT)), 0, 24*11, 30, WHITE);
+                    DrawText(TextFormat("IE: %08b", get_mem(&c, IE)), 0, 24*12, 30, WHITE);
+                    DrawText(TextFormat("IF: %08b", get_mem(&c, IF)), 0, 24*13, 30, WHITE);
 
                     for (int i = 0; i < 20; i++) {
                         DrawText(TextFormat("%s", instructions[i]), GetScreenWidth()-400, 28*i, 30, WHITE);
