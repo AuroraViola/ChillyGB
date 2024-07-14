@@ -26,6 +26,12 @@ typedef struct {
     char BANKtext[20];
     char RAMBANKtext[20];
     char RAMENtext[20];
+
+    char TSTATEStext[20];
+    char DIV[20];
+    char TIMA[20];
+    char TMA[20];
+    char TAC[20];
 }debugtexts;
 
 void generate_texts(cpu *c, debugtexts *texts);

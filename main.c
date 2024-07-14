@@ -283,7 +283,7 @@ int main(void) {
                     }
                 }
 
-                if (IsKeyPressed(KEY_N)) {
+                if (IsKeyPressed(KEY_N) || IsKeyDown(KEY_C)) {
                     execute(&c);
                     Update_Audio(&c);
                 }
@@ -311,16 +311,16 @@ int main(void) {
                                 red = 20;
                             switch (video.display[i][j]) {
                                 case 0:
-                                    pixels[i][j] = (Color) {185+red, 237, 186, alpha};
+                                    pixels[i][j] = (Color) {185 + red, 237, 186, alpha};
                                     break;
                                 case 1:
-                                    pixels[i][j] = (Color) {118+red, 196, 123, alpha};
+                                    pixels[i][j] = (Color) {118 + red, 196, 123, alpha};
                                     break;
                                 case 2:
-                                    pixels[i][j] = (Color) {49+red, 106, 64, alpha};
+                                    pixels[i][j] = (Color) {49 + red, 106, 64, alpha};
                                     break;
                                 case 3:
-                                    pixels[i][j] = (Color) {10+red, 38, 16, alpha};
+                                    pixels[i][j] = (Color) {10 + red, 38, 16, alpha};
                                     break;
                             }
                         }
@@ -397,7 +397,6 @@ int main(void) {
                     }
                     else
                         IntrInfoBoxActive = GuiWindowBox((Rectangle) {IntrInfoOffset.x, IntrInfoOffset.y, 250, 0}, "Interrupts state");
-
 
                 EndDrawing();
                 SetWindowTitle("ChillyGB - Debug");

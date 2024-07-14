@@ -113,6 +113,10 @@ void initialize_cpu_memory(cpu *c) {
     c->memory[WX] = 0x00;
     c->memory[IE] = 0x00;
 
+    c->cart.bank_select = 1;
+    c->cart.bank_select_ram = 0;
+    c->cart.ram_enable = false;
+
     // Initialize Joypad
     KeyboardKey keys[] = {KEY_D, KEY_A, KEY_W, KEY_S, KEY_L, KEY_K, KEY_BACKSPACE, KEY_ENTER};
     for (int i = 0; i < 4; i++) {
@@ -255,7 +259,7 @@ void add_ticks(cpu *c, uint16_t ticks) {
             }
         }
 
-        uint16_t next_timer = timer1.t_states + 4;
+        uint32_t next_timer = timer1.t_states + 4;
         if (timer1.reset_timer) {
             timer1.reset_timer = false;
             next_timer = 4;
@@ -301,9 +305,9 @@ void run_interrupt(cpu *c) {
         c->ime = false;
         c->is_halted = false;
         c->sp--;
-        c->memory[c->sp] = (uint8_t)(c->pc >> 8);
+        set_mem(c, c->sp, (uint8_t)(c->pc >> 8));
         c->sp--;
-        c->memory[c->sp] = (uint8_t)(c->pc);
+        set_mem(c, c->sp, (uint8_t)(c->pc));
         if (((c->memory[IE] & 1) == 1) && ((c->memory[IF] & 1) == 1)) {
             c->memory[IF] &= 0b11111110;
             c->pc = 0x40;

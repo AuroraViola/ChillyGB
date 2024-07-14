@@ -450,7 +450,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             }
             return 255;
         case 0xfea0 ... 0xfeff:
-            return 0;
+            return 255;
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
 

@@ -3,9 +3,10 @@
 #include "cpu.h"
 #include "opcodes.h"
 #include "ppu.h"
+#include "timer.h"
 
 const uint8_t rst_vec_1[] = {0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38};
-const char r8_1[][5] = {"B", "c", "d", "e", "h", "l", "[hl]", "a"};
+const char r8_1[][5] = {"b", "c", "d", "e", "h", "l", "[hl]", "a"};
 const char r16_1[][3] = {"bc", "de", "hl", "sp"};
 const char r16stk_1[][3] = {"bc", "de", "hl", "af"};
 const char r16mem_1[][4] = {"bc", "de", "hl+", "hl-"};
@@ -35,6 +36,8 @@ void generate_texts(cpu *c, debugtexts *texts) {
     sprintf(texts->BANKtext, "Bank: %i", c->cart.bank_select);
     sprintf(texts->RAMBANKtext, "Ram Bank: %i", c->cart.bank_select_ram);
     sprintf(texts->RAMENtext, "Ram En: %i", c->cart.ram_enable);
+
+    sprintf(texts->TSTATEStext, "Timer: %08X", (timer1.t_states) >> 1);
 }
 
 int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
@@ -60,7 +63,7 @@ int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
             sprintf(instruction, "%04X: JP $%04X", v_pc, p.imm16);
             return 3;
         case 0x06: case 0x16: case 0x26: case 0x36: case 0x0e: case 0x1e: case 0x2e: case 0x3e:
-            sprintf(instruction, "%04X: LD %s $%02X", v_pc, r8_1[p.operand_r8], p.imm8);
+            sprintf(instruction, "%04X: LD %s $%02X", v_pc, r8_1[p.operand_stk_r8], p.imm8);
             return 2;
         case 0x04: case 0x14: case 0x24: case 0x34: case 0x0c: case 0x1c: case 0x2c: case 0x3c:
             sprintf(instruction, "%04X: INC %s", v_pc, r8_1[p.operand_stk_r8]);
@@ -163,7 +166,7 @@ int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
             return 2;
         case 0xcb:
             sprintf(instruction, "%04X: PREFIX", v_pc);
-            return 3;
+            return 2;
         case 0x1f:
             sprintf(instruction, "%04X: RRA", v_pc);
             return 1;

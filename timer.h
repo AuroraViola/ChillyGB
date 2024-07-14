@@ -6,7 +6,7 @@
 
 typedef struct {
     bool is_tac_on;
-    uint16_t t_states;
+    uint32_t t_states;
     uint8_t module;
     uint8_t tma;
     uint8_t tima;
