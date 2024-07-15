@@ -165,7 +165,41 @@ int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
             sprintf(instruction, "%04X: SUB a, $%02X", v_pc, p.imm8);
             return 2;
         case 0xcb:
-            sprintf(instruction, "%04X: PREFIX", v_pc);
+            switch (p.imm8) {
+                case 0x00 ... 0x07:
+                    sprintf(instruction, "%04X: RLC %s", v_pc, r8_1[p.operand_r8]);
+                    break;
+                case 0x08 ... 0x0f:
+                    sprintf(instruction, "%04X: RRC %s", v_pc, r8_1[p.operand_r8]);
+                    break;
+                case 0x10 ... 0x17:
+                    sprintf(instruction, "%04X: RL %s", v_pc, r8_1[p.operand_r8]);
+                    break;
+                case 0x18 ... 0x1f:
+                    sprintf(instruction, "%04X: RR %s", v_pc, r8_1[p.operand_r8]);
+                    break;
+                case 0x20 ... 0x27:
+                    sprintf(instruction, "%04X: SLA %s", v_pc, r8_1[p.operand_r8]);
+                    break;
+                case 0x28 ... 0x2f:
+                    sprintf(instruction, "%04X: SRA %s", v_pc, r8_1[p.operand_r8]);
+                    break;
+                case 0x30 ... 0x37:
+                    sprintf(instruction, "%04X: SWAP %s", v_pc, r8_1[p.operand_r8]);
+                    break;
+                case 0x38 ... 0x3f:
+                    sprintf(instruction, "%04X: SRL %s", v_pc, r8_1[p.operand_r8]);
+                    break;
+                case 0x40 ... 0x7f:
+                    sprintf(instruction, "%04X: BIT %i, %s", v_pc, ((opcode >> 3) & 7) ,r8_1[p.operand_r8]);
+                    break;
+                case 0x80 ... 0xbf:
+                    sprintf(instruction, "%04X: RES %i, %s", v_pc, ((opcode >> 3) & 7) ,r8_1[p.operand_r8]);
+                    break;
+                case 0xc0 ... 0xff:
+                    sprintf(instruction, "%04X: SET %i, %s", v_pc, ((opcode >> 3) & 7) ,r8_1[p.operand_r8]);
+                    break;
+            }
             return 2;
         case 0x1f:
             sprintf(instruction, "%04X: RRA", v_pc);
