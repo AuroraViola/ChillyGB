@@ -6,6 +6,7 @@
 #define CHILLYGB_DEBUG_H
 
 typedef struct {
+    char memory[4096][100];
     char AFtext[20];
     char BCtext[20];
     char DEtext[20];
@@ -31,7 +32,8 @@ typedef struct {
     char DIV[20];
     char TIMA[20];
     char TMA[20];
-    char TAC[20];
+    char TIMER_ON[20];
+    char MODULE[20];
 }debugtexts;
 
 void generate_texts(cpu *c, debugtexts *texts);

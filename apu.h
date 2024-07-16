@@ -59,6 +59,7 @@ typedef struct {
     noise_channel ch4;
     float pan[4];
     bool is_on;
+    int volume;
 }channels;
 
 extern channels audio;

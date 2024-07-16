@@ -1,0 +1,3 @@
+[submodule "raylib-nuklear"]
+	path = raylib-nuklear
+	url = https://github.com/RobLoach/raylib-nuklear

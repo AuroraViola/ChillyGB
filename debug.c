@@ -37,7 +37,37 @@ void generate_texts(cpu *c, debugtexts *texts) {
     sprintf(texts->RAMBANKtext, "Ram Bank: %i", c->cart.bank_select_ram);
     sprintf(texts->RAMENtext, "Ram En: %i", c->cart.ram_enable);
 
-    sprintf(texts->TSTATEStext, "Timer: %08X", (timer1.t_states) >> 1);
+    sprintf(texts->TSTATEStext, "Global: %08X", (timer1.t_states) >> 1);
+    sprintf(texts->TIMA, "TIMA: %02X", timer1.tima);
+    sprintf(texts->TMA, "TMA: %02X", timer1.tma);
+    sprintf(texts->DIV, "DIV: %02X", get_mem(c, DIV));
+    if (timer1.is_tac_on)
+        sprintf(texts->TIMER_ON, "Timer: ON");
+    else
+        sprintf(texts->TIMER_ON, "Timer: OFF");
+    sprintf(texts->MODULE, "Module: %i", timer1.module);
+
+    for (int i = 0; i < 4096; i++) {
+        uint16_t pointer = (i << 4);
+        sprintf(texts->memory[i], "%04X: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X ",
+                        pointer, get_mem(c, pointer),
+                        get_mem(c,pointer+1),
+                        get_mem(c,pointer+2),
+                        get_mem(c,pointer+3),
+                        get_mem(c,pointer+4),
+                        get_mem(c,pointer+5),
+                        get_mem(c,pointer+6),
+                        get_mem(c,pointer+7),
+                        get_mem(c,pointer+8),
+                        get_mem(c,pointer+9),
+                        get_mem(c,pointer+10),
+                        get_mem(c,pointer+11),
+                        get_mem(c,pointer+12),
+                        get_mem(c,pointer+13),
+                        get_mem(c,pointer+14),
+                        get_mem(c,pointer+15)
+                );
+    }
 }
 
 int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
