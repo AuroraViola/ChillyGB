@@ -1,4 +1,4 @@
-<img src="res/icons/ChillyGB.svg" alt="logo" title="feishin" align="right" height="96px" />
+<img src="res/icons/ChillyGB.svg" alt="logo" title="ChillyGB" align="right" height="64px" />
 
 # ChillyGB
 
@@ -6,14 +6,14 @@ ChillyGB is an experimental Game Boy (DMG) emulator written in C that aims to si
 
 ## Screenshots
 
-<img src="screenshots/Kirby1.png" width="24.25%"/>
-<img src="screenshots/Pokemon1.png" width="24.25%"/>
-<img src="screenshots/Tetris1.png" width="24.25%"/>
-<img src="screenshots/Zelda1.png" width="24.25%"/>
-<img src="screenshots/Kirby2.png" width="24.25%"/>
-<img src="screenshots/Pokemon2.png" width="24.25%"/>
-<img src="screenshots/Tetris2.png" width="24.25%"/>
-<img src="screenshots/Zelda2.png" width="24.25%"/>
+<a><img src="screenshots/Kirby1.png" width="24.25%"/></a>
+<a><img src="screenshots/Pokemon1.png" width="24.25%"/></a>
+<a><img src="screenshots/Tetris1.png" width="24.25%"/></a>
+<a><img src="screenshots/Zelda1.png" width="24.25%"/></a>
+<a><img src="screenshots/Kirby2.png" width="24.25%"/></a>
+<a><img src="screenshots/Pokemon2.png" width="24.25%"/></a>
+<a><img src="screenshots/Tetris2.png" width="24.25%"/></a>
+<a><img src="screenshots/Zelda2.png" width="24.25%"/></a>
 
 ## Planned features
 
@@ -40,6 +40,7 @@ ChillyGB is an experimental Game Boy (DMG) emulator written in C that aims to si
   * Save states
   * Screenshots
   * Frame blending
+  * Key editor
   * Sprite, Window and object palette editor
   * Rom folder
 * Debugger Improvements
