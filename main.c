@@ -32,7 +32,6 @@ Color Palettes[6][5] = {
             (Color) {49, 106, 64, 255},
             (Color) {10, 38, 16, 255},
             (Color) {200, 237, 186, 255}
-
         },
         {
             (Color) {198, 222, 140, 255},
@@ -40,7 +39,6 @@ Color Palettes[6][5] = {
             (Color) {57, 97, 57, 255},
             (Color) {8, 24, 16, 255},
             (Color) {198, 222, 140, 255}
-
         },
         {
             (Color) {255, 255, 255, 255},
@@ -135,7 +133,7 @@ int main(void) {
         switch (emulator_mode) {
             case MENU:
                 UpdateNuklear(ctx);
-                if (nk_begin(ctx, "Settings", nk_rect(24, 24, 400, 400),
+                if (nk_begin(ctx, "Settings", nk_rect(24, 24, 400, 200),
                             NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_MINIMIZABLE)) {
                     nk_layout_row_dynamic(ctx, 30, 2);
                     nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
@@ -207,20 +205,7 @@ int main(void) {
                     if (video.is_on) {
                         for (int i = 0; i < 144; i++) {
                             for (int j = 0; j < 160; j++) {
-                                switch (video.display[i][j]) {
-                                    case 0:
-                                        pixels[i][j] = Palettes[current_palette][0];
-                                        break;
-                                    case 1:
-                                        pixels[i][j] = Palettes[current_palette][1];
-                                        break;
-                                    case 2:
-                                        pixels[i][j] = Palettes[current_palette][2];
-                                        break;
-                                    case 3:
-                                        pixels[i][j] = Palettes[current_palette][3];
-                                        break;
-                                }
+                                pixels[i][j] = Palettes[current_palette][video.display[i][j]];
                             }
                         }
                     }
@@ -239,9 +224,8 @@ int main(void) {
                                                     (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
                                                     (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
                     EndDrawing();
-                    uint16_t fps = GetFPS();
                     char str[80];
-                    sprintf(str, "ChillyGB - %d FPS - %.1fx", fps, (float)(fps)/60);
+                    sprintf(str, "ChillyGB - %d FPS - %.1fx", GetFPS(), (float)(GetFPS())/60);
                     SetWindowTitle(str);
                 }
                 break;
@@ -359,20 +343,7 @@ int main(void) {
                 if (video.is_on) {
                     for (int i = 0; i < 144; i++) {
                         for (int j = 0; j < 160; j++) {
-                            switch (video.display[i][j]) {
-                                case 0:
-                                    pixels[i][j] = Palettes[current_palette][0];
-                                    break;
-                                case 1:
-                                    pixels[i][j] = Palettes[current_palette][1];
-                                    break;
-                                case 2:
-                                    pixels[i][j] = Palettes[current_palette][2];
-                                    break;
-                                case 3:
-                                    pixels[i][j] = Palettes[current_palette][3];
-                                    break;
-                            }
+                            pixels[i][j] = Palettes[current_palette][video.display[i][j]];
                             if (i == video.scan_line)
                                 pixels[i][j].a = 127;
                             if (i == c.memory[LYC])
