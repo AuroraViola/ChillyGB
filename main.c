@@ -70,12 +70,95 @@ Color Palettes[6][5] = {
         }
 };
 
+cpu c = {};
+bool exited = false;
+bool game_started = false;
+bool show_settings = false;
+char rom_name[256];
+uint8_t emulator_mode = MENU;
+
+void DrawNavBar(struct nk_context *ctx) {
+    if (nk_begin(ctx, "Overview", nk_rect(0, 0, GetScreenWidth(), 35), 0)) {
+        nk_menubar_begin(ctx);
+        nk_layout_row_begin(ctx, NK_STATIC, 25, 5);
+        nk_layout_row_push(ctx, 60);
+        if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(150, 200))) {
+            static size_t prog = 40;
+            static int slider = 10;
+            static int check = nk_true;
+            nk_layout_row_dynamic(ctx, 25, 1);
+            if (nk_menu_item_label(ctx, "Load ROM", NK_TEXT_LEFT)) {
+            }
+            if (nk_menu_item_label(ctx, "Save SRAM", NK_TEXT_LEFT)) {
+                if (game_started) {
+                    save_game(&c.cart, rom_name);
+                }
+            }
+            if (nk_menu_item_label(ctx, "Load state", NK_TEXT_LEFT)) {
+            }
+            if (nk_menu_item_label(ctx, "Save state", NK_TEXT_LEFT)) {
+            }
+            if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) {
+                exited = true;
+            }
+            nk_menu_end(ctx);
+        }
+
+        nk_layout_row_push(ctx, 120);
+        if (nk_menu_begin_label(ctx, "Emulation", NK_TEXT_LEFT, nk_vec2(150, 200))) {
+            static size_t prog = 40;
+            static int slider = 10;
+            static int check = nk_true;
+            nk_layout_row_dynamic(ctx, 25, 1);
+            if (nk_menu_item_label(ctx, "Reset", NK_TEXT_LEFT)) {
+                if (game_started) {
+                    initialize_cpu_memory(&c);
+                    emulator_mode = GAME;
+                    ResumeAudioStream(audio.ch1.stream);
+                    ResumeAudioStream(audio.ch2.stream);
+                    ResumeAudioStream(audio.ch3.stream);
+                    ResumeAudioStream(audio.ch4.stream);
+                }
+            }
+            nk_menu_end(ctx);
+        }
+        nk_layout_row_push(ctx, 70);
+        if (nk_menu_begin_label(ctx, "Tools", NK_TEXT_LEFT, nk_vec2(150, 200))) {
+            static size_t prog = 40;
+            static int slider = 10;
+            static int check = nk_true;
+            nk_layout_row_dynamic(ctx, 25, 1);
+            if (nk_menu_item_label(ctx, "Debugger", NK_TEXT_LEFT)) {
+                if (game_started) {
+                    emulator_mode = DEBUG;
+                }
+            }
+            if (nk_menu_item_label(ctx, "Settings", NK_TEXT_LEFT)) {
+                show_settings = true;
+            }
+            nk_menu_end(ctx);
+        }
+        nk_layout_row_push(ctx, 60);
+        if (nk_menu_begin_label(ctx, "Info", NK_TEXT_LEFT, nk_vec2(150, 200))) {
+            static size_t prog = 40;
+            static int slider = 10;
+            static int check = nk_true;
+            nk_layout_row_dynamic(ctx, 25, 1);
+            if (nk_menu_item_label(ctx, "Help", NK_TEXT_LEFT)) {
+            }
+            if (nk_menu_item_label(ctx, "About", NK_TEXT_LEFT)) {
+            }
+            nk_menu_end(ctx);
+        }
+        nk_menubar_end(ctx);
+    }
+    nk_end(ctx);
+}
+
 int main(void) {
     uint8_t volume = 255;
     int current_palette = 0;
 
-    // Initialize CPU, memory and timer
-    cpu c = {};
 
     // Initialize Raylib and Nuklear
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -97,9 +180,6 @@ int main(void) {
     };
     Texture2D display = LoadTextureFromImage(display_image);
 
-    char rom_name[256];
-
-    uint8_t emulator_mode = MENU;
 
     // Initialize APU
     InitAudioDevice();
@@ -111,12 +191,11 @@ int main(void) {
     char instructions[30][50];
     debugtexts texts;
 
-    bool game_started = false;
     int ff_speed = 1;
 
     audio.volume = volume;
 
-    while(!WindowShouldClose()) {
+    while(!WindowShouldClose() && !exited) {
         if (IsFileDropped()) {
             FilePathList droppedFiles = LoadDroppedFiles();
             if ((int) droppedFiles.count == 1) {
@@ -126,6 +205,10 @@ int main(void) {
                 initialize_cpu_memory(&c);
                 emulator_mode = GAME;
                 game_started = true;
+                ResumeAudioStream(audio.ch1.stream);
+                ResumeAudioStream(audio.ch2.stream);
+                ResumeAudioStream(audio.ch3.stream);
+                ResumeAudioStream(audio.ch4.stream);
             }
             UnloadDroppedFiles(droppedFiles);
         }
@@ -133,26 +216,22 @@ int main(void) {
         switch (emulator_mode) {
             case MENU:
                 UpdateNuklear(ctx);
-                if (nk_begin(ctx, "Settings", nk_rect(24, 24, 400, 200),
-                            NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_MINIMIZABLE)) {
+                DrawNavBar(ctx);
+
+                if (show_settings && nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 400, 200),
+                             NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
                     nk_layout_row_dynamic(ctx, 30, 2);
                     nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     audio.volume = nk_slide_int(ctx, 0, audio.volume, 255, 1);
                     nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     struct nk_vec2 size = {200, 100};
                     nk_combobox(ctx, palettes, 6, &current_palette, 20, size);
-                    if (game_started) {
-                        nk_layout_row_dynamic(ctx, 60, 1);
-                        if (nk_button_label(ctx, "Reset game")) {
-                            initialize_cpu_memory(&c);
-                            emulator_mode = GAME;
-                            ResumeAudioStream(audio.ch1.stream);
-                            ResumeAudioStream(audio.ch2.stream);
-                            ResumeAudioStream(audio.ch3.stream);
-                            ResumeAudioStream(audio.ch4.stream);
-                        }
-                    }
+
                 }
+
+                if (nk_window_is_hidden(ctx, "ctx-settings"))
+                    show_settings = false;
+
                 nk_end(ctx);
                 if (IsKeyPressed(KEY_ESCAPE) && game_started) {
                     emulator_mode = GAME;
@@ -171,11 +250,6 @@ int main(void) {
                         float fontsize = 7 * scale;
                         int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
                         DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, Palettes[current_palette][3]);
-                    }
-                    else {
-                        float fontsize = 10 * scale;
-                        int center = MeasureText("EMULATION PAUSED", fontsize);
-                        DrawText("EMULATION PAUSED", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, Palettes[current_palette][3]);
                     }
                     DrawNuklear(ctx);
                 EndDrawing();
@@ -232,6 +306,7 @@ int main(void) {
 
             case DEBUG:
                 UpdateNuklear(ctx);
+
                 generate_texts(&c, &texts);
                 decode_instructions(&c, instructions);
 
@@ -287,6 +362,7 @@ int main(void) {
                     nk_label(ctx, texts.TSTATEStext, NK_TEXT_CENTERED);
                 }
                 nk_end(ctx);
+
 
                 if (nk_begin(ctx, "Cart Info", nk_rect(472, 466, 190, 128),
                              NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
