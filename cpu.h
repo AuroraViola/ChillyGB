@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include "settings.h"
 
 #ifndef CHILLYGB_CPU_H
 #define CHILLYGB_CPU_H
@@ -20,9 +21,7 @@ typedef struct {
     uint8_t banks_ram;
     uint8_t bank_select_ram;
     bool ram_enable;
-
     bool mbc1mode;
-
 }cartridge;
 
 typedef struct {
@@ -152,7 +151,7 @@ enum cond {
     condNZ = 0,
 };
 
-void initialize_cpu_memory(cpu *c);
+void initialize_cpu_memory(cpu *c, settings *s);
 void execute(cpu *c);
 void add_ticks(cpu *c, uint16_t ticks);
 void dma_transfer(cpu *c);

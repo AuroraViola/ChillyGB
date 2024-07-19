@@ -16,7 +16,7 @@ uint8_t stretch_number(uint8_t num) {
     return ((t + (t | 0b1010101)) ^ 0b1010101) & 0b11111111;
 }
 
-void initialize_cpu_memory(cpu *c) {
+void initialize_cpu_memory(cpu *c, settings *s) {
     srand(time(NULL));
     c->r.reg8[A] = 0x01;
     c->r.reg8[B] = 0x00;
@@ -150,17 +150,38 @@ void initialize_cpu_memory(cpu *c) {
     uint8_t logo_tiles_initial[24][2];
     uint8_t logo_tiles[24][4];
 
-    for (uint16_t i = 0; i < 24; i++) {
-        logo_tiles_initial[i][0] = c->cart.data[0][0x104 + (i*2)];
-        logo_tiles_initial[i][1] = c->cart.data[0][0x104 + (i*2) + 1];
+    uint8_t custom_logo[24][2] = {
+            {0x13, 0x33}, {0xef, 0x30}, {0x66, 0x66},
+            {0x00, 0x0c}, {0xdd, 0x1d}, {0xbb, 0xbb},
+            {0x00, 0x33}, {0x00, 0x33}, {0x37, 0x66},
+            {0xce, 0x60}, {0xff, 0xcf}, {0x8c, 0xc8},
+            {0x33, 0x31}, {0x03, 0xfe}, {0x76, 0x66},
+            {0x66, 0x66}, {0xdd, 0xdc}, {0xbb, 0xbd},
+            {0x30, 0x3b}, {0xf3, 0x3f}, {0x66, 0x73},
+            {0xe6, 0xec}, {0xfc, 0xff}, {0x8c, 0xc8}
+    };
+
+    if (!s->custom_boot_logo) {
+        for (uint16_t i = 0; i < 24; i++) {
+            logo_tiles_initial[i][0] = c->cart.data[0][0x104 + (i * 2)];
+            logo_tiles_initial[i][1] = c->cart.data[0][0x104 + (i * 2) + 1];
+        }
+        for (uint16_t i = 0; i < 24; i++) {
+            logo_tiles[i][0] = stretch_number(logo_tiles_initial[i][0] >> 4);
+            logo_tiles[i][1] = stretch_number(logo_tiles_initial[i][0] & 0xf);
+            logo_tiles[i][2] = stretch_number(logo_tiles_initial[i][1] >> 4);
+            logo_tiles[i][3] = stretch_number(logo_tiles_initial[i][1] & 0xf);
+        }
+    }
+    else {
+        for (uint16_t i = 0; i < 24; i++) {
+            logo_tiles[i][0] = stretch_number(custom_logo[i][0] >> 4);
+            logo_tiles[i][1] = stretch_number(custom_logo[i][0] & 0xf);
+            logo_tiles[i][2] = stretch_number(custom_logo[i][1] >> 4);
+            logo_tiles[i][3] = stretch_number(custom_logo[i][1] & 0xf);
+        }
     }
 
-    for (uint16_t i = 0; i < 24; i++) {
-        logo_tiles[i][0] = stretch_number(logo_tiles_initial[i][0] >> 4);
-        logo_tiles[i][1] = stretch_number(logo_tiles_initial[i][0] & 0xf);
-        logo_tiles[i][2] = stretch_number(logo_tiles_initial[i][1] >> 4);
-        logo_tiles[i][3] = stretch_number(logo_tiles_initial[i][1] & 0xf);
-    }
 
     for (uint16_t i = 0; i < 24; i++) {
         for (uint16_t j = 0; j < 4; j ++) {
@@ -169,9 +190,11 @@ void initialize_cpu_memory(cpu *c) {
         }
     }
 
-    uint8_t r_tile[] = {0x3c, 0x42, 0xb9, 0xa5, 0xb9, 0xa5, 0x42, 0x3c};
-    for (uint16_t i = 0; i < 8; i++) {
-        c->memory[0x8190 + (i * 2)] = r_tile[i];
+    if (!s->custom_boot_logo) {
+        uint8_t r_tile[] = {0x3c, 0x42, 0xb9, 0xa5, 0xb9, 0xa5, 0x42, 0x3c};
+        for (uint16_t i = 0; i < 8; i++) {
+            c->memory[0x8190 + (i * 2)] = r_tile[i];
+        }
     }
 
     // Initialize internal timer

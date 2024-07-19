@@ -6,11 +6,11 @@
 void load_settings(settings *s) {
     FILE *f = fopen("settings.conf", "r");
     if (f != NULL) {
-        char junk;
-        fscanf(f, "%s %i\n", &junk, &s->volume);
+        char string;
+        fscanf(f, "%s %i\n", &string, &s->volume);
         audio.volume = s->volume;
-        fscanf(f, "%s %i\n", &junk, &s->palette);
-        fscanf(f, "%s %i\n", &junk, &s->custom_boot_logo);
+        fscanf(f, "%s %i\n", &string, &s->palette);
+        fscanf(f, "%s %i\n", &string, &s->custom_boot_logo);
         fclose(f);
     }
     else {
