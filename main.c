@@ -74,6 +74,7 @@ cpu c = {};
 bool exited = false;
 bool game_started = false;
 bool show_settings = false;
+bool show_about = false;
 char rom_name[256];
 uint8_t emulator_mode = MENU;
 
@@ -139,14 +140,24 @@ void DrawNavBar(struct nk_context *ctx) {
             nk_menu_end(ctx);
         }
         nk_layout_row_push(ctx, 60);
-        if (nk_menu_begin_label(ctx, "Info", NK_TEXT_LEFT, nk_vec2(150, 200))) {
+        if (nk_menu_begin_label(ctx, "Help", NK_TEXT_LEFT, nk_vec2(150, 200))) {
             static size_t prog = 40;
             static int slider = 10;
             static int check = nk_true;
             nk_layout_row_dynamic(ctx, 25, 1);
-            if (nk_menu_item_label(ctx, "Help", NK_TEXT_LEFT)) {
+            if (nk_menu_item_label(ctx, "Github", NK_TEXT_LEFT)) {
+                #ifdef _WIN32
+                    system("start https://github.com/AuroraViola/ChillyGB");
+                #elif __APPLE__
+                    system("open https://github.com/AuroraViola/ChillyGB");
+                #elif __linux__
+                    system("xdg-open https://github.com/AuroraViola/ChillyGB");
+                #else
+                    printf("Failed to open GitHub link: Unsupported OS\n");
+                #endif
             }
             if (nk_menu_item_label(ctx, "About", NK_TEXT_LEFT)) {
+                show_about = true;
             }
             nk_menu_end(ctx);
         }
@@ -180,6 +191,8 @@ int main(void) {
     };
     Texture2D display = LoadTextureFromImage(display_image);
 
+    Image logo_image = LoadImage("../res/icons/ChillyGB-256.png");
+    Texture2D logo = LoadTextureFromImage(logo_image);
 
     // Initialize APU
     InitAudioDevice();
@@ -219,18 +232,45 @@ int main(void) {
                 DrawNavBar(ctx);
 
                 if (show_settings && nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 400, 200),
-                             NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
+                                                     NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
                     nk_layout_row_dynamic(ctx, 30, 2);
                     nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     audio.volume = nk_slide_int(ctx, 0, audio.volume, 255, 1);
                     nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     struct nk_vec2 size = {200, 100};
                     nk_combobox(ctx, palettes, 6, &current_palette, 20, size);
-
                 }
-
                 if (nk_window_is_hidden(ctx, "ctx-settings"))
                     show_settings = false;
+
+                if (show_about && nk_begin_titled(ctx, "ctx-about","About", nk_rect((GetScreenWidth()/2-200), (GetScreenHeight()/2-250), 400, 500),
+                                                  NK_WINDOW_CLOSABLE)) {
+                    nk_layout_row_begin(ctx, NK_STATIC, 256, 3);
+                    {
+                        /* padding */
+                        nk_layout_row_push(ctx, (370-150)/2);
+                        nk_label(ctx, "", NK_TEXT_LEFT);
+
+                        /* header */
+                        struct nk_image chillygb_logo = TextureToNuklear(logo);
+                        nk_layout_row_push(ctx, 150);
+                        nk_image(ctx, chillygb_logo);
+
+                        /* padding */
+                        nk_layout_row_push(ctx, (370-150)/2);
+                        nk_label(ctx, "", NK_TEXT_LEFT);
+                    }
+                    nk_layout_row_end(ctx);
+                    nk_layout_row_dynamic(ctx, 20, 1);
+                    nk_label(ctx, "",  NK_TEXT_CENTERED);
+                    nk_label(ctx, "ChillyGB", NK_TEXT_CENTERED);
+                    nk_label(ctx, "By AuroraViola", NK_TEXT_CENTERED);
+                    nk_label(ctx, "",  NK_TEXT_CENTERED);
+                    nk_label(ctx, "ChillyGB is licensed under the",  NK_TEXT_CENTERED);
+                    nk_label(ctx, "GNU General Public License v3.0.",  NK_TEXT_CENTERED);
+                }
+                if (nk_window_is_hidden(ctx, "ctx-about"))
+                    show_about = false;
 
                 nk_end(ctx);
                 if (IsKeyPressed(KEY_ESCAPE) && game_started) {
@@ -454,6 +494,7 @@ int main(void) {
 
     save_game(&c.cart, rom_name);
     UnloadTexture(display);
+    UnloadTexture(logo);
     UnloadNuklear(ctx);
     CloseWindow();
 
