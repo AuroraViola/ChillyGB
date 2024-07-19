@@ -20,5 +20,7 @@ add_executable(ChillyGB main.c
         cartridge.c
         debug.h
         debug.c
+        settings.h
+        settings.c
 )
 target_link_libraries(ChillyGB raylib m)

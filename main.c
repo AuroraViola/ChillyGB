@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "cpu.h"
 #include "ppu.h"
+#include "settings.h"
 #include "apu.h"
 #include "timer.h"
 #include "opcodes.h"
@@ -167,9 +168,8 @@ void DrawNavBar(struct nk_context *ctx) {
 }
 
 int main(void) {
-    uint8_t volume = 255;
-    int current_palette = 0;
-
+    settings set = {};
+    load_settings(&set);
 
     // Initialize Raylib and Nuklear
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -181,7 +181,7 @@ int main(void) {
     Color pixels[144][160] = { 0 };
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)
-            pixels[i][j] = Palettes[current_palette][4];
+            pixels[i][j] = Palettes[set.palette][4];
     Image display_image = {
             .data = pixels,
             .width = 160,
@@ -190,23 +190,19 @@ int main(void) {
             .mipmaps = 1
     };
     Texture2D display = LoadTextureFromImage(display_image);
-
     Image logo_image = LoadImage("../res/icons/ChillyGB-256.png");
     Texture2D logo = LoadTextureFromImage(logo_image);
+    float scale;
 
     // Initialize APU
     InitAudioDevice();
     SetAudioStreamBufferSizeDefault(512);
     load_audio_streams();
 
-    float scale;
-
+    // Initialize Debug variables
     char instructions[30][50];
     debugtexts texts;
-
     int ff_speed = 1;
-
-    audio.volume = volume;
 
     while(!WindowShouldClose() && !exited) {
         if (IsFileDropped()) {
@@ -235,10 +231,10 @@ int main(void) {
                                                      NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
                     nk_layout_row_dynamic(ctx, 30, 2);
                     nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    audio.volume = nk_slide_int(ctx, 0, audio.volume, 255, 1);
+                    audio.volume = nk_slide_int(ctx, 0, audio.volume, 100, 1);
                     nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     struct nk_vec2 size = {200, 100};
-                    nk_combobox(ctx, palettes, 6, &current_palette, 20, size);
+                    nk_combobox(ctx, palettes, 6, &set.palette, 20, size);
                 }
                 if (nk_window_is_hidden(ctx, "ctx-settings"))
                     show_settings = false;
@@ -289,7 +285,7 @@ int main(void) {
                     if (!game_started) {
                         float fontsize = 7 * scale;
                         int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
-                        DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, Palettes[current_palette][3]);
+                        DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, Palettes[set.palette][3]);
                     }
                     DrawNuklear(ctx);
                 EndDrawing();
@@ -319,14 +315,14 @@ int main(void) {
                     if (video.is_on) {
                         for (int i = 0; i < 144; i++) {
                             for (int j = 0; j < 160; j++) {
-                                pixels[i][j] = Palettes[current_palette][video.display[i][j]];
+                                pixels[i][j] = Palettes[set.palette][video.display[i][j]];
                             }
                         }
                     }
                     else {
                         for (int i = 0; i < 144; i++) {
                             for (int j = 0; j < 160; j++) {
-                                pixels[i][j] = Palettes[current_palette][4];
+                                pixels[i][j] = Palettes[set.palette][4];
                             }
                         }
                     }
@@ -459,7 +455,7 @@ int main(void) {
                 if (video.is_on) {
                     for (int i = 0; i < 144; i++) {
                         for (int j = 0; j < 160; j++) {
-                            pixels[i][j] = Palettes[current_palette][video.display[i][j]];
+                            pixels[i][j] = Palettes[set.palette][video.display[i][j]];
                             if (i == video.scan_line)
                                 pixels[i][j].a = 127;
                             if (i == c.memory[LYC])
@@ -470,7 +466,7 @@ int main(void) {
                 else {
                     for (int i = 0; i < 144; i++) {
                         for (int j = 0; j < 160; j++) {
-                            pixels[i][j] = Palettes[current_palette][4];
+                            pixels[i][j] = Palettes[set.palette][4];
                         }
                     }
                 }
@@ -493,6 +489,7 @@ int main(void) {
     }
 
     save_game(&c.cart, rom_name);
+    save_settings(&set);
     UnloadTexture(display);
     UnloadTexture(logo);
     UnloadNuklear(ctx);
