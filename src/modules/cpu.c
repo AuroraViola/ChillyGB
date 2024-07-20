@@ -1,9 +1,9 @@
-#include "cpu.h"
-#include "apu.h"
-#include "ppu.h"
-#include "input.h"
-#include "timer.h"
-#include "opcodes.h"
+#include "../includes/cpu.h"
+#include "../includes/apu.h"
+#include "../includes/ppu.h"
+#include "../includes/input.h"
+#include "../includes/timer.h"
+#include "../includes/opcodes.h"
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>

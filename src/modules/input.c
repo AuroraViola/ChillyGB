@@ -1,6 +1,6 @@
-#include "cpu.h"
-#include "apu.h"
-#include "input.h"
+#include "../includes/cpu.h"
+#include "../includes/apu.h"
+#include "../includes/input.h"
 #include "raylib.h"
 #include <stdint.h>
 

@@ -3,24 +3,24 @@ project(ChillyGB C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(ChillyGB main.c
-        cpu.c
-        cpu.h
-        opcodes.c
-        opcodes.h
-        ppu.h
-        ppu.c
-        input.c
-        input.h
-        apu.h
-        apu.c
-        timer.h
-        timer.c
-        cartridge.h
-        cartridge.c
-        debug.h
-        debug.c
-        settings.h
-        settings.c
+add_executable(ChillyGB src/main.c
+        src/modules/cpu.c
+        src/includes/cpu.h
+        src/modules/opcodes.c
+        src/includes/opcodes.h
+        src/includes/ppu.h
+        src/modules/ppu.c
+        src/modules/input.c
+        src/includes/input.h
+        src/includes/apu.h
+        src/modules/apu.c
+        src/includes/timer.h
+        src/modules/timer.c
+        src/includes/cartridge.h
+        src/modules/cartridge.c
+        src/includes/debug.h
+        src/modules/debug.c
+        src/includes/settings.h
+        src/modules/settings.c
 )
 target_link_libraries(ChillyGB raylib m)

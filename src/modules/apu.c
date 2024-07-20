@@ -1,5 +1,5 @@
-#include "apu.h"
-#include "cpu.h"
+#include "../includes/apu.h"
+#include "../includes/cpu.h"
 #include "raylib.h"
 #include <math.h>
 #include <stdio.h>

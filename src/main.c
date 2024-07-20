@@ -1,20 +1,20 @@
 #include "raylib.h"
-#include "cpu.h"
-#include "ppu.h"
-#include "settings.h"
-#include "apu.h"
-#include "timer.h"
-#include "opcodes.h"
-#include "debug.h"
-#include "input.h"
-#include "cartridge.h"
+#include "includes/cpu.h"
+#include "includes/ppu.h"
+#include "includes/settings.h"
+#include "includes/apu.h"
+#include "includes/timer.h"
+#include "includes/opcodes.h"
+#include "includes/debug.h"
+#include "includes/input.h"
+#include "includes/cartridge.h"
 #include <stdio.h>
 #include <string.h>
 
 #define NK_INCLUDE_FONT_BAKING
 #define NK_INCLUDE_DEFAULT_FONT
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
-#include "raylib-nuklear/include/raylib-nuklear.h"
+#include "../raylib-nuklear/include/raylib-nuklear.h"
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 

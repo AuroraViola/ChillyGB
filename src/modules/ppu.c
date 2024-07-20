@@ -1,5 +1,5 @@
-#include "cpu.h"
-#include "ppu.h"
+#include "../includes/cpu.h"
+#include "../includes/ppu.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

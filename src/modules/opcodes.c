@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "cpu.h"
-#include "apu.h"
-#include "ppu.h"
-#include "timer.h"
-#include "input.h"
+#include "../includes/cpu.h"
+#include "../includes/apu.h"
+#include "../includes/ppu.h"
+#include "../includes/timer.h"
+#include "../includes/input.h"
 
 const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
 
