@@ -176,7 +176,7 @@ int main(void) {
     SetExitKey(KEY_NULL);
     SetWindowMinSize(160, 144);
     SetTargetFPS(60);
-    struct nk_context *ctx = InitNuklearEx(LoadFontEx("../res/fonts/UbuntuMono.ttf", 20, 0, 250), 20);
+    struct nk_context *ctx = InitNuklearEx(LoadFontEx("res/fonts/UbuntuMono.ttf", 20, 0, 250), 20);
     Color pixels[144][160] = { 0 };
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)
@@ -189,7 +189,7 @@ int main(void) {
             .mipmaps = 1
     };
     Texture2D display = LoadTextureFromImage(display_image);
-    Image logo_image = LoadImage("../res/icons/ChillyGB-256.png");
+    Image logo_image = LoadImage("res/icons/ChillyGB-256.png");
     Texture2D logo = LoadTextureFromImage(logo_image);
     float scale;
 

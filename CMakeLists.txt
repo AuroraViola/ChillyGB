@@ -24,3 +24,10 @@ add_executable(ChillyGB src/main.c
         src/modules/settings.c
 )
 target_link_libraries(ChillyGB raylib m)
+
+add_custom_command(
+        TARGET ChillyGB POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/res/
+        ${CMAKE_CURRENT_BINARY_DIR}/res/
+)
