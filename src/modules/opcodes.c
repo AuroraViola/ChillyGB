@@ -302,6 +302,27 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             video.need_sprites_reload = true;
             break;
 
+        case BGP:
+            video.bgp[0] = value & 3;
+            video.bgp[1] = (value >> 2) & 3;
+            video.bgp[2] = (value >> 4) & 3;
+            video.bgp[3] = (value >> 6) & 3;
+            break;
+
+        case OBP0:
+            video.obp[0][0] = value & 3;
+            video.obp[0][1] = (value >> 2) & 3;
+            video.obp[0][2] = (value >> 4) & 3;
+            video.obp[0][3] = (value >> 6) & 3;
+            break;
+
+        case OBP1:
+            video.obp[1][0] = value & 3;
+            video.obp[1][1] = (value >> 2) & 3;
+            video.obp[1][2] = (value >> 4) & 3;
+            video.obp[1][3] = (value >> 6) & 3;
+            break;
+
         case NR11:
             audio.ch1.lenght = value & 0x3f;
             if (audio.is_on)
@@ -501,6 +522,15 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return video.scan_line;
         case LCDC:
             return video.bg_enable | (video.obj_enable << 1) | (video.obj_size << 2) | (video.bg_tilemap << 3) | (video.bg_tiles << 4) | (video.window_enable << 5) | (video.window_tilemap << 6) | (video.is_on << 7);
+
+        case BGP:
+            return video.bgp[0] | (video.bgp[1] << 2) | (video.bgp[2] << 4) | (video.bgp[3] << 6);
+
+        case OBP0:
+            return video.obp[0][0] | (video.obp[0][1] << 2) | (video.obp[0][2] << 4) | (video.obp[0][3] << 6);
+
+        case OBP1:
+            return video.obp[1][0] | (video.obp[1][1] << 2) | (video.obp[1][2] << 4) | (video.obp[1][3] << 6);
 
         case NR10:
             return c->memory[addr] | 0x80;

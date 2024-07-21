@@ -33,10 +33,17 @@ typedef struct {
     sprite sprites[40];
     sprite_px sprite_display[2][176][176];
 
+    sprite_px sprite_line[176];
+    uint8_t oam_buffer[40];
+    uint8_t buffer_size;
+
     uint8_t window_internal_line;
     bool wy_trigger;
 
     uint8_t mode3_duration;
+
+    uint8_t bgp[4];
+    uint8_t obp[2][4];
 
     bool is_on;
     bool bg_enable;
@@ -68,5 +75,6 @@ extern ppu video;
 
 void load_display(cpu *c);
 uint16_t get_mode3_duration(cpu *c);
+void oam_scan();
 
 #endif //CHILLYGB_PPU_H

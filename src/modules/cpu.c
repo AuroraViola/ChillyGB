@@ -107,8 +107,18 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
     c->memory[BGP] = 0xfc;
-    c->memory[OBP0] = 0xff;
-    c->memory[OBP1] = 0xff;
+    video.bgp[0] = 0;
+    video.bgp[1] = 3;
+    video.bgp[2] = 3;
+    video.bgp[3] = 3;
+    video.obp[0][0] = 3;
+    video.obp[0][1] = 3;
+    video.obp[0][2] = 3;
+    video.obp[0][3] = 3;
+    video.obp[1][0] = 3;
+    video.obp[1][1] = 3;
+    video.obp[1][2] = 3;
+    video.obp[1][3] = 3;
     c->memory[WY] = 0x00;
     c->memory[WX] = 0x00;
     c->memory[IE] = 0x00;
@@ -218,63 +228,68 @@ bool is_stat_condition(cpu *c) {
 
 }
 
+void tick_scanline(cpu *c) {
+    timer1.scanline_timer -= 4;
+    bool prev_stat = is_stat_condition(c);
+    if (timer1.scanline_timer < 0) {
+        timer1.scanline_timer += 456;
+        video.scan_line++;
+        video.mode3_duration = 0;
+        if (video.scan_line == 144) {
+            video.mode = 1;
+            c->memory[IF] |= 1;
+            if (video.mode2_select && !prev_stat)
+                c->memory[IF] |= 2;
+            video.draw_screen = true;
+        }
+
+        if (video.scan_line > 152) {
+            video.scan_line = 0;
+            video.wy_trigger = false;
+            video.window_internal_line = 0;
+            timer1.scanline_timer += 456;
+        }
+
+        video.ly_eq_lyc = (video.scan_line == c->memory[LYC]);
+
+        if (update_keys())
+            c->memory[IF] |= 16;
+    }
+
+    if (video.scan_line < 144) {
+        // Mode 2
+        if (timer1.scanline_timer > 376 && video.mode != 2) {
+            oam_scan();
+            if (video.scan_line == c->memory[WY])
+                video.wy_trigger = true;
+            video.mode = 2;
+        }
+        // Mode 3
+        else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 &&
+                 video.mode != 3) {
+            video.mode3_duration = get_mode3_duration(c);
+            video.mode = 3;
+        }
+        // Mode 0
+        else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
+            load_display(c);
+            video.mode = 0;
+        }
+    }
+    if (is_stat_condition(c) && !prev_stat)
+        c->memory[IF] |= 2;
+}
+
 void add_ticks(cpu *c, uint16_t ticks) {
     ticks >>= 2;
     for (int i = 0; i < ticks; i++) {
         if (video.is_on) {
-            timer1.scanline_timer -= 4;
-            bool prev_stat = is_stat_condition(c);
-            if (timer1.scanline_timer < 0) {
-                timer1.scanline_timer += 456;
-                video.scan_line++;
-                video.mode3_duration = 0;
-                if (video.scan_line == 144) {
-                    video.mode = 1;
-                    c->memory[IF] |= 1;
-                    if (video.mode2_select && !prev_stat)
-                        c->memory[IF] |= 2;
-                    video.draw_screen = true;
-                }
-
-                if (video.scan_line > 152) {
-                    video.scan_line = 0;
-                    video.wy_trigger = false;
-                    video.window_internal_line = 0;
-                    timer1.scanline_timer += 456;
-                }
-
-                video.ly_eq_lyc = (video.scan_line == c->memory[LYC]);
-
-                if (update_keys())
-                    c->memory[IF] |= 16;
-            }
-
-            if (video.scan_line < 144) {
-                // Mode 2
-                if (timer1.scanline_timer > 376 && video.mode != 2) {
-                    if (video.scan_line == c->memory[WY])
-                        video.wy_trigger = true;
-                    video.mode = 2;
-                }
-                // Mode 3
-                else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 &&
-                           video.mode != 3) {
-                    video.mode3_duration = get_mode3_duration(c);
-                    video.mode = 3;
-                }
-                // Mode 0
-                else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
-                    load_display(c);
-                    video.mode = 0;
-                }
-            }
-            if (is_stat_condition(c) && !prev_stat)
-                c->memory[IF] |= 2;
+            tick_scanline(c);
         }
         else {
             timer1.lcdoff_timer -= 4;
             if (timer1.lcdoff_timer < 0) {
-                timer1.lcdoff_timer += 69768;
+                timer1.lcdoff_timer += 70224;
                 load_display(c);
                 video.draw_screen = true;
                 if (update_keys())
@@ -511,7 +526,7 @@ uint8_t execute_instruction(cpu *c) {
         case 0x10:
             return stop(c, &p);
     }
-    printf("%x opcode not implemented", opcode);
+    printf("%x Invalid OPCODE", opcode);
     return 0;
 }
 
