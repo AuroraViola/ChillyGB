@@ -38,3 +38,15 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Prepare artifacts
+      # Build your program with the given configuration
+      run: cp /usr/local/lib/libraylib.so.550 build && cd build && patchelf --remove-needed libraylib.so.550 ChillyGB && patchelf --add-needed ./libraylib.so.550 ChillyGB
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Build
+        path: |
+          build/ChillyGB
+          build/res
+          build/libraylib.so.550
