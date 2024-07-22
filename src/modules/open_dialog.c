@@ -164,7 +164,18 @@ char *do_open_rom_dialog(void) {
     return NULL;
 }
 
-#else
+#elif PLATFORM_WEB
+#include <emscripten.h>
+#include <stddef.h>
+
+char *do_open_rom_dialog(void) {
+    EM_ASM(
+        openDialog();
+    );
+    return NULL;
+}
+#else 
+#include <stddef.h>
 char *do_open_rom_dialog(void) {
     return NULL;
 }

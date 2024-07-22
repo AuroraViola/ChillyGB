@@ -55,12 +55,30 @@
       <progress value="0" max="100" id="progress" hidden=1></progress>  
     </div>
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+    <input style="display: none" type="file" id="open_romfile">
     <script type='text/javascript'>
       document.addEventListener("visibilitychange", () => {
         if (document.hidden) {
           ccall('pause', 'v');
         }
       });
+
+      const open_romfile = document.getElementById('open_romfile'); 
+      open_romfile.onchange = (e) => {
+        const file = e.target.files[0];
+        console.log(file);
+
+        file.arrayBuffer().then((buffer) => {
+          FS.mkdir('/file_picker_uploads');
+          const path = `/file_picker_uploads/${file.name}`
+          FS.writeFile(path, new Uint8Array(buffer));
+          ccall("load_cartridge", "v", ["string"], [path]);
+        });
+      };
+
+      function openDialog() {
+        open_romfile.click();
+      }
 
       var statusElement = document.getElementById('status');
       var progressElement = document.getElementById('progress');
