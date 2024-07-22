@@ -21,9 +21,6 @@
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
-extern void test() {
-    printf("meow\n");
-}
 
 typedef enum EmuModes{
     MENU = 0,
@@ -189,6 +186,14 @@ void DrawNavBar() {
     }
     nk_end(ctx);
 }
+void pause() {
+    if (emulator_mode != GAME) return;
+    emulator_mode = MENU;
+    PauseAudioStream(audio.ch1.stream);
+    PauseAudioStream(audio.ch2.stream);
+    PauseAudioStream(audio.ch3.stream);
+    PauseAudioStream(audio.ch4.stream);
+}
 
 void update_frame() {
     if (IsFileDropped()) {
@@ -213,8 +218,8 @@ void update_frame() {
         case MENU:
             UpdateNuklear(ctx);
             DrawNavBar();
-
-            if (show_settings && nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 400, 200),
+            if (show_settings){
+                if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 400, 200),
                                                  NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
                 nk_layout_row_dynamic(ctx, 30, 2);
                 nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
@@ -224,38 +229,42 @@ void update_frame() {
                 nk_combobox(ctx, palettes, 6, &set.palette, 20, size);
                 nk_label(ctx, "Original logo", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                 nk_checkbox_label(ctx, "", &set.custom_boot_logo);
+                }
+                nk_end(ctx);
             }
             if (nk_window_is_hidden(ctx, "ctx-settings"))
                 show_settings = false;
 
-            if (show_about && nk_begin_titled(ctx, "ctx-about","About", nk_rect((GetScreenWidth()/2-200), (GetScreenHeight()/2-250), 400, 500),
+            if (show_about) {
+                if(nk_begin_titled(ctx, "ctx-about","About", nk_rect((GetScreenWidth()/2-200), (GetScreenHeight()/2-250), 400, 500),
                                               NK_WINDOW_CLOSABLE)) {
-                nk_layout_row_begin(ctx, NK_STATIC, 256, 3);
-                /* padding */
-                nk_layout_row_push(ctx, (370-150)/2);
-                nk_label(ctx, "", NK_TEXT_LEFT);
+                    nk_layout_row_begin(ctx, NK_STATIC, 256, 3);
+                    /* padding */
+                    nk_layout_row_push(ctx, (370-150)/2);
+                    nk_label(ctx, "", NK_TEXT_LEFT);
 
-                /* header */
-                struct nk_image chillygb_logo = TextureToNuklear(logo);
-                nk_layout_row_push(ctx, 150);
-                nk_image(ctx, chillygb_logo);
+                    /* header */
+                    struct nk_image chillygb_logo = TextureToNuklear(logo);
+                    nk_layout_row_push(ctx, 150);
+                    nk_image(ctx, chillygb_logo);
 
-                /* padding */
-                nk_layout_row_push(ctx, (370-150)/2);
-                nk_label(ctx, "", NK_TEXT_LEFT);
-                nk_layout_row_end(ctx);
-                nk_layout_row_dynamic(ctx, 20, 1);
-                nk_label(ctx, "",  NK_TEXT_CENTERED);
-                nk_label(ctx, "ChillyGB", NK_TEXT_CENTERED);
-                nk_label(ctx, "By AuroraViola", NK_TEXT_CENTERED);
-                nk_label(ctx, "",  NK_TEXT_CENTERED);
-                nk_label(ctx, "ChillyGB is licensed under the",  NK_TEXT_CENTERED);
-                nk_label(ctx, "GNU General Public License v3.0.",  NK_TEXT_CENTERED);
+                    /* padding */
+                    nk_layout_row_push(ctx, (370-150)/2);
+                    nk_label(ctx, "", NK_TEXT_LEFT);
+                    nk_layout_row_end(ctx);
+                    nk_layout_row_dynamic(ctx, 20, 1);
+                    nk_label(ctx, "",  NK_TEXT_CENTERED);
+                    nk_label(ctx, "ChillyGB", NK_TEXT_CENTERED);
+                    nk_label(ctx, "By AuroraViola", NK_TEXT_CENTERED);
+                    nk_label(ctx, "",  NK_TEXT_CENTERED);
+                    nk_label(ctx, "ChillyGB is licensed under the",  NK_TEXT_CENTERED);
+                    nk_label(ctx, "GNU General Public License v3.0.",  NK_TEXT_CENTERED);
+                }
+                nk_end(ctx);
             }
             if (nk_window_is_hidden(ctx, "ctx-about"))
                 show_about = false;
-
-            nk_end(ctx);
+            
             if (IsKeyPressed(KEY_ESCAPE) && game_started) {
                 emulator_mode = GAME;
                 ResumeAudioStream(audio.ch1.stream);
@@ -289,10 +298,7 @@ void update_frame() {
                 if (IsKeyPressed(KEY_ESCAPE)) {
                     save_settings();
                     emulator_mode = MENU;
-                    PauseAudioStream(audio.ch1.stream);
-                    PauseAudioStream(audio.ch2.stream);
-                    PauseAudioStream(audio.ch3.stream);
-                    PauseAudioStream(audio.ch4.stream);
+                    pause();
                 }
                 if (IsKeyPressed(KEY_F3)) {
                     emulator_mode = DEBUG;
