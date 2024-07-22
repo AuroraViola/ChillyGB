@@ -172,7 +172,7 @@ void DrawNavBar() {
                     system("open https://github.com/AuroraViola/ChillyGB");
                 #elif __linux__
                     system("xdg-open https://github.com/AuroraViola/ChillyGB");
-                #elif defined(platform_web)
+                #elif defined(PLATFORM_WEB)
                 EM_ASM(
                     window.open("https://github.com/AuroraViola/ChillyGB").focus();
                 );
