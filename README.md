@@ -33,7 +33,6 @@ You can try it now [here](https://chillygb.arci.me)
   * Stop Instruction
 * Graphical and particular features
   * Better menu
-    * File explorer for loading roms
     * More options
   * Save states
   * Screenshots

@@ -7,6 +7,7 @@
 #include "includes/debug.h"
 #include "includes/input.h"
 #include "includes/cartridge.h"
+#include "includes/open_dialog.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -93,6 +94,18 @@ debugtexts texts;
 int ff_speed = 1;
 struct nk_context *ctx;
 
+void load_cartridge(char *path) {
+    strcpy(rom_name, path);
+    load_game(&c.cart, rom_name);
+    initialize_cpu_memory(&c, &set);
+    emulator_mode = GAME;
+    game_started = true;
+    ResumeAudioStream(audio.ch1.stream);
+    ResumeAudioStream(audio.ch2.stream);
+    ResumeAudioStream(audio.ch3.stream);
+    ResumeAudioStream(audio.ch4.stream);
+}
+
 void DrawNavBar() {
     if (nk_begin(ctx, "Overview", nk_rect(0, 0, GetScreenWidth(), 35), 0)) {
         nk_menubar_begin(ctx);
@@ -103,7 +116,11 @@ void DrawNavBar() {
             static int slider = 10;
             static int check = nk_true;
             nk_layout_row_dynamic(ctx, 25, 1);
-            if (nk_menu_item_label(ctx, "Load ROM", NK_TEXT_LEFT)) {
+        if (nk_menu_item_label(ctx, "Load ROM", NK_TEXT_LEFT)) {
+                char *path = do_open_rom_dialog();
+                if (path != NULL) {
+                    load_cartridge(path);
+                }
             }
             if (nk_menu_item_label(ctx, "Save SRAM", NK_TEXT_LEFT)) {
                 if (game_started) {
@@ -201,15 +218,7 @@ void update_frame() {
         if ((int) droppedFiles.count == 1) {
             if (game_started)
                 save_game(&c.cart, rom_name);
-            strcpy(rom_name, droppedFiles.paths[0]);
-            load_game(&c.cart, rom_name);
-            initialize_cpu_memory(&c, &set);
-            emulator_mode = GAME;
-            game_started = true;
-            ResumeAudioStream(audio.ch1.stream);
-            ResumeAudioStream(audio.ch2.stream);
-            ResumeAudioStream(audio.ch3.stream);
-            ResumeAudioStream(audio.ch4.stream);
+            load_cartridge(droppedFiles.paths[0]);
         }
         UnloadDroppedFiles(droppedFiles);
     }
@@ -482,7 +491,7 @@ void update_frame() {
     }
 }
 
-int main(void) {
+int main(int argc, char **argv) {
     load_settings();
 
     // Initialize Raylib and Nuklear
@@ -512,6 +521,10 @@ int main(void) {
     load_audio_streams();
 
     joypad1.fast_forward = 1;
+
+    if (argc > 1) {
+        load_cartridge(argv[1]);
+    }
 
     #if defined(PLATFORM_WEB)
     EM_ASM(
