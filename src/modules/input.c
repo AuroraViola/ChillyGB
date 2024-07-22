@@ -19,14 +19,9 @@ bool update_keys() {
     }
 
     if (IsKeyPressed(KEY_SPACE))
-        SetTargetFPS(3000);
+        joypad1.fast_forward = 5;
     if (IsKeyReleased(KEY_SPACE))
-        SetTargetFPS(60);
-
-    if (IsKeyPressed(KEY_B))
-        SetTargetFPS(2);
-    if (IsKeyReleased(KEY_B))
-        SetTargetFPS(60);
+        joypad1.fast_forward = 1;
 
     for (int i = 0; i < 4; i++) {
         if (IsKeyPressed(joypad1.keys_dpad[i]))

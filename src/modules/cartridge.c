@@ -4,6 +4,14 @@
 
 void get_save_name(char rom_name[256], char save_name[256]) {
     strcpy(save_name, rom_name);
+
+    #if defined(PLATFORM_WEB)
+    char * skip = save_name + 14;
+    char * save = "/saves/";
+    memcpy(skip, save, 7);
+    strcpy(save_name, skip);
+    #endif
+
     char *ext = strrchr (save_name, '.');
     if (ext != NULL)
         *ext = '\0';

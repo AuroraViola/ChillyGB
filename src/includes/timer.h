@@ -6,6 +6,7 @@
 
 typedef struct {
     bool is_tac_on;
+    uint32_t timer_global;
     uint32_t t_states;
     uint8_t module;
     uint8_t tma;

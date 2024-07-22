@@ -10,7 +10,9 @@ typedef struct {
     bool custom_boot_logo;
 }settings;
 
-void load_settings(settings *s);
-void save_settings(settings *s);
+extern settings set;
+
+void load_settings();
+void save_settings();
 
 #endif //CHILLYGB_SETTINGS_H

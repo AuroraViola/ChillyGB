@@ -226,9 +226,11 @@ void load_sprite_line() {
         else {
             for (int x = 0; x < 8; x++) {
                 if ((selected_sprite.x + x) < 176) {
-                    video.sprite_line[selected_sprite.x + x].color = selected_sprite.tile_16[y][x];
-                    video.sprite_line[selected_sprite.x + x].priority = selected_sprite.priority;
-                    video.sprite_line[selected_sprite.x + x].palette = selected_sprite.palette;
+                    if (selected_sprite.tile_16[y][x] != 0) {
+                        video.sprite_line[selected_sprite.x + x].color = selected_sprite.tile_16[y][x];
+                        video.sprite_line[selected_sprite.x + x].priority = selected_sprite.priority;
+                        video.sprite_line[selected_sprite.x + x].palette = selected_sprite.palette;
+                    }
                 }
             }
         }

@@ -281,6 +281,7 @@ void tick_scanline(cpu *c) {
 }
 
 void add_ticks(cpu *c, uint16_t ticks) {
+    timer1.timer_global += ticks;
     ticks >>= 2;
     for (int i = 0; i < ticks; i++) {
         if (video.is_on) {

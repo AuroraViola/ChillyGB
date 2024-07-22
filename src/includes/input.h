@@ -10,6 +10,8 @@ typedef struct {
     bool btn[4];
     bool dpad_on;
     bool btn_on;
+
+    int fast_forward;
 }joypad;
 
 enum dpad {
