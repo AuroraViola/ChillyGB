@@ -35,6 +35,11 @@ void save_game(cartridge *cart, char rom_name[256]) {
             fwrite(cart->ram, 0x20000, 1, save);
         fclose(save);
     }
+    else if (cart->type == 6) {
+        FILE *save = fopen(save_name, "w");
+        fwrite(cart->ram, 0x200, 1, save);
+        fclose(save);
+    }
 
 }
 
@@ -81,6 +86,13 @@ void load_game(cartridge *cart, char rom_name[256]) {
                 fread(cart->ram, 0x10000, 1, save);
             else if (cart->banks_ram == 16)
                 fread(cart->ram, 0x20000, 1, save);
+            fclose(save);
+        }
+    }
+    else if (cart->type == 6) {
+        FILE *save = fopen(save_name, "r");
+        if (save != NULL) {
+            fread(cart->ram, 0x200, 1, save);
             fclose(save);
         }
     }

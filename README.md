@@ -23,7 +23,6 @@ You can try it now [here](https://chillygb.arci.me)
   * MBC1 improvements
     * Support for ROM larger than 512KB
     * Support for RAM bank switching
-  * MBC2 mapper support
   * RTC support
   * Support for rom larger than 4MB
   * Pixel FIFO and accurate PPU timing

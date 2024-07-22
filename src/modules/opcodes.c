@@ -73,6 +73,24 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     else
                         c->cart.ram_enable = false;
                     break;
+                // MBC 2
+                case 5 ... 6:
+                    // Rom control
+                    if ((addr & 0x100) != 0) {
+                        if ((value & 15) == 0) {
+                            value = 1;
+                        }
+                        c->cart.bank_select = (value & 15) % c->cart.banks;
+                    }
+                    // RAM control
+                    else {
+                        if ((value & 0xf) == 0x0a)
+                            c->cart.ram_enable = true;
+                        else
+                            c->cart.ram_enable = false;
+                    }
+
+                    break;
                 // MBC 3
                 case 0x12 ... 0x13: case 0x10:
                     if (value == 0x0a)
@@ -99,6 +117,24 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                         value = 1;
                     }
                     c->cart.bank_select = (value & 31) % c->cart.banks;
+                    break;
+                // MBC 2
+                case 5 ... 6:
+                    // Rom control
+                    if ((addr & 0x100) != 0) {
+                        if ((value & 15) == 0) {
+                            value = 1;
+                        }
+                        c->cart.bank_select = (value & 15) % c->cart.banks;
+                    }
+                    // RAM control
+                    else {
+                        if ((value & 0xf) == 0xa)
+                            c->cart.ram_enable = true;
+                        else
+                            c->cart.ram_enable = false;
+                    }
+
                     break;
                 // MBC 3
                 case 0x0f ... 0x13:
@@ -164,6 +200,10 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             if (c->cart.ram_enable) {
                 if ((c->cart.type == 0x0f || c->cart.type == 0x10) && (c->cart.bank_select_ram >= 8)) {
                     // TODO
+                }
+                // MBC 2
+                else if (c->cart.type == 5 || c->cart.type == 6) {
+                    c->cart.ram[c->cart.bank_select_ram][(addr - 0xa000) & 0x1ff] = value;
                 }
                 else {
                     c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
@@ -462,8 +502,13 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->cart.data[c->cart.bank_select][addr-0x4000];
         case 0xa000 ... 0xbfff:
             if (c->cart.ram_enable) {
+                // MBC 3 RTC
                 if ((c->cart.type == 0x0f || c->cart.type == 0x10) && (c->cart.bank_select_ram >= 8)) {
                     // TODO
+                }
+                // MBC 2 built-in RAM
+                else if (c->cart.type == 5 || c->cart.type == 6) {
+                    return (c->cart.ram[0][(addr - 0xa000) & 0x01ff] | 0xf0);
                 }
                 else {
                     return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
