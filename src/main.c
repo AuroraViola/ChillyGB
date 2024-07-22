@@ -297,7 +297,6 @@ void update_frame() {
             if (video.draw_screen) {
                 if (IsKeyPressed(KEY_ESCAPE)) {
                     save_settings();
-                    emulator_mode = MENU;
                     pause();
                 }
                 if (IsKeyPressed(KEY_F3)) {
