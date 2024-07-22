@@ -1,6 +1,7 @@
 #!/bin/sh
 
-emcc -o build-wasm/game.html \
+mkdir build-wasm
+emcc -o build-wasm/index.html \
 	src/main.c src/modules/* \
 	-Os -Wall raylib/src/libraylib.a \
 	-I. -Iraylib/src/ -L. -Lraylib/src/ -s USE_GLFW=3 \
