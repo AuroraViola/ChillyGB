@@ -9,6 +9,7 @@
 #include "includes/cartridge.h"
 #include "includes/open_dialog.h"
 #include <stdio.h>
+#include <getopt.h>
 #include <string.h>
 
 #if defined(PLATFORM_WEB)
@@ -21,7 +22,6 @@
 #include "../raylib-nuklear/include/raylib-nuklear.h"
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
-
 
 typedef enum EmuModes{
     MENU = 0,
@@ -116,7 +116,7 @@ void DrawNavBar() {
             static int slider = 10;
             static int check = nk_true;
             nk_layout_row_dynamic(ctx, 25, 1);
-        if (nk_menu_item_label(ctx, "Load ROM", NK_TEXT_LEFT)) {
+            if (nk_menu_item_label(ctx, "Load ROM", NK_TEXT_LEFT)) {
                 char *path = do_open_rom_dialog();
                 if (path != NULL) {
                     load_cartridge(path);
@@ -158,7 +158,7 @@ void DrawNavBar() {
             nk_menu_end(ctx);
         }
         nk_layout_row_push(ctx, 70);
-        if (nk_menu_begin_label(ctx, "Tools", NK_TEXT_LEFT, nk_vec2(150, 200))) {
+        if (nk_menu_begin_label(ctx, "Tools", NK_TEXT_LEFT, nk_vec2(230, 200))) {
             static size_t prog = 40;
             static int slider = 10;
             static int check = nk_true;
@@ -203,7 +203,7 @@ void DrawNavBar() {
     }
     nk_end(ctx);
 }
-void pause() {
+void pause_game() {
     if (emulator_mode != GAME) return;
     emulator_mode = MENU;
     PauseAudioStream(audio.ch1.stream);
@@ -306,7 +306,7 @@ void update_frame() {
             if (video.draw_screen) {
                 if (IsKeyPressed(KEY_ESCAPE)) {
                     save_settings();
-                    pause();
+                    pause_game();
                 }
                 if (IsKeyPressed(KEY_F3)) {
                     emulator_mode = DEBUG;
@@ -492,6 +492,71 @@ void update_frame() {
 }
 
 int main(int argc, char **argv) {
+    int n_ticks = 0;
+    char *test_image_path;
+
+    if (argc > 1) {
+        load_cartridge(argv[1]);
+    }
+
+    int arg_count;
+    const char *short_opt = "ith:";
+    struct option long_opt[] = {
+            {"image",          required_argument, NULL, 'i'},
+            {"ticks",          required_argument, NULL, 't'},
+            {"help",          no_argument, NULL, 'h'},
+            {NULL,            0,                 NULL, 0  }
+    };
+
+    while((arg_count = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
+        switch(arg_count) {
+            case -1:
+            case 0:
+                break;
+
+            case 'i':
+                test_image_path = optarg;
+                break;
+
+            case 't':
+                n_ticks = atoi(optarg);
+                break;
+
+            case 'h':
+                printf("Usage: ChillyGB [OPTIONS]\n");
+                printf("  -h, --help                      Print this help and exit\n");
+                printf("  -i filename, --image filename   The file path to the image for comparing the final result\n");
+                printf("  -t, --ticks, n_ticks            Number of t-cycles to do before exiting the test\n");
+                printf("\n");
+                return(0);
+
+            case ':':
+            case '?':
+                fprintf(stderr, "Try `%s --help' for more information.\n", argv[0]);
+                return(-2);
+
+            default:
+                fprintf(stderr, "%s: invalid option -- %c\n", argv[0], c);
+                return(-2);
+        };
+    };
+
+    if (n_ticks > 0) {
+        SetTraceLogLevel(LOG_ERROR);
+        test_rom(&c, n_ticks);
+        Color pixels_screen[144][160];
+        Image screenshot = take_debug_screenshot(pixels_screen);
+        Image expected = LoadImage(test_image_path);
+        for (int i = 0; i < 144; i++) {
+            for (int j = 0; j < 160; j++) {
+                if (GetImageColor(screenshot, j, i).r != GetImageColor(expected, j, i).r) {
+                    return 1;
+                }
+            }
+        }
+        return 0;
+    }
+
     load_settings();
 
     // Initialize Raylib and Nuklear
@@ -522,9 +587,6 @@ int main(int argc, char **argv) {
 
     joypad1.fast_forward = 1;
 
-    if (argc > 1) {
-        load_cartridge(argv[1]);
-    }
 
     #if defined(PLATFORM_WEB)
     EM_ASM(

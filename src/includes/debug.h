@@ -38,5 +38,7 @@ typedef struct {
 
 void generate_texts(cpu *c, debugtexts *texts);
 void decode_instructions(cpu *c, char instruction[20][50]);
+Image take_debug_screenshot(Color pixels[144][160]);
+void test_rom(cpu *c, int n_ticks);
 
 #endif //CHILLYGB_DEBUG_H

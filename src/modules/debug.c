@@ -1,8 +1,10 @@
 #include <stdio.h>
+#include "raylib.h"
 #include "../includes/debug.h"
 #include "../includes/cpu.h"
 #include "../includes/opcodes.h"
 #include "../includes/ppu.h"
+#include "../includes/apu.h"
 #include "../includes/timer.h"
 
 const uint8_t rst_vec_1[] = {0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38};
@@ -324,4 +326,47 @@ void decode_instructions(cpu *c, char instruction[30][50]) {
     for (int i = 0; i < 30; i++) {
         virtual_pc += decode_instruction(c, virtual_pc, instruction[i]);
     }
+}
+
+void test_rom(cpu *c, int n_ticks) {
+    PauseAudioStream(audio.ch1.stream);
+    PauseAudioStream(audio.ch2.stream);
+    PauseAudioStream(audio.ch3.stream);
+    PauseAudioStream(audio.ch4.stream);
+    timer1.timer_global = 0;
+    while (timer1.timer_global < n_ticks) {
+        execute(c);
+        Update_Audio(c);
+    }
+}
+
+Image take_debug_screenshot(Color pixels[144][160]){
+    Color palette[4] = {
+        (Color) {255, 255, 255, 255},
+        (Color) {170, 170, 170, 255},
+        (Color) {85, 85, 85, 255},
+        (Color) {0, 0, 0, 255},
+    };
+    if (video.is_on) {
+        for (int i = 0; i < 144; i++) {
+            for (int j = 0; j < 160; j++) {
+                pixels[i][j] = palette[video.display[i][j]];
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < 144; i++) {
+            for (int j = 0; j < 160; j++) {
+                pixels[i][j] = palette[0];
+            }
+        }
+    }
+    Image screen_image = (Image){
+            .data = pixels,
+            .width = 160,
+            .height = 144,
+            .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
+            .mipmaps = 1
+    };
+    return screen_image;
 }
