@@ -69,7 +69,6 @@
         console.log(file);
 
         file.arrayBuffer().then((buffer) => {
-          FS.mkdir('/file_picker_uploads');
           const path = `/file_picker_uploads/${file.name}`
           FS.writeFile(path, new Uint8Array(buffer));
           ccall("load_cartridge", "v", ["string"], [path]);

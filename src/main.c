@@ -594,6 +594,7 @@ int main(int argc, char **argv) {
 
     #if defined(PLATFORM_WEB)
     EM_ASM(
+        FS.mkdir('/file_picker_uploads');
         // Make a directory other than '/'
         FS.mkdir('/saves');
         // Then mount with IDBFS type
