@@ -523,7 +523,7 @@ int main(int argc, char **argv) {
                 break;
 
             case 'h':
-                printf("Usage: ChillyGB [OPTIONS]\n");
+                printf("Usage: ChillyGB [ROM] [OPTIONS]\n");
                 printf("  -h, --help                      Print this help and exit\n");
                 printf("  -i filename, --image filename   The file path to the image for comparing the final result\n");
                 printf("  -t, --ticks, n_ticks            Number of t-cycles to do before exiting the test\n");
@@ -547,13 +547,17 @@ int main(int argc, char **argv) {
         Color pixels_screen[144][160];
         Image screenshot = take_debug_screenshot(pixels_screen);
         Image expected = LoadImage(test_image_path);
+        export_screenshot(screenshot, rom_name);
         for (int i = 0; i < 144; i++) {
             for (int j = 0; j < 160; j++) {
                 if (GetImageColor(screenshot, j, i).r != GetImageColor(expected, j, i).r) {
+                    printf("Test FAILED\n");
+                    printf("Reason: Image mismatch\n");
                     return 1;
                 }
             }
         }
+        printf("Test PASSED");
         return 0;
     }
 
