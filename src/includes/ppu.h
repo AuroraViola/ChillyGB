@@ -19,7 +19,7 @@ typedef struct {
     uint8_t color;
     bool priority;
     bool palette;
-    bool initial_obj_px;
+    uint8_t x;
 }sprite_px;
 
 typedef struct {

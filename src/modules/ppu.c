@@ -173,36 +173,6 @@ void load_window() {
     }
 }
 
-void load_sprite_displays() {
-    memset(video.sprite_display, 0, 2*176*176*sizeof(sprite_px));
-    for (int i = 0; i < video.buffer_size; i++) {
-        if (video.sprites[video.oam_buffer[i]].x < 176 && video.sprites[video.oam_buffer[i]].y < 176) {
-            for (int y = 0; y < 8; y++) {
-                for (int x = 0; x < 8; x++) {
-                    if (video.sprites[video.oam_buffer[i]].y + y < 176 && video.sprites[video.oam_buffer[i]].x + x < 176 && video.sprite_display[0][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x + x].color == 0) {
-                        video.sprite_display[0][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x + x].color = video.sprites[video.oam_buffer[i]].tile[y][x];
-                        video.sprite_display[0][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x + x].palette = video.sprites[video.oam_buffer[i]].palette;
-                        video.sprite_display[0][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x + x].priority = video.sprites[video.oam_buffer[i]].priority;
-                    }
-                }
-                if (video.sprites[video.oam_buffer[i]].y + y < 176)
-                    video.sprite_display[0][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x].initial_obj_px = true;
-            }
-            for (int y = 0; y < 16; y++) {
-                for (int x = 0; x < 8; x++) {
-                    if (video.sprites[video.oam_buffer[i]].y + y < 176 && video.sprites[video.oam_buffer[i]].x + x < 176 && video.sprite_display[1][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x + x].color == 0) {
-                        video.sprite_display[1][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x +x].color = video.sprites[video.oam_buffer[i]].tile_16[y][x];
-                        video.sprite_display[1][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x + x].palette = video.sprites[video.oam_buffer[i]].palette;
-                        video.sprite_display[1][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x + x].priority = video.sprites[video.oam_buffer[i]].priority;
-                    }
-                }
-                if (video.sprites[video.oam_buffer[i]].y + y < 176)
-                    video.sprite_display[1][video.sprites[video.oam_buffer[i]].y + y][video.sprites[video.oam_buffer[i]].x].initial_obj_px = true;
-            }
-        }
-    }
-}
-
 uint8_t get_sprite_row(int sprite_index) {
     return (video.scan_line + 16) - video.sprites[sprite_index].y;
 }
@@ -215,10 +185,13 @@ void load_sprite_line() {
         if (!video.obj_size) {
             for (int x = 0; x < 8; x++) {
                 if ((selected_sprite.x + x) < 176) {
-                    if (selected_sprite.tile[y][x] != 0) {
-                        video.sprite_line[selected_sprite.x + x].color = selected_sprite.tile[y][x];
-                        video.sprite_line[selected_sprite.x + x].priority = selected_sprite.priority;
-                        video.sprite_line[selected_sprite.x + x].palette = selected_sprite.palette;
+                    if (selected_sprite.x < video.sprite_line[selected_sprite.x + x].x || video.sprite_line[selected_sprite.x + x].x == 0) {
+                        if (selected_sprite.tile[y][x] != 0) {
+                            video.sprite_line[selected_sprite.x + x].color = selected_sprite.tile[y][x];
+                            video.sprite_line[selected_sprite.x + x].priority = selected_sprite.priority;
+                            video.sprite_line[selected_sprite.x + x].palette = selected_sprite.palette;
+                            video.sprite_line[selected_sprite.x + x].x = selected_sprite.x;
+                        }
                     }
                 }
             }
@@ -226,10 +199,13 @@ void load_sprite_line() {
         else {
             for (int x = 0; x < 8; x++) {
                 if ((selected_sprite.x + x) < 176) {
-                    if (selected_sprite.tile_16[y][x] != 0) {
-                        video.sprite_line[selected_sprite.x + x].color = selected_sprite.tile_16[y][x];
-                        video.sprite_line[selected_sprite.x + x].priority = selected_sprite.priority;
-                        video.sprite_line[selected_sprite.x + x].palette = selected_sprite.palette;
+                    if (selected_sprite.x < video.sprite_line[selected_sprite.x + x].x || video.sprite_line[selected_sprite.x + x].x == 0) {
+                        if (selected_sprite.tile_16[y][x] != 0) {
+                            video.sprite_line[selected_sprite.x + x].color = selected_sprite.tile_16[y][x];
+                            video.sprite_line[selected_sprite.x + x].priority = selected_sprite.priority;
+                            video.sprite_line[selected_sprite.x + x].palette = selected_sprite.palette;
+                            video.sprite_line[selected_sprite.x + x].x = selected_sprite.x;
+                        }
                     }
                 }
             }
@@ -243,11 +219,9 @@ void oam_scan() {
     if (video.obj_size)
         sprite_height = 16;
     for (int i = 0; (i < 40) && (video.buffer_size < 10); i++) {
-        if (video.sprites[i].x > 0) {
-            if ((video.scan_line + 16) >= video.sprites[i].y && (video.scan_line + 16) < video.sprites[i].y + sprite_height) {
-                video.oam_buffer[video.buffer_size] = i;
-                video.buffer_size++;
-            }
+        if ((video.scan_line + 16) >= video.sprites[i].y && (video.scan_line + 16) < video.sprites[i].y + sprite_height) {
+            video.oam_buffer[video.buffer_size] = i;
+            video.buffer_size++;
         }
     }
 }
@@ -256,17 +230,6 @@ uint16_t get_mode3_duration(cpu *c) {
     uint16_t duration = c->memory[SCX] % 8;
     if (c->memory[WX] < 167 && video.window_enable && video.wy_trigger)
         duration += 6;
-    if (video.obj_enable) {
-        int y = video.scan_line;
-        for (uint8_t x = 0; x < 176; x++) {
-            if (video.sprite_display[video.obj_size][y][x].initial_obj_px) {
-                if (x == 0)
-                    duration += 11;
-                else
-                    duration += 6;
-            }
-        }
-    }
     return duration;
 }
 
@@ -335,32 +298,6 @@ void load_display(cpu *c) {
                     }
                 }
             }
-            /*
-            for (uint8_t x = 0; x < 160; x++) {
-                if (video.sprite_display[video.obj_size][y+16][x+8].color != 0) {
-                    if (video.sprite_display[video.obj_size][y+16][x+8].palette) {
-                        if (!video.sprite_display[video.obj_size][y + 16][x + 8].priority) {
-                            video.display[y][x] = video.obp1[video.sprite_display[video.obj_size][y + 16][x + 8].color];
-                        }
-                        else {
-                            if (video.display[y][x] == video.bgp[0]) {
-                                video.display[y][x] = video.obp1[video.sprite_display[video.obj_size][y + 16][x + 8].color];
-                            }
-                        }
-                    }
-                    else {
-                        if (!video.sprite_display[video.obj_size][y + 16][x + 8].priority) {
-                            video.display[y][x] = video.obp0[video.sprite_display[video.obj_size][y + 16][x + 8].color];
-                        }
-                        else {
-                            if (video.display[y][x] == video.bgp[0]) {
-                                video.display[y][x] = video.obp0[video.sprite_display[video.obj_size][y + 16][x + 8].color];
-                            }
-                        }
-                    }
-                }
-            }
-             */
         }
     }
     else {
