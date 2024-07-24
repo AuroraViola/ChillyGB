@@ -1,5 +1,3 @@
-# This starter workflow is for a CMake project running on a single platform. There is a different starter workflow if you need cross-platform coverage.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
 name: Build (Linux)
 
 on:
@@ -9,14 +7,10 @@ on:
     branches: [ "main" ]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
   build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +19,8 @@ jobs:
         submodules: recursive
 
     - name: Install dependency
-      run: sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+      run: sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev zlib1g-dev libpng-dev bison rsync zip python3 python-is-python3
+
     - name: Build Raylib
       run: |
         cd raylib 
@@ -33,18 +28,13 @@ jobs:
         cmake -DBUILD_SHARED_LIBS=ON ..
         make && sudo make install
       
-      # Build your program with the given configuration
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Build
-      # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: Prepare artifacts
-      # Build your program with the given configuration
       run: cp /usr/local/lib/libraylib.so.550 build && cd build && patchelf --remove-needed libraylib.so.550 ChillyGB && patchelf --add-needed ./libraylib.so.550 ChillyGB
 
     - uses: actions/upload-artifact@v4
@@ -54,3 +44,33 @@ jobs:
           build/ChillyGB
           build/res
           build/libraylib.so.550
+
+    - name: Get submodule commit
+      run: echo "ROM_COMMIT=$(git submodule status game-boy-test-roms)" >> $GITHUB_ENV
+
+    - name: Restore cached Roms
+      id: cache-roms-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          game-boy-test-roms/artifacts
+        key: ${{ env.ROM_COMMIT }}
+
+    - name: Build Roms
+      if: steps.cache-roms-restore.outputs.cache-hit != 'true'
+      run: |
+        cd game-boy-test-roms/src
+        ./assemble-all.sh
+
+    - name: Save Roms
+      id: cache-roms-save
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          game-boy-test-roms/artifacts
+        key: ${{ steps.cache-roms-restore.outputs.cache-primary-key }}
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --build-config ${{env.BUILD_TYPE}}
