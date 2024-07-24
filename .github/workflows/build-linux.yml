@@ -21,13 +21,54 @@ jobs:
     - name: Install dependency
       run: sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev zlib1g-dev libpng-dev bison rsync zip python3 python-is-python3
 
-    - name: Build Raylib
+    - name: Get submodule commit
       run: |
-        cd raylib 
+        echo "ROM_COMMIT=$(git submodule status game-boy-test-roms)" >> $GITHUB_ENV
+        echo "RAYLIB_COMMIT=$(git submodule status raylib)" >> $GITHUB_ENV
+
+    - name: root suid tar
+      run: sudo chown root:root /bin/tar && sudo chmod u+s /bin/tar
+
+    - name: Restore cached raylib
+      id: cache-raylib-restore
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          /usr/local/lib/libraylib.so.5.5.0
+          /usr/local/lib/libraylib.so.550
+          /usr/local/lib/libraylib.so
+          /usr/local/include/raylib.h
+          /usr/local/include/rlgl.h
+          /usr/local/include/raymath.h
+          /usr/local/lib/pkgconfig/raylib.pc
+          /usr/local/lib/cmake/raylib/raylib-config-version.cmake
+          /usr/local/lib/cmake/raylib/raylib-config.cmake
+        key: ${{ env.RAYLIB_COMMIT }}
+
+    - name: Build Raylib
+      if: steps.cache-raylib-restore.outputs.cache-hit != 'true'
+      run: |
+        cd raylib
         mkdir build && cd build
         cmake -DBUILD_SHARED_LIBS=ON ..
         make && sudo make install
-      
+
+    - name: Save Raylib
+      id: cache-raylib-save
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          /usr/local/lib/libraylib.so.5.5.0
+          /usr/local/lib/libraylib.so.550
+          /usr/local/lib/libraylib.so
+          /usr/local/include/raylib.h
+          /usr/local/include/rlgl.h
+          /usr/local/include/raymath.h
+          /usr/local/lib/pkgconfig/raylib.pc
+          /usr/local/lib/cmake/raylib/raylib-config-version.cmake
+          /usr/local/lib/cmake/raylib/raylib-config.cmake
+        key: ${{ steps.cache-raylib-restore.outputs.cache-primary-key }}
+
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
@@ -44,9 +85,6 @@ jobs:
           build/ChillyGB
           build/res
           build/libraylib.so.550
-
-    - name: Get submodule commit
-      run: echo "ROM_COMMIT=$(git submodule status game-boy-test-roms)" >> $GITHUB_ENV
 
     - name: Restore cached Roms
       id: cache-roms-restore
