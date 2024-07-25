@@ -43,13 +43,15 @@ void save_game(cartridge *cart, char rom_name[256]) {
 
 }
 
-void load_game(cartridge *cart, char rom_name[256]) {
+bool load_game(cartridge *cart, char rom_name[256]) {
     char save_name[256];
     get_save_name(rom_name, save_name);
 
-    FILE *file = fopen(rom_name, "r");
+    FILE *file = fopen(rom_name, "rb");
+    if (file == NULL) {
+        return false;
+    }
     fread(cart->data[0], 0x4000, 1, file);
-
     cart->type = cart->data[0][0x0147];
     cart->banks = (2 << cart->data[0][0x0148]);
 
@@ -96,4 +98,5 @@ void load_game(cartridge *cart, char rom_name[256]) {
             fclose(save);
         }
     }
+    return true;
 }

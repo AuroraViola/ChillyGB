@@ -1,9 +1,6 @@
 #include "../includes/apu.h"
 #include "../includes/cpu.h"
 #include "raylib.h"
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 channels audio;
 
@@ -59,23 +56,10 @@ uint8_t get_wave_value(float idx) {
     return audio.ch3.wave_pattern[(uint8_t)(idx)] >> audio.ch3.volume;
 }
 
+uint8_t cycles[] = { 1, 2, 4, 6};
 uint16_t get_wave_duty(cpu *c, uint16_t NRx1) {
     uint8_t duty = c->memory[NRx1] >> 6;
-    switch (duty) {
-        case 0:
-            duty = 1;
-            break;
-        case 1:
-            duty = 2;
-            break;
-        case 2:
-            duty = 4;
-            break;
-        case 3:
-            duty = 6;
-            break;
-    }
-    return duty;
+    return cycles[duty];
 }
 uint8_t get_wave_duty_ch1(float idx) {
     idx *= 8;

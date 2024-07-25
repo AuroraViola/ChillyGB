@@ -96,7 +96,10 @@ struct nk_context *ctx;
 
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
-    load_game(&c.cart, rom_name);
+    if(!load_game(&c.cart, rom_name)){
+        fprintf(stderr, "Failed to open game: %s\n", rom_name);
+        return;
+    }
     initialize_cpu_memory(&c, &set);
     emulator_mode = GAME;
     game_started = true;
@@ -495,12 +498,8 @@ int main(int argc, char **argv) {
     int n_ticks = 0;
     char *test_image_path;
 
-    if (argc > 1) {
-        load_cartridge(argv[1]);
-    }
-
     int arg_count;
-    const char *short_opt = "ith:";
+    const char *short_opt = "i:t:h";
     struct option long_opt[] = {
             {"image",          required_argument, NULL, 'i'},
             {"ticks",          required_argument, NULL, 't'},
@@ -536,10 +535,14 @@ int main(int argc, char **argv) {
                 return(-2);
 
             default:
-                fprintf(stderr, "%s: invalid option -- %c\n", argv[0], c);
+                fprintf(stderr, "%s: invalid option -- %c\n", argv[0], arg_count);
                 return(-2);
         };
     };
+
+    if (optind < argc) {
+        load_cartridge(argv[optind]);
+    }
 
     if (n_ticks > 0) {
         SetTraceLogLevel(LOG_ERROR);

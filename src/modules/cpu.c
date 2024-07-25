@@ -211,7 +211,7 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     timer1.t_states = 23440324;
 }
 
-bool is_stat_condition(cpu *c) {
+bool is_stat_condition() {
     if (video.ly_eq_lyc && video.lyc_select) {
         return true;
     }
@@ -230,7 +230,7 @@ bool is_stat_condition(cpu *c) {
 
 void tick_scanline(cpu *c) {
     timer1.scanline_timer -= 4;
-    bool prev_stat = is_stat_condition(c);
+    bool prev_stat = is_stat_condition();
     if (timer1.scanline_timer < 0) {
         timer1.scanline_timer += 456;
         video.scan_line++;
@@ -276,7 +276,7 @@ void tick_scanline(cpu *c) {
             video.mode = 0;
         }
     }
-    if (is_stat_condition(c) && !prev_stat)
+    if (is_stat_condition() && !prev_stat)
         c->memory[IF] |= 2;
 }
 

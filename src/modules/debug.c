@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <libgen.h>
 #include "raylib.h"
 #include "../includes/debug.h"
 #include "../includes/cpu.h"
@@ -343,21 +344,7 @@ void test_rom(cpu *c, int n_ticks) {
 
 void export_screenshot(Image screenshot, char rom_name[256]) {
     char screenshot_file[256];
-    int slash_i = -1;
-    strcpy(screenshot_file, rom_name);
-    for (int i = 0; i < strlen(screenshot_file); i++) {
-        if (screenshot_file[i] == '/') {
-            slash_i = i+1;
-        }
-    }
-    if (slash_i != 1) {
-        for (int i = 0; i < (strlen(screenshot_file) - slash_i); i++) {
-            screenshot_file[i] = screenshot_file[i+slash_i];
-        }
-        //screenshot_file[slash_i] = '\0';
-        screenshot_file[strlen(screenshot_file) - slash_i] = '\0';
-    }
-
+    strcpy(screenshot_file, basename(rom_name));
     char *ext = strrchr (screenshot_file, '.');
     if (ext != NULL)
         *ext = '\0';

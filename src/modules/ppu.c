@@ -1,7 +1,6 @@
 #include "../includes/cpu.h"
 #include "../includes/ppu.h"
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 ppu video;

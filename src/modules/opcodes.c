@@ -1,7 +1,5 @@
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include "../includes/cpu.h"
 #include "../includes/apu.h"
 #include "../includes/ppu.h"

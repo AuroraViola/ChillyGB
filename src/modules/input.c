@@ -2,7 +2,6 @@
 #include "../includes/apu.h"
 #include "../includes/input.h"
 #include "raylib.h"
-#include <stdint.h>
 
 joypad joypad1;
 
