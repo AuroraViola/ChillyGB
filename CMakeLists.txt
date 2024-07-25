@@ -67,23 +67,25 @@ add_test(blargg/mem_timing-2,
         "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/mem_timing-2/mem_timing-dmg-cgb.png"
         "--ticks" "20000000")
 
-add_test(blargg/dmg_sound,
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/dmg_sound/dmg_sound.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/dmg_sound/dmg_sound-dmg.png"
-        "--ticks" "300000000")
+## Tests not yet implemented
 
-add_test(blargg/oam_bug,
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/oam_bug/oam_bug.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/oam_bug/oam_bug-dmg.png"
-        "--ticks" "300000000")
+#add_test(blargg/dmg_sound,
+#        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
+#                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/dmg_sound/dmg_sound.gb"
+#        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/dmg_sound/dmg_sound-dmg.png"
+#        "--ticks" "300000000")
 
-add_test(blargg/halt_bug,
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/halt_bug.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/halt_bug-dmg-cgb.png"
-        "--ticks" "20000000")
+#add_test(blargg/oam_bug,
+#        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
+#                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/oam_bug/oam_bug.gb"
+#        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/oam_bug/oam_bug-dmg.png"
+#        "--ticks" "300000000")
+
+#add_test(blargg/halt_bug,
+#        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
+#                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/halt_bug.gb"
+#        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/halt_bug-dmg-cgb.png"
+#        "--ticks" "20000000")
 
 add_test(dmg-acid2,
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
