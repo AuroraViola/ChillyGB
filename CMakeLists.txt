@@ -6,6 +6,17 @@ enable_testing()
 
 set(CMAKE_C_STANDARD 11)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+        include(FetchContent)
+        FetchContent_Declare(
+                raylib_win64
+                URL      https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_win64_mingw-w64.zip
+        )
+        FetchContent_MakeAvailable(raylib_win64)
+        include_directories(${raylib_win64_SOURCE_DIR}/include)
+        link_directories(${raylib_win64_SOURCE_DIR}/lib)
+endif()
+
 add_executable(ChillyGB src/main.c
         src/modules/cpu.c
         src/includes/cpu.h
@@ -29,6 +40,10 @@ add_executable(ChillyGB src/main.c
         src/modules/open_dialog.c
 )
 target_link_libraries(ChillyGB raylib m)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+        target_link_libraries(ChillyGB gdi32 winmm comdlg32)
+endif()
 
 add_custom_command(
         TARGET ChillyGB POST_BUILD
