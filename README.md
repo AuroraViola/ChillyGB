@@ -17,41 +17,83 @@ You can try it now [here](https://chillygb.arci.me)
 <a><img src="https://github.com/user-attachments/assets/e81491da-a1f8-4a3d-bff8-0878b83720f3" width="24.25%"/></a>
 <a><img src="https://github.com/user-attachments/assets/a69b77fc-d871-4eef-9e77-e508e4f7d7e9" width="24.25%"/></a>
 
+## Building
+
+### Linux
+
+#### Dependency Installation
+**Fedora**
+```bash
+sudo dnf install git cmake make raylib raylib-devel gcc
+```
+**Arch Linux**
+```bash
+sudo pacman -S git cmake make gcc raylib
+```
+
+#### ChillyGB Installation
+
+Clone the ChillyGB repository
+```bash
+git clone https://github.com/AuroraViola/ChillyGB && cd ChillyGB
+```
+Build ChillyGB
+```bash
+cmake -B ./build -DCMAKE_BUILD_TYPE=Release
+cmake --build ./build --config Release
+```
+
+### Windows
+
+TODO
+
 ## Planned features
 
-* Emulation Improvements
-  * MBC1 improvements
-    * Support for ROM larger than 512KB
-    * Support for RAM bank switching
-  * RTC support
-  * Support for rom larger than 4MB
-  * Pixel FIFO and accurate PPU timing
-  * VRAM and OAM Access
-  * DMA Conflicts
+Here is a list of planned features that need to be implemented for the first stable release
+
+* **Cartridge support**
+  * MBC3 with RTC support
+  * Support for MBC1 ROMs larger than 512KB
+  * Support for RAM bank switching in MBC1
+  * Support for ROMs larger than 4MB
+* **Emulation Improvements**
+  * Pixel FIFO and more accurate PPU timing
   * Accurate sound behaviours
-  * Link cable emulation and multiplayer support
-  * Stop Instruction
-* Graphical and particular features
-  * Better menu
-    * More options
+  * Correct serial emulation
+  * STAT IRQ blocking
+  * Halt bug
+* **Graphical and particular features**
   * Save states
+  * Key editor
+
+## Planned features with very low priority
+
+* **Cartridge support**
+  * MBC6 support
+  * Pocket camera support
+* **Emulation Improvements**
+  * Stop Instruction
+  * Accurate VRAM and OAM timing Access
+  * DMA Conflicts
+  * Online multiplayer support via emulated link cable
+* **Graphical and particular features**
   * Screenshots
   * Frame blending
-  * Key editor
-  * Sprite, Window and object palette editor
+  * Palette editor
+  * Rewind
   * Rom folder
-* Debugger Improvements
+* **Debugger Improvements**
   * Stack viewer
   * VRAM viewer
   * Memory editor
 
 ## Not Planned features
 
+These features will not be implemented (at least in this repository)
+
 * Gameboy color support
-* ~~Boot Rom support~~
-* Rewind
 * SGB borders
 
 ## License
 
-[GNU General Public License v3.0](https://github.com/AuroraViola/ChillyGB/blob/main/LICENSE.md)
+This software is licensed under the [GNU General Public License v3.0](https://github.com/AuroraViola/ChillyGB/blob/main/LICENSE.md)
