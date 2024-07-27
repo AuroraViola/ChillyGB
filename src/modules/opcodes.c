@@ -62,136 +62,123 @@ void reset_apu_regs(cpu *c) {
 
 void set_mem(cpu *c, uint16_t addr, uint8_t value) {
     switch (addr) {
-        case 0x0000 ... 0x1fff: // Rom
+        case 0x0000 ... 0x7fff:
             switch (c->cart.type) {
                 // MBC 1
-                case 2 ... 3:
-                    if ((value & 0xf) == 0xa)
-                        c->cart.ram_enable = true;
-                    else
-                        c->cart.ram_enable = false;
+                case 0x1 ... 0x3:
+                    switch (addr) {
+                        case 0x0000 ... 0x1fff:
+                            if (c->cart.type != 0x1) {
+                                if ((value & 0xf) == 0xa)
+                                    c->cart.ram_enable = true;
+                                else
+                                    c->cart.ram_enable = false;
+                            }
+                            break;
+                        case 0x2000 ... 0x3fff:
+                            if ((value & 31) == 0) {
+                                value = 1;
+                            }
+                            c->cart.bank_select = (value & 31) % c->cart.banks;
+                            break;
+                        case 0x4000 ... 0x5fff:
+                            break;
+                        case 0x6000 ... 0x7fff:
+                            c->cart.mbc1mode = value & 1;
+                            break;
+                    }
                     break;
-                // MBC 2
-                case 5 ... 6:
-                    // Rom control
-                    if ((addr & 0x100) != 0) {
-                        if ((value & 15) == 0) {
-                            value = 1;
-                        }
-                        c->cart.bank_select = (value & 15) % c->cart.banks;
-                    }
-                    // RAM control
-                    else {
-                        if ((value & 0xf) == 0x0a)
-                            c->cart.ram_enable = true;
-                        else
-                            c->cart.ram_enable = false;
-                    }
 
-                    break;
-                // MBC 3
-                case 0x12 ... 0x13: case 0x10:
-                    if (value == 0x0a)
-                        c->cart.ram_enable = true;
-                    else if (value == 0)
-                        c->cart.ram_enable = false;
-                    break;
-                // MBC 5
-                case 0x1a ... 0x1b: case 0x1d ... 0x1e:
-                    if (value == 0x0a)
-                        c->cart.ram_enable = true;
-                    else if (value == 0)
-                        c->cart.ram_enable = false;
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case 0x2000 ... 0x3fff: // Rom
-            switch (c->cart.type) {
-                // MBC 1
-                case 1 ... 3:
-                    if ((value & 31) == 0) {
-                        value = 1;
-                    }
-                    c->cart.bank_select = (value & 31) % c->cart.banks;
-                    break;
                 // MBC 2
-                case 5 ... 6:
-                    // Rom control
-                    if ((addr & 0x100) != 0) {
-                        if ((value & 15) == 0) {
-                            value = 1;
+                case 0x5 ... 0x6:
+                    if (addr < 0x4000) {
+                        if ((addr & 0x100) != 0) {
+                            if ((value & 15) == 0) {
+                                value = 1;
+                            }
+                            c->cart.bank_select = (value & 15) % c->cart.banks;
+                        } else {
+                            if ((value & 0xf) == 0x0a)
+                                c->cart.ram_enable = true;
+                            else
+                                c->cart.ram_enable = false;
                         }
-                        c->cart.bank_select = (value & 15) % c->cart.banks;
+                        break;
                     }
-                    // RAM control
-                    else {
-                        if ((value & 0xf) == 0xa)
-                            c->cart.ram_enable = true;
-                        else
-                            c->cart.ram_enable = false;
-                    }
+                    break;
 
-                    break;
                 // MBC 3
-                case 0x0f ... 0x13:
-                    if ((value & 127) == 0) {
-                        value = 1;
+                case 0x11 ... 0x13:
+                    switch (addr) {
+                        case 0x0000 ... 0x1fff:
+                            if (c->cart.type != 0x11) {
+                                if (value == 0x0a)
+                                    c->cart.ram_enable = true;
+                                else if (value == 0)
+                                    c->cart.ram_enable = false;
+                            }
+                            break;
+                        case 0x2000 ... 0x3fff:
+                            if ((value & (c->cart.banks - 1)) == 0) {
+                                value = 1;
+                            }
+                            c->cart.bank_select = value % c->cart.banks;
+                            break;
+                        case 0x4000 ... 0x5fff:
+                            if (c->cart.type != 0x11) {
+                                if (c->cart.banks_ram > 1) {
+                                    if (value >= 0 && value <= 3) {
+                                        c->cart.bank_select_ram = value;
+                                    }
+                                }
+                            }
+                            break;
+                        case 0x6000 ... 0x7fff:
+                            break;
                     }
-                    c->cart.bank_select = value & 127;
                     break;
+
                 // MBC 5
                 case 0x19 ... 0x1e:
-                    if (addr <= 0x2fff)
-                        c->cart.bank_select = value & (c->cart.banks-1);
+                    switch (addr) {
+                        case 0x0000 ... 0x1fff:
+                            if (c->cart.type != 0x19 && c->cart.type != 0x1c) {
+                                if (value == 0x0a)
+                                    c->cart.ram_enable = true;
+                                else if (value == 0)
+                                    c->cart.ram_enable = false;
+                            }
+                            break;
+                        case 0x2000 ... 0x2fff:
+                            c->cart.bank_select = value | (c->cart.bank_select & 0x100);
+                            c->cart.bank_select %= c->cart.banks;
+                            break;
+                        case 0x3000 ... 0x3fff:
+                            if ((value & 1) == 0) {
+                                c->cart.bank_select &= 255;
+                            }
+                            else {
+                                c->cart.bank_select |= 256;
+                            }
+                            c->cart.bank_select %= c->cart.banks;
+                            break;
+                        case 0x4000 ... 0x5fff:
+                            if (c->cart.type != 0x19 && c->cart.type != 0x1c) {
+                                if (c->cart.banks_ram > 1) {
+                                    if ((value >= 0 && value < 16) && value <= c->cart.banks_ram) {
+                                        c->cart.bank_select_ram = value;
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                     break;
+
                 default:
                     break;
             }
-            break;
-        case 0x4000 ... 0x5fff: // Rom
-            switch (c->cart.type) {
-                // MBC 1
-                case 2 ... 3:
-                    if (c->cart.banks_ram > 1) {
-                        if (value >= 0 && value <= 3) {
-                            c->cart.bank_select_ram = value;
-                        }
-                    }
-                    break;
-                // MBC 3
-                case 0x12 ... 0x13:
-                    if (c->cart.banks_ram > 1) {
-                        if (value >= 0 && value <= 3) {
-                            c->cart.bank_select_ram = value;
-                        }
-                    }
-                    break;
-                // MBC3 Timer
-                case 0x0f ... 0x10:
-                    if (c->cart.banks_ram > 1) {
-                        if (value >= 0 && value <= 3) {
-                            c->cart.bank_select_ram = value;
-                        }
-                    }
-                    if (value >= 8 && value <= 12) {
-                        c->cart.bank_select_ram = value;
-                    }
-                    break;
-                // MBC 5
-                case 0x1a ... 0x1b: case 0x1d ... 0x1e:
-                    if (c->cart.banks_ram > 1) {
-                        if (value >= 0 && value <= 16) {
-                            c->cart.bank_select_ram = value;
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case 0x6000 ... 0x7fff: // Rom
             break;
 
         case 0xa000 ... 0xbfff: // Ram
@@ -497,22 +484,17 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
 uint8_t get_mem(cpu *c, uint16_t addr) {
     switch (addr) {
-        case 0x0000 ... 0x00ff:
-            if (c->bootrom.is_enabled)
+        case 0x0000 ... 0x3fff:
+            if (c->bootrom.is_enabled && addr < 0x100)
                 return c->bootrom.data[addr];
             return c->cart.data[0][addr];
-        case 0x0100 ... 0x3fff:
-            return c->cart.data[0][addr];
+
         case 0x4000 ... 0x7fff:
             return c->cart.data[c->cart.bank_select][addr-0x4000];
         case 0xa000 ... 0xbfff:
             if (c->cart.ram_enable) {
-                // MBC 3 RTC
-                if ((c->cart.type == 0x0f || c->cart.type == 0x10) && (c->cart.bank_select_ram >= 8)) {
-                    // TODO
-                }
                 // MBC 2 built-in RAM
-                else if (c->cart.type == 5 || c->cart.type == 6) {
+                if (c->cart.type == 5 || c->cart.type == 6) {
                     return (c->cart.ram[0][(addr - 0xa000) & 0x01ff] | 0xf0);
                 }
                 else {
