@@ -15,14 +15,14 @@ void load_settings() {
         fscanf(f, "volume: %i\n", &set.volume);
         audio.volume = set.volume;
         fscanf(f, "palette: %i\n", &set.palette);
-        fscanf(f, "custom_logo: %i\n", &set.custom_boot_logo);
+        fscanf(f, "enable_bootrom: %i\n", &set.bootrom_enabled);
         fclose(f);
     }
     else {
         set.volume = 100;
         audio.volume = set.volume;
         set.palette = 0;
-        set.custom_boot_logo = true;
+        set.bootrom_enabled = true;
     }
 }
 
@@ -34,6 +34,6 @@ void save_settings() {
     #endif
     fprintf(file, "volume: %i\n", audio.volume);
     fprintf(file, "palette: %i\n", set.palette);
-    fprintf(file, "custom_logo: %i\n", set.custom_boot_logo);
+    fprintf(file, "enable_bootrom: %i\n", set.bootrom_enabled);
     fclose(file);
 }

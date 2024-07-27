@@ -48,7 +48,7 @@ You can try it now [here](https://chillygb.arci.me)
 ## Not Planned features
 
 * Gameboy color support
-* Boot Rom support
+* ~~Boot Rom support~~
 * Rewind
 * SGB borders
 

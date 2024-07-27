@@ -25,6 +25,11 @@ typedef struct {
 }cartridge;
 
 typedef struct {
+    uint8_t data[0x100];
+    bool is_enabled;
+}rom;
+
+typedef struct {
     registers r;
     uint16_t sp;
     uint16_t pc;
@@ -42,6 +47,8 @@ typedef struct {
     bool freq_sweep;
     uint8_t freq_sweep_pace;
     bool sound_lenght;
+
+    rom bootrom;
 }cpu;
 
 typedef struct {
@@ -151,9 +158,11 @@ enum cond {
     condNZ = 0,
 };
 
+void initialize_cpu_memory_no_bootrom(cpu *c, settings *s);
 void initialize_cpu_memory(cpu *c, settings *s);
 void execute(cpu *c);
 void add_ticks(cpu *c, uint16_t ticks);
 void dma_transfer(cpu *c);
+bool load_bootrom(rom *bootrom);
 
 #endif //CHILLYGB_CPU_H

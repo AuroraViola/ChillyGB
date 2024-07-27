@@ -100,7 +100,10 @@ void load_cartridge(char *path) {
         fprintf(stderr, "Failed to open game: %s\n", rom_name);
         return;
     }
-    initialize_cpu_memory(&c, &set);
+    if (load_bootrom(&c.bootrom) && set.bootrom_enabled)
+        initialize_cpu_memory(&c, &set);
+    else
+        initialize_cpu_memory_no_bootrom(&c, &set);
     emulator_mode = GAME;
     game_started = true;
     ResumeAudioStream(audio.ch1.stream);
@@ -150,7 +153,10 @@ void DrawNavBar() {
             nk_layout_row_dynamic(ctx, 25, 1);
             if (nk_menu_item_label(ctx, "Reset", NK_TEXT_LEFT)) {
                 if (game_started) {
-                    initialize_cpu_memory(&c, &set);
+                    if (load_bootrom(&c.bootrom) && set.bootrom_enabled)
+                        initialize_cpu_memory(&c, &set);
+                    else
+                        initialize_cpu_memory_no_bootrom(&c, &set);
                     emulator_mode = GAME;
                     ResumeAudioStream(audio.ch1.stream);
                     ResumeAudioStream(audio.ch2.stream);
@@ -233,14 +239,16 @@ void update_frame() {
             if (show_settings){
                 if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 400, 200),
                                                  NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
-                nk_layout_row_dynamic(ctx, 30, 2);
-                nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                audio.volume = nk_slide_int(ctx, 0, audio.volume, 100, 1);
-                nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                struct nk_vec2 size = {200, 100};
-                nk_combobox(ctx, palettes, 6, &set.palette, 20, size);
-                nk_label(ctx, "Original logo", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                nk_checkbox_label(ctx, "", &set.custom_boot_logo);
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    audio.volume = nk_slide_int(ctx, 0, audio.volume, 100, 1);
+                    nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    struct nk_vec2 size = {200, 100};
+                    nk_combobox(ctx, palettes, 6, &set.palette, 20, size);
+                    #ifndef PLATFORM_WEB
+                    nk_label(ctx, "Boot Rom", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_checkbox_label(ctx, "", &set.bootrom_enabled);
+                    #endif
                 }
                 nk_end(ctx);
             }
@@ -448,7 +456,7 @@ void update_frame() {
             }
 
             if (IsKeyPressed(KEY_R)) {
-                initialize_cpu_memory(&c, &set);
+                initialize_cpu_memory_no_bootrom(&c, &set);
             }
 
             if (IsKeyPressed(KEY_ESCAPE)) {
@@ -564,8 +572,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    load_settings();
-
     // Initialize Raylib and Nuklear
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*4, 144*4, "ChillyGB");
@@ -594,7 +600,6 @@ int main(int argc, char **argv) {
 
     joypad1.fast_forward = 1;
 
-
     #if defined(PLATFORM_WEB)
     EM_ASM(
         FS.mkdir('/file_picker_uploads');
@@ -611,6 +616,7 @@ int main(int argc, char **argv) {
     );
     emscripten_set_main_loop(update_frame, 0, 1);
     #else
+    load_settings();
     while(!WindowShouldClose() && !exited) {
         update_frame();
     }

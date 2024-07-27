@@ -3,6 +3,7 @@
 
 uint8_t get_mem(cpu *c, uint16_t addr);
 void set_mem(cpu *c, uint16_t addr, uint8_t value);
+void reset_apu_regs(cpu *c);
 
 uint8_t jp(cpu *c, parameters *p);
 uint8_t ld_r8_imm8(cpu *c, parameters *p);

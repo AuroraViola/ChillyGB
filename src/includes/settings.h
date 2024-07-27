@@ -7,7 +7,7 @@
 typedef struct {
     int palette;
     int volume;
-    bool custom_boot_logo;
+    bool bootrom_enabled;
 }settings;
 
 extern settings set;

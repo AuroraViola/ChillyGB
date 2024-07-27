@@ -480,6 +480,9 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->memory[addr] = value;
             break;
 
+        case 0xff50:
+            c->bootrom.is_enabled = false;
+            break;
 
         case 0xff30 ... 0xff3f: // Wave Ram
             if (!audio.ch3.is_active)
@@ -494,7 +497,11 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
 uint8_t get_mem(cpu *c, uint16_t addr) {
     switch (addr) {
-        case 0x0000 ... 0x3fff:
+        case 0x0000 ... 0x00ff:
+            if (c->bootrom.is_enabled)
+                return c->bootrom.data[addr];
+            return c->cart.data[0][addr];
+        case 0x0100 ... 0x3fff:
             return c->cart.data[0][addr];
         case 0x4000 ... 0x7fff:
             return c->cart.data[c->cart.bank_select][addr-0x4000];
