@@ -24,7 +24,7 @@ void save_game(cartridge *cart, char rom_name[256]) {
     get_save_name(rom_name, save_name);
 
     if (cart->type == 3 || cart->type == 0x13 || cart->type == 0x1b) {
-        FILE *save = fopen(save_name, "w");
+        FILE *save = fopen(save_name, "wb");
         if (cart->banks_ram == 1)
             fwrite(cart->ram, 0x2000, 1, save);
         else if (cart->banks_ram == 4)
@@ -36,7 +36,7 @@ void save_game(cartridge *cart, char rom_name[256]) {
         fclose(save);
     }
     else if (cart->type == 6) {
-        FILE *save = fopen(save_name, "w");
+        FILE *save = fopen(save_name, "wb");
         fwrite(cart->ram, 0x200, 1, save);
         fclose(save);
     }
