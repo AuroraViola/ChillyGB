@@ -53,7 +53,6 @@ Here is a list of planned features that need to be implemented for the first sta
 
 * **Cartridge support**
   * MBC3 with RTC support
-  * Support for MBC1 ROMs larger than 512KB
 * **Emulation Improvements**
   * Pixel FIFO and more accurate PPU timing
   * Accurate sound behaviours

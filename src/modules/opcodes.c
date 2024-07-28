@@ -79,12 +79,13 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                             if ((value & 31) == 0) {
                                 value = 1;
                             }
-                            c->cart.bank_select = (value & 31) % c->cart.banks;
+                            c->cart.bank_select = ((c->cart.bank_select & 96) | (value & 31)) % c->cart.banks;
                             break;
                         case 0x4000 ... 0x5fff:
+                            value &= 3;
                             if (c->cart.mbc1mode) {
                                 if (c->cart.banks_ram > 1) {
-                                    c->cart.bank_select_ram = value & 3;
+                                    c->cart.bank_select_ram = value;
                                 }
                             }
                             else {
@@ -92,6 +93,11 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                                     c->cart.bank_select_ram = 0;
                                 }
                             }
+
+                            if (c->cart.banks > 32) {
+                                c->cart.bank_select = ((c->cart.bank_select & 31) | (value << 5)) % c->cart.banks;
+                            }
+
                             break;
                         case 0x6000 ... 0x7fff:
                             c->cart.mbc1mode = value & 1;
@@ -503,6 +509,11 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case 0x0000 ... 0x3fff:
             if (c->bootrom.is_enabled && addr < 0x100)
                 return c->bootrom.data[addr];
+            if (c->cart.type == 1 || c->cart.type == 2 || c->cart.type == 3) {
+                if (c->cart.mbc1mode)
+                    return c->cart.data[c->cart.bank_select & 96][addr];
+                return c->cart.data[0][addr];
+            }
             return c->cart.data[0][addr];
 
         case 0x4000 ... 0x7fff:
