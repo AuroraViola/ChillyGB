@@ -67,6 +67,7 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     c->cart.bank_select = 1;
     c->cart.bank_select_ram = 0;
     c->cart.ram_enable = false;
+    c->cart.mbc1mode = false;
 
     // Initialize Joypad keys
     KeyboardKey keys[] = {KEY_D, KEY_A, KEY_W, KEY_S, KEY_L, KEY_K, KEY_BACKSPACE, KEY_ENTER};
@@ -199,6 +200,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->cart.bank_select = 1;
     c->cart.bank_select_ram = 0;
     c->cart.ram_enable = false;
+    c->cart.mbc1mode = false;
 
     // Initialize Joypad
     KeyboardKey keys[] = {KEY_D, KEY_A, KEY_W, KEY_S, KEY_L, KEY_K, KEY_BACKSPACE, KEY_ENTER};

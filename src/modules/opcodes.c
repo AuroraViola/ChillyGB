@@ -82,6 +82,16 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                             c->cart.bank_select = (value & 31) % c->cart.banks;
                             break;
                         case 0x4000 ... 0x5fff:
+                            if (c->cart.mbc1mode) {
+                                if (c->cart.banks_ram > 1) {
+                                    c->cart.bank_select_ram = value & 3;
+                                }
+                            }
+                            else {
+                                if (c->cart.banks_ram > 1) {
+                                    c->cart.bank_select_ram = 0;
+                                }
+                            }
                             break;
                         case 0x6000 ... 0x7fff:
                             c->cart.mbc1mode = value & 1;
@@ -183,6 +193,12 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
         case 0xa000 ... 0xbfff: // Ram
             if (c->cart.ram_enable) {
+                if (c->cart.type == 1 || c->cart.type == 2 || c->cart.type == 3) {
+                    if (c->cart.mbc1mode)
+                        c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+                    else
+                        c->cart.ram[0][addr - 0xa000] = value;
+                }
                 if ((c->cart.type == 0x0f || c->cart.type == 0x10) && (c->cart.bank_select_ram >= 8)) {
                     // TODO
                 }
@@ -493,6 +509,11 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->cart.data[c->cart.bank_select][addr-0x4000];
         case 0xa000 ... 0xbfff:
             if (c->cart.ram_enable) {
+                if (c->cart.type == 1 || c->cart.type == 2 || c->cart.type == 3) {
+                    if (c->cart.mbc1mode)
+                        return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
+                    return c->cart.ram[0][addr - 0xa000];
+                }
                 // MBC 2 built-in RAM
                 if (c->cart.type == 5 || c->cart.type == 6) {
                     return (c->cart.ram[0][(addr - 0xa000) & 0x01ff] | 0xf0);

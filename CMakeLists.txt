@@ -120,6 +120,12 @@ add_test(mooneye/manual-only/sprite_priority
         "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/mooneye-test-suite/manual-only/sprite_priority-dmg.png"
         "--ticks" "1000000")
 
+add_test(mbc3-tester
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
+                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/mbc3-tester/mbc3-tester.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/mbc3-tester/mbc3-tester-dmg.png"
+        "--ticks" "4000000")
+
 add_test(scribbltest/lycscx
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
                   "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/lycscx/lycscx.gb"
