@@ -7,11 +7,11 @@ joypad joypad1;
 
 bool update_keys() {
     for (int i = 0; i < 4; i++) {
-        if (IsKeyDown(joypad1.keys_dpad[i]))
+        if (IsKeyDown(joypad1.keys_dpad[i]) || IsGamepadButtonDown(0, joypad1.gamepad_dpad[i]))
             joypad1.dpad[i] = 0;
         else
             joypad1.dpad[i] = 1;
-        if (IsKeyDown(joypad1.keys_btn[i]))
+        if (IsKeyDown(joypad1.keys_btn[i]) || IsGamepadButtonDown(0, joypad1.gamepad_btn[i]))
             joypad1.btn[i] = 0;
         else
             joypad1.btn[i] = 1;
