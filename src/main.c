@@ -317,6 +317,7 @@ void update_frame() {
             if (video.draw_screen) {
                 if (IsKeyPressed(KEY_ESCAPE)) {
                     save_settings();
+                    save_game(&c.cart, rom_name);
                     pause_game();
                 }
                 if (IsKeyPressed(KEY_F3)) {
