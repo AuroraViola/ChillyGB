@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "../includes/cpu.h"
 #include "../includes/apu.h"
 #include "../includes/ppu.h"
@@ -154,6 +155,60 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     }
                     break;
 
+                // MBC 3 RTC
+                case 0x0f ... 0x10:
+                    switch (addr) {
+                        case 0x0000 ... 0x1fff:
+                            if (value == 0x0a)
+                                c->cart.ram_enable = true;
+                            else if (value == 0)
+                                c->cart.ram_enable = false;
+                            break;
+                        case 0x2000 ... 0x3fff:
+                            if ((value & (c->cart.banks - 1)) == 0) {
+                                value = 1;
+                            }
+                            c->cart.bank_select = value % c->cart.banks;
+                            break;
+                        case 0x4000 ... 0x5fff:
+                            if (c->cart.banks_ram > 1) {
+                                if (value >= 0 && value <= 3) {
+                                    c->cart.bank_select_ram = value;
+                                }
+                                else if (value >= 0x08 && value <= 0x0c) {
+                                    c->cart.bank_select_ram = value;
+                                }
+                            }
+                            else {
+                                if (value >= 0x08 && value <= 0x0c) {
+                                    c->cart.bank_select_ram = value;
+                                }
+                            }
+                            break;
+                        case 0x6000 ... 0x7fff:
+                            if (value == 0) {
+                                c->cart.rtc.about_to_latch = false;
+                            }
+                            else if (value == 1) {
+                                if (!c->cart.rtc.about_to_latch) {
+                                    c->cart.rtc.seconds = c->cart.rtc.time % 60;
+                                    c->cart.rtc.minutes = (c->cart.rtc.time / 60) % 60;
+                                    c->cart.rtc.hours = (c->cart.rtc.time / 3600) % 24;
+                                    c->cart.rtc.days = (c->cart.rtc.time / 86400);
+
+                                    if (c->cart.rtc.days > 511) {
+                                        c->cart.rtc.day_carry = true;
+                                        c->cart.rtc.days &= 511;
+                                        c->cart.rtc.time += 512 * 3600 * 24;
+                                    }
+                                }
+                                c->cart.rtc.about_to_latch = true;
+                            }
+
+                            break;
+                    }
+                    break;
+
                 // MBC 5
                 case 0x19 ... 0x1e:
                     switch (addr) {
@@ -205,14 +260,43 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     else
                         c->cart.ram[0][addr - 0xa000] = value;
                 }
-                if ((c->cart.type == 0x0f || c->cart.type == 0x10) && (c->cart.bank_select_ram >= 8)) {
-                    // TODO
-                }
                 // MBC 2
                 else if (c->cart.type == 5 || c->cart.type == 6) {
                     c->cart.ram[c->cart.bank_select_ram][(addr - 0xa000) & 0x1ff] = value;
                 }
-                else {
+                // RTC
+                else if ((c->cart.type == 0x0f || c->cart.type == 0x10) && c->cart.bank_select_ram >= 8) {
+                    uint8_t seconds = c->cart.rtc.time % 60;
+                    uint8_t minutes = (c->cart.rtc.time / 60) % 60;
+                    uint8_t hours = (c->cart.rtc.time / 3600) % 24;
+                    uint16_t days = c->cart.rtc.time / 86400;
+                    switch (c->cart.bank_select_ram) {
+                        case 0x08:
+                            //if (value < 60)
+                                seconds = value;
+                            break;
+                        case 0x09:
+                            //if (value < 60)
+                                minutes = value;
+                            break;
+                        case 0x0a:
+                            //if (value < 24)
+                                hours = value;
+                            break;
+                        case 0x0b:
+                            days = (days & 0xff00) | value;
+                            break;
+                        case 0x0c:
+                            days = (days & 0xff) | ((value & 1) << 8);
+                            c->cart.rtc.is_halted = (value >> 6) & 1;
+                            c->cart.rtc.day_carry = (value >> 7) & 1;
+                            break;
+                        default:
+                            break;
+                    }
+                    c->cart.rtc.time = seconds + (minutes * 60) + (hours * 3600) + (days * 86400);
+                }
+                else if (c->cart.type != 0x0f) {
                     c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
                 }
             }
@@ -520,6 +604,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->cart.data[c->cart.bank_select][addr-0x4000];
         case 0xa000 ... 0xbfff:
             if (c->cart.ram_enable) {
+                // MBC 1 Bit mode
                 if (c->cart.type == 1 || c->cart.type == 2 || c->cart.type == 3) {
                     if (c->cart.mbc1mode)
                         return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
@@ -529,7 +614,22 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 if (c->cart.type == 5 || c->cart.type == 6) {
                     return (c->cart.ram[0][(addr - 0xa000) & 0x01ff] | 0xf0);
                 }
-                else {
+                // RTC
+                else if ((c->cart.type == 0x0f || c->cart.type == 0x10) && c->cart.bank_select_ram >= 8) {
+                    switch (c->cart.bank_select_ram) {
+                        case 0x08:
+                            return c->cart.rtc.seconds;
+                        case 0x09:
+                            return c->cart.rtc.minutes;
+                        case 0x0a:
+                            return c->cart.rtc.hours;
+                        case 0x0b:
+                            return c->cart.rtc.days;
+                        case 0x0c:
+                            return (c->cart.rtc.day_carry << 7) | (c->cart.rtc.is_halted << 6) | ((c->cart.rtc.days & 256) >> 8);
+                    }
+                }
+                else if (c->cart.type != 0x0f){
                     return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
                 }
             }

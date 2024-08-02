@@ -39,6 +39,7 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     timer1.module = 0;
     timer1.is_tac_on = false;
     timer1.t_states = 0;
+    timer1.rtc_timer = 0;
 
     reset_apu_regs(c);
 
@@ -130,6 +131,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     timer1.tma = 0;
     timer1.module = 0;
     timer1.is_tac_on = false;
+    timer1.rtc_timer = 0;
     c->memory[IF] = 0xe1;
 
     audio.is_on = true;
@@ -415,6 +417,14 @@ void add_ticks(cpu *c, uint16_t ticks) {
         }
 
         timer1.t_states = next_timer;
+
+        if (!c->cart.rtc.is_halted) {
+            timer1.rtc_timer += 4;
+            if (timer1.rtc_timer > 4194304) {
+                timer1.rtc_timer = 0;
+                c->cart.rtc.time++;
+            }
+        }
     }
 }
 

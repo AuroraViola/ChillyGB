@@ -16,6 +16,8 @@ typedef struct {
 
     int32_t scanline_timer;
     int32_t lcdoff_timer;
+
+    int32_t rtc_timer;
 }timer;
 
 extern timer timer1;

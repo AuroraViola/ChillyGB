@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 #include "settings.h"
 
 #ifndef CHILLYGB_CPU_H
@@ -9,6 +10,18 @@ typedef union {
     uint16_t reg16[4];
     uint8_t reg8[8];
 }registers;
+
+typedef struct {
+    uint32_t time;
+    uint8_t seconds;
+    uint8_t minutes;
+    uint8_t hours;
+    uint16_t days;
+
+    bool day_carry;
+    bool is_halted;
+    bool about_to_latch;
+}rtc_clock;
 
 typedef struct {
     uint8_t data[512][0x4000];
@@ -22,6 +35,8 @@ typedef struct {
     uint8_t bank_select_ram;
     bool ram_enable;
     bool mbc1mode;
+
+    rtc_clock rtc;
 }cartridge;
 
 typedef struct {
