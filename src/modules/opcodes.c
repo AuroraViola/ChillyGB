@@ -62,6 +62,7 @@ void reset_apu_regs(cpu *c) {
 }
 
 void set_mem(cpu *c, uint16_t addr, uint8_t value) {
+    uint8_t next_module;
     switch (addr) {
         case 0x0000 ... 0x7fff:
             switch (c->cart.type) {
@@ -355,7 +356,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             timer1.tma = value;
             break;
         case TAC: // divider register
-            uint8_t next_module = value & 3;
+            next_module = value & 3;
             if ((value & 4) != 0) {
                 if (timer1.is_tac_on && ((timer1.t_states & clock_tac_shift2[timer1.module]) != 0 && (timer1.t_states & clock_tac_shift2[next_module]) == 0)) {
                     timer1.tima++;
@@ -741,8 +742,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case NR51:
             return c->memory[addr];
         case NR52:
-            uint8_t ch_on = audio.ch1.is_active | (audio.ch2.is_active << 1) | (audio.ch3.is_active << 2) | (audio.ch4.is_active << 3) | 0x70;
-            return (c->memory[addr] & 0xf0) | ch_on;
+            return (c->memory[addr] & 0xf0) | (audio.ch1.is_active | (audio.ch2.is_active << 1) | (audio.ch3.is_active << 2) | (audio.ch4.is_active << 3) | 0x70);
 
         case 0xff30 ... 0xff3f:
             if (audio.ch3.is_active)
@@ -1226,6 +1226,7 @@ uint8_t call_cond(cpu *c, parameters *p) {
 uint8_t prefix(cpu *c, parameters *p) {
     c->pc += 2;
     uint8_t prevC;
+    uint8_t iszero;
     uint8_t b3 = (p->imm8 & 0b00111000) >> 3;
     switch(p->imm8) {
         // RLC
@@ -1534,7 +1535,6 @@ uint8_t prefix(cpu *c, parameters *p) {
             return 8;
         // BIT
         case 0x40 ... 0x7f:
-            uint8_t iszero;
             if (p->operand_r8 == 6) {
                 add_ticks(c, 4);
                 iszero = (get_mem(c, c->r.reg16[HL]) >> b3) & 1;
