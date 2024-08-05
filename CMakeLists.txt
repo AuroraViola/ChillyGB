@@ -38,6 +38,8 @@ add_executable(ChillyGB src/main.c
         src/modules/settings.c
         src/includes/open_dialog.h
         src/modules/open_dialog.c
+        src/includes/savestates.h
+        src/modules/savestates.c
 )
 target_link_libraries(ChillyGB raylib m)
 

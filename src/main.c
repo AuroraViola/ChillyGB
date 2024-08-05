@@ -8,6 +8,7 @@
 #include "includes/input.h"
 #include "includes/cartridge.h"
 #include "includes/open_dialog.h"
+#include "includes/savestates.h"
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>
@@ -134,8 +135,12 @@ void DrawNavBar() {
                 }
             }
             if (nk_menu_item_label(ctx, "Load state", NK_TEXT_LEFT)) {
+                if (game_started)
+                    load_state(&c, rom_name);
             }
             if (nk_menu_item_label(ctx, "Save state", NK_TEXT_LEFT)) {
+                if (game_started)
+                    save_state(&c, rom_name);
             }
             #ifndef PLATFORM_WEB
             if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) {
@@ -326,6 +331,13 @@ void update_frame() {
                     PauseAudioStream(audio.ch2.stream);
                     PauseAudioStream(audio.ch3.stream);
                     PauseAudioStream(audio.ch4.stream);
+                }
+
+                if (IsKeyPressed(KEY_F2)) {
+                    save_state(&c, rom_name);
+                }
+                if (IsKeyPressed(KEY_F1)) {
+                    load_state(&c, rom_name);
                 }
                 video.draw_screen = false;
                 if (video.is_on) {
