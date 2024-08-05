@@ -1,6 +1,7 @@
 #!/bin/sh
 
 mkdir build-wasm
+cp res/icons/ChillyGB.svg build-wasm/icon.svg
 emcc -o build-wasm/index.html \
 	src/main.c src/modules/* \
 	-Os -Wall raylib/src/libraylib.a \
