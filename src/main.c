@@ -246,7 +246,7 @@ void update_frame() {
                                                  NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
                     nk_layout_row_dynamic(ctx, 30, 2);
                     nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    audio.volume = nk_slide_int(ctx, 0, audio.volume, 100, 1);
+                    set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
                     nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     struct nk_vec2 size = {200, 100};
                     nk_combobox(ctx, palettes, 6, &set.palette, 20, size);

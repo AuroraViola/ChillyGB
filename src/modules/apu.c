@@ -244,7 +244,7 @@ void AudioInputCallback_CH1(void *buffer, unsigned int frames) {
 
     for (unsigned int i = 0; i < frames; i++) {
         if (audio.ch1.is_active && audio.pan[0] != 0.6f)
-            d[i] = (short)(audio.ch1.volume * audio.volume * get_wave_duty_ch1(audio.ch1.idx) * 3);
+            d[i] = (short)(audio.ch1.volume * set.volume * get_wave_duty_ch1(audio.ch1.idx) * 3);
         else
             d[i] = 0;
         audio.ch1.idx += incr;
@@ -260,7 +260,7 @@ void AudioInputCallback_CH2(void *buffer, unsigned int frames) {
 
     for (unsigned int i = 0; i < frames; i++) {
         if (audio.ch2.is_active && audio.pan[1] != 0.6f)
-            d[i] = (short)(audio.ch2.volume * audio.volume * get_wave_duty_ch2(audio.ch2.idx) * 3);
+            d[i] = (short)(audio.ch2.volume * set.volume * get_wave_duty_ch2(audio.ch2.idx) * 3);
         else
             d[i] = 0;
         audio.ch2.idx += incr;
@@ -276,7 +276,7 @@ void AudioInputCallback_CH3(void *buffer, unsigned int frames) {
 
     for (unsigned int i = 0; i < frames; i++) {
         if (audio.ch3.is_active && audio.pan[2] != 0.6f)
-            d[i] = (short)(audio.volume * get_wave_value(audio.ch3.idx) * 3);
+            d[i] = (short)(set.volume * get_wave_value(audio.ch3.idx) * 3);
         else
             d[i] = 0;
         audio.ch3.idx += incr;
@@ -294,7 +294,7 @@ void AudioInputCallback_CH4(void *buffer, unsigned int frames) {
 
     for (unsigned int i = 0; i < frames; i++) {
         if (audio.ch4.is_active && audio.pan[3] != 0.6f) {
-            d[i] = (short)(audio.ch4.volume * audio.volume * audio.ch4.current_bit * 3);
+            d[i] = (short)(audio.ch4.volume * set.volume * audio.ch4.current_bit * 3);
         }
         else
             d[i] = 0;

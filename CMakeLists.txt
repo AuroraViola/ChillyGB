@@ -40,6 +40,7 @@ add_executable(ChillyGB src/main.c
         src/modules/open_dialog.c
         src/includes/savestates.h
         src/modules/savestates.c
+        cJSON/cJSON.c
 )
 target_link_libraries(ChillyGB raylib m)
 
