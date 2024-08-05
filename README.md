@@ -51,8 +51,6 @@ TODO
 
 Here is a list of planned features that need to be implemented for the first stable release
 
-* **Cartridge support**
-  * MBC3 with RTC support
 * **Emulation Improvements**
   * Pixel FIFO and more accurate PPU timing
   * Accurate sound behaviours
@@ -60,7 +58,6 @@ Here is a list of planned features that need to be implemented for the first sta
   * STAT IRQ blocking
   * Halt bug
 * **Graphical and particular features**
-  * Save states
   * Key editor
 
 ## Planned features with very low priority
