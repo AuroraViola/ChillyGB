@@ -91,6 +91,7 @@ Texture2D logo;
 Texture2D display;
 char instructions[30][50];
 float scale;
+int scale_integer;
 debugtexts texts;
 int ff_speed = 1;
 struct nk_context *ctx;
@@ -237,6 +238,7 @@ void update_frame() {
         UnloadDroppedFiles(droppedFiles);
     }
     scale = MIN((float) GetScreenWidth() / 160, (float) GetScreenHeight() / 144);
+    scale_integer = MIN((int) GetScreenWidth() / 160, (int) GetScreenHeight() / 144);
     switch (emulator_mode) {
         case MENU:
             UpdateNuklear(ctx);
@@ -248,8 +250,10 @@ void update_frame() {
                     nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
                     nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    struct nk_vec2 size = {200, 100};
+                    struct nk_vec2 size = {200, 200};
                     nk_combobox(ctx, palettes, 6, &set.palette, 20, size);
+                    nk_label(ctx, "Integer Scaling", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_checkbox_label(ctx, "", &set.integer_scaling);
                     #ifndef PLATFORM_WEB
                     nk_label(ctx, "Boot Rom", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     nk_checkbox_label(ctx, "", &set.bootrom_enabled);
@@ -299,12 +303,21 @@ void update_frame() {
             }
             BeginDrawing();
             ClearBackground(BLACK);
-            DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
-                           (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
-                                        (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
-                                        (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+            if (set.integer_scaling) {
+                DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, display.width, display.height},
+                               (Rectangle) {(GetScreenWidth() - (160 * scale_integer)) * 0.5f,
+                                            (GetScreenHeight() - (144 * scale_integer)) * 0.5f,
+                                            160 * scale_integer, 144 * scale_integer}, (Vector2) {0, 0}, 0.0f,
+                               WHITE);
+            }
+            else {
+                DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
+                               (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
+                                            (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
+                                            (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+            }
             if (!game_started) {
-                float fontsize = 7 * scale;
+                float fontsize = (set.integer_scaling) ? 7 * scale_integer : 7 * scale;
                 int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
                 DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, Palettes[set.palette][3]);
             }
@@ -357,10 +370,20 @@ void update_frame() {
                 UpdateTexture(display, pixels);
                 BeginDrawing();
                 ClearBackground(BLACK);
-                DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
-                               (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
-                                            (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
-                                            (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+                if (set.integer_scaling) {
+                    DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, display.width, display.height},
+                                   (Rectangle) {(GetScreenWidth() - (160 * scale_integer)) * 0.5f,
+                                                (GetScreenHeight() - (144 * scale_integer)) * 0.5f,
+                                                160 * scale_integer, 144 * scale_integer}, (Vector2) {0, 0}, 0.0f,
+                                   WHITE);
+                }
+                else {
+                    DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
+                                   (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
+                                                (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
+                                                (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f,
+                                   WHITE);
+                }
                 EndDrawing();
                 char str[80];
                 sprintf(str, "ChillyGB - %d FPS - %.1fx", GetFPS(), (float)(GetFPS())/60);

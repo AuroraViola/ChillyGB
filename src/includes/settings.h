@@ -8,6 +8,7 @@ typedef struct {
     int palette;
     int volume;
     bool bootrom_enabled;
+    bool integer_scaling;
 }settings;
 
 extern settings set;
