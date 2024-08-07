@@ -198,13 +198,13 @@ void update_frame() {
             UpdateNuklear(ctx);
             DrawNavBar();
             if (show_settings){
-                if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 400, 200),
+                if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 500, 200),
                                                  NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
                     nk_layout_row_dynamic(ctx, 30, 2);
                     nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
                     nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    struct nk_vec2 size = {200, 200};
+                    struct nk_vec2 size = {250, 200};
                     int comboxes_len = 0;
                     for (int i = 0; i < set.palettes_size; i++) {
                         stpcpy(comboxes + comboxes_len, set.palettes[i].name);
