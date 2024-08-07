@@ -30,53 +30,6 @@ typedef enum EmuModes{
     DEBUG,
 }EmuModes;
 
-static const char *palettes[] = {"ChillyGB", "SamePalette", "GrayScale", "Super Game Boy", "Realistic", "bgb"};
-
-Color Palettes[6][5] = {
-        {
-            (Color) {185, 237, 186, 255},
-            (Color) {118, 196, 123, 255},
-            (Color) {49, 106, 64, 255},
-            (Color) {10, 38, 16, 255},
-            (Color) {200, 237, 186, 255}
-        },
-        {
-            (Color) {198, 222, 140, 255},
-            (Color) {132, 165, 99, 255},
-            (Color) {57, 97, 57, 255},
-            (Color) {8, 24, 16, 255},
-            (Color) {198, 222, 140, 255}
-        },
-        {
-            (Color) {255, 255, 255, 255},
-            (Color) {176, 176, 176, 255},
-            (Color) {104, 104, 104, 255},
-            (Color) {0, 0, 0, 255},
-            (Color) {255, 255, 255, 255}
-        },
-        {
-            (Color) {255, 239, 206, 255},
-            (Color) {222, 148, 74, 255},
-            (Color) {173, 41, 33, 255},
-            (Color) {49, 24, 82, 255},
-            (Color) {255, 239, 206, 255}
-        },
-        {
-            (Color) {117, 152, 51, 255},
-            (Color) {88, 143, 81, 255},
-            (Color) {59, 117, 96, 255},
-            (Color) {46, 97, 90, 255},
-            (Color) {148, 138, 4, 255}
-        },
-        {
-            (Color) {224, 248, 208, 255},
-            (Color) {136, 192, 112, 255},
-            (Color) {52, 104, 86, 255},
-            (Color) {8, 24, 32, 255},
-            (Color) {224, 248, 208, 255}
-        }
-};
-
 cpu c = {};
 bool exited = false;
 bool game_started = false;
@@ -95,6 +48,7 @@ int scale_integer;
 debugtexts texts;
 int ff_speed = 1;
 struct nk_context *ctx;
+char comboxes[2500] = "";
 
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
@@ -251,7 +205,12 @@ void update_frame() {
                     set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
                     nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     struct nk_vec2 size = {200, 200};
-                    nk_combobox(ctx, palettes, 6, &set.palette, 20, size);
+                    int comboxes_len = 0;
+                    for (int i = 0; i < set.palettes_size; i++) {
+                        stpcpy(comboxes + comboxes_len, set.palettes[i].name);
+                        comboxes_len += strlen(set.palettes[i].name)+1;
+                    }
+                    nk_combobox_string(ctx, comboxes, &set.selected_palette, set.palettes_size, 20, size);
                     nk_label(ctx, "Integer Scaling", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     nk_checkbox_label(ctx, "", &set.integer_scaling);
                     #ifndef PLATFORM_WEB
@@ -301,6 +260,22 @@ void update_frame() {
                 ResumeAudioStream(audio.ch3.stream);
                 ResumeAudioStream(audio.ch4.stream);
             }
+
+            if (video.is_on) {
+                for (int i = 0; i < 144; i++) {
+                    for (int j = 0; j < 160; j++) {
+                        pixels[i][j] = set.palettes[set.selected_palette].colors[video.display[i][j]];
+                    }
+                }
+            }
+            else {
+                for (int i = 0; i < 144; i++) {
+                    for (int j = 0; j < 160; j++) {
+                        pixels[i][j] = set.palettes[set.selected_palette].colors[0];
+                    }
+                }
+            }
+            UpdateTexture(display, pixels);
             BeginDrawing();
             ClearBackground(BLACK);
             if (set.integer_scaling) {
@@ -317,9 +292,9 @@ void update_frame() {
                                             (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
             }
             if (!game_started) {
-                float fontsize = (set.integer_scaling) ? 7 * scale_integer : 7 * scale;
+                float fontsize = (set.integer_scaling) ? (7 * scale_integer) : (7 * scale);
                 int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
-                DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, Palettes[set.palette][3]);
+                DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, set.palettes[set.selected_palette].colors[3]);
             }
             DrawNuklear(ctx);
             EndDrawing();
@@ -356,14 +331,14 @@ void update_frame() {
                 if (video.is_on) {
                     for (int i = 0; i < 144; i++) {
                         for (int j = 0; j < 160; j++) {
-                            pixels[i][j] = Palettes[set.palette][video.display[i][j]];
+                            pixels[i][j] = set.palettes[set.selected_palette].colors[video.display[i][j]];
                         }
                     }
                 }
                 else {
                     for (int i = 0; i < 144; i++) {
                         for (int j = 0; j < 160; j++) {
-                            pixels[i][j] = Palettes[set.palette][4];
+                            pixels[i][j] = set.palettes[set.selected_palette].colors[0];
                         }
                     }
                 }
@@ -506,7 +481,7 @@ void update_frame() {
             if (video.is_on) {
                 for (int i = 0; i < 144; i++) {
                     for (int j = 0; j < 160; j++) {
-                        pixels[i][j] = Palettes[set.palette][video.display[i][j]];
+                        pixels[i][j] = set.palettes[set.selected_palette].colors[video.display[i][j]];
                         if (i == video.scan_line)
                             pixels[i][j].a = 127;
                         if (i == c.memory[LYC])
@@ -517,7 +492,7 @@ void update_frame() {
             else {
                 for (int i = 0; i < 144; i++) {
                     for (int j = 0; j < 160; j++) {
-                        pixels[i][j] = Palettes[set.palette][4];
+                        pixels[i][j] = set.palettes[set.selected_palette].colors[0];
                     }
                 }
             }
@@ -617,7 +592,7 @@ int main(int argc, char **argv) {
     ctx = InitNuklearEx(LoadFontEx("res/fonts/UbuntuMono.ttf", 20, 0, 250), 20);
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)
-            pixels[i][j] = Palettes[set.palette][4];
+            pixels[i][j] = (Color) {255, 255, 255, 255};
     display_image = (Image){
             .data = pixels,
             .width = 160,
