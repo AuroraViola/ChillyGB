@@ -63,7 +63,8 @@ Here is a list of planned features that need to be implemented for the first sta
 ## Planned features with very low priority
 
 * **Cartridge support**
-  * MBC6 support
+  * MBC1M
+  * MBC5 Rumble
   * Pocket camera support
 * **Emulation Improvements**
   * Stop Instruction
@@ -73,10 +74,14 @@ Here is a list of planned features that need to be implemented for the first sta
 * **Graphical and particular features**
   * Screenshots
   * Frame blending
+  * Pixel grid
   * Palette editor
   * Rewind
   * Rom folder
 * **Debugger Improvements**
+  * Breakpoints
+  * Watchpoints
+  * APU state
   * Stack viewer
   * VRAM viewer
   * Memory editor
