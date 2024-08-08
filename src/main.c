@@ -37,6 +37,7 @@ bool show_settings = false;
 bool show_about = false;
 char rom_name[256];
 uint8_t emulator_mode = MENU;
+Color pixels_screen[144][160];
 Color pixels[144][160] = { 0 };
 Image display_image;
 Image logo_image;
@@ -566,7 +567,6 @@ int main(int argc, char **argv) {
     if (n_ticks > 0) {
         SetTraceLogLevel(LOG_ERROR);
         test_rom(&c, n_ticks);
-        Color pixels_screen[144][160];
         Image screenshot = take_debug_screenshot(pixels_screen);
         Image expected = LoadImage(test_image_path);
         export_screenshot(screenshot, rom_name);

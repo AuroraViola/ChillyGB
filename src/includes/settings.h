@@ -19,7 +19,7 @@ typedef struct {
     bool ch_on[4];
 
     // Video settings
-    palette palettes[20];
+    palette palettes[100];
     int palettes_size;
     int selected_palette;
     bool integer_scaling;
