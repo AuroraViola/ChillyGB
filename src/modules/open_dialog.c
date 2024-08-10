@@ -1,11 +1,7 @@
 /*
  * This File was based on https://github.com/LIJI32/SameBoy/blob/master/OpenDialog
  */
-
-
-#ifdef __linux__
-
-//#include "../includes/open_dialog.h"
+#if defined(__linux__) && !defined(CUSTOM_OPEN_DIALOG)
 #include <stdio.h>
 #include <dlfcn.h>
 #include <stdbool.h>
@@ -124,7 +120,7 @@ char *do_open_rom_dialog(void) {
     fprintf(stderr, "Failed to display GTK dialog\n");
     return NULL;
 }
-#elif _WIN32
+#elif defined(_WIN32) && !defined(CUSTOM_OPEN_DIALOG)
 #define COBJMACROS
 #include <windows.h>
 #include <shlobj.h>
@@ -165,7 +161,7 @@ char *do_open_rom_dialog(void) {
     return NULL;
 }
 
-#elif PLATFORM_WEB
+#elif defined(PLATFORM_WEB) && !defined(CUSTOM_OPEN_DIALOG)
 #include <emscripten.h>
 #include <stddef.h>
 
@@ -186,7 +182,8 @@ char *do_open_rom_dialog(void) {
 #include "../includes/input.h"
 #include <assert.h>
 #include "../includes/debug.h"
-#include "../../raylib-nuklear/include/nuklear.h"
+#include "../../raylib-nuklear/include/raylib-nuklear.h"
+
 struct item_t {
     char name[256];
     struct item_t* next;

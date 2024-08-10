@@ -1,0 +1,31 @@
+name: Build (Switch)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure CMake
+        run: /opt/devkitpro/portlibs/switch/bin/aarch64-none-elf-cmake -DPLATFORM=NX -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        run: cd build && make -j$(nproc)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Build
+          path: |
+            build/ChillyGB.nro

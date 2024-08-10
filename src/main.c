@@ -16,6 +16,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#if defined(_WIN32)
+char *stpcpy (char *__restrict __dest, const char *__restrict __src);
+#endif
+
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
@@ -194,7 +198,7 @@ void update_frame() {
         case MENU:
             UpdateNuklear(ctx);
             DrawNavBar();
-            #if PLATFORM_NX
+            #ifdef CUSTOM_OPEN_DIALOG
             DrawFileManager(ctx);
             #endif
             if (show_settings){

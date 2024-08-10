@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.18)
 project(ChillyGB C)
 
 include(CTest)
@@ -57,6 +57,11 @@ add_executable(ChillyGB src/main.c
         cJSON/cJSON.c
 )
 target_link_libraries(ChillyGB raylib m)
+option(CUSTOM_OPEN_DIALOG "Enable custom open dialog box built with Nuklear" OFF)
+
+if(CUSTOM_OPEN_DIALOG)
+        target_compile_definitions(ChillyGB PRIVATE -DCUSTOM_OPEN_DIALOG)
+endif()
 
 if (${PLATFORM} MATCHES "NX")
   target_link_libraries(ChillyGB EGL GLESv2 glapi drm_nouveau nx stdc++)
