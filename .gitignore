@@ -5,3 +5,8 @@ res/bootrom/dmg_boot.bin
 build-wasm
 Roms
 .idea
+build-linux
+cmake-build-switch
+build-linux
+cmake-build-switch
+emsdk

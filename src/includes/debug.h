@@ -36,6 +36,9 @@ typedef struct {
     char MODULE[20];
 }debugtexts;
 
+void debugprint(char* text);
+extern char debug_text[4096];
+
 void generate_texts(cpu *c, debugtexts *texts);
 void decode_instructions(cpu *c, char instruction[20][50]);
 Image take_debug_screenshot(Color pixels[144][160]);

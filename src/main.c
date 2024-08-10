@@ -1,3 +1,4 @@
+#define NK_INCLUDE_STANDARD_BOOL
 #include "raylib.h"
 #include "includes/cpu.h"
 #include "includes/ppu.h"
@@ -9,18 +10,22 @@
 #include "includes/cartridge.h"
 #include "includes/open_dialog.h"
 #include "includes/savestates.h"
+#include "../raylib-nuklear/include/raylib-nuklear.h"
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>
+#include <stdlib.h>
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
 #endif
 
-#define RAYLIB_NUKLEAR_IMPLEMENTATION
-#include <stdlib.h>
+#if PLATFORM_NX
+    #define RES_DIR "romfs:/"
+#else 
+    #define RES_DIR "res/"
+#endif
 
-#include "../raylib-nuklear/include/raylib-nuklear.h"
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
@@ -54,6 +59,9 @@ char comboxes[2500] = "";
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
     if(!load_game(&c.cart, rom_name)){
+        debugprint("Failed to load game: ");
+        debugprint(rom_name);
+        debugprint("\n");
         fprintf(stderr, "Failed to open game: %s\n", rom_name);
         return;
     }
@@ -186,6 +194,9 @@ void update_frame() {
         case MENU:
             UpdateNuklear(ctx);
             DrawNavBar();
+            #if PLATFORM_NX
+            DrawFileManager(ctx);
+            #endif
             if (show_settings){
                 if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 500, 200),
                                                  NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
@@ -286,6 +297,8 @@ void update_frame() {
                 DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, set.palettes[set.selected_palette].colors[3]);
             }
             DrawNuklear(ctx);
+            DrawText(debug_text, 50, 50, 25, WHITE);
+
             EndDrawing();
             if (game_started)
                 SetWindowTitle("ChillyGB - Paused");
@@ -297,7 +310,7 @@ void update_frame() {
                 Update_Audio(&c);
             }
             if (video.draw_screen) {
-                if (IsKeyPressed(KEY_ESCAPE)) {
+                if (IsKeyPressed(KEY_ESCAPE) ) {
                     save_settings();
                     save_game(&c.cart, rom_name);
                     pause_game();
@@ -490,7 +503,7 @@ void update_frame() {
             if (nk_begin(ctx, "Display", nk_rect(686, 24, 650, 600),
                          NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_MINIMIZABLE)) {
                 nk_layout_row_dynamic(ctx, nk_window_get_height(ctx)-56, 1);
-                nk_image_color(ctx, display_debug, nk_white);
+                nk_image_color(ctx, display_debug, (struct nk_color){255,255,255,255});
             }
             nk_end(ctx);
             BeginDrawing();
@@ -570,14 +583,14 @@ int main(int argc, char **argv) {
         printf("Test PASSED");
         return 0;
     }
-
     // Initialize Raylib and Nuklear
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*4, 144*4, "ChillyGB");
     SetExitKey(KEY_NULL);
     SetWindowMinSize(160, 144);
     SetTargetFPS(60);
-    ctx = InitNuklearEx(LoadFontEx("res/fonts/UbuntuMono.ttf", 20, 0, 250), 20);
+    ctx = InitNuklearEx(LoadFontEx(RES_DIR "fonts/UbuntuMono.ttf", 20, 0, 250), 20);
+
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)
             pixels[i][j] = (Color) {255, 255, 255, 255};
@@ -589,7 +602,7 @@ int main(int argc, char **argv) {
             .mipmaps = 1
     };
     display = LoadTextureFromImage(display_image);
-    logo_image = LoadImage("res/icons/ChillyGB-256.png");
+    logo_image = LoadImage(RES_DIR "icons/ChillyGB-256.png");
     logo = LoadTextureFromImage(logo_image);
 
     // Initialize APU

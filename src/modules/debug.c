@@ -16,6 +16,19 @@ const char r16stk_1[][3] = {"bc", "de", "hl", "af"};
 const char r16mem_1[][4] = {"bc", "de", "hl+", "hl-"};
 const char cond_1[][4] = {"nz", "z", "nc", "c"};
 
+char debug_text[4096];
+int debug_text_len = 0;
+void debugprint(char* text) {
+    if ( strlen(text) + debug_text_len < 4096) {
+        strcat(debug_text, text);
+        debug_text_len += strlen(text);
+    }
+    else {
+        debug_text_len = 0;
+        debug_text[0] = '\0';
+    }
+}
+
 void generate_texts(cpu *c, debugtexts *texts) {
     sprintf(texts->AFtext, "AF: %04X", c->r.reg16[AF]);
     sprintf(texts->BCtext, "BC: %04X", c->r.reg16[BC]);
@@ -343,6 +356,7 @@ void test_rom(cpu *c, int n_ticks) {
 }
 
 void export_screenshot(Image screenshot, char rom_name[256]) {
+    #ifndef PLATFORM_NX //TODO: fix basename for NX
     char screenshot_file[256];
     strcpy(screenshot_file, basename(rom_name));
     char *ext = strrchr (screenshot_file, '.');
@@ -351,6 +365,7 @@ void export_screenshot(Image screenshot, char rom_name[256]) {
     char new_ext[] = "-result.png";
     strcat(screenshot_file, new_ext);
     ExportImage(screenshot, screenshot_file);
+    #endif
 }
 
 Image take_debug_screenshot(Color pixels[144][160]){

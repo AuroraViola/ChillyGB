@@ -16,6 +16,19 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         include_directories(${raylib_win64_SOURCE_DIR}/include)
         link_directories(${raylib_win64_SOURCE_DIR}/lib)
 endif()
+ 
+if (${PLATFORM} MATCHES "NX")
+        include(FetchContent)
+        FetchContent_Declare(
+                        raylib_nx
+                        GIT_REPOSITORY https://github.com/luizpestana/raylib-nx
+                        GIT_TAG 5f62632744b82eaadd9eccd07492c456daabe52d
+        )
+        FetchContent_MakeAvailable(raylib_nx)
+        add_custom_target(libraylib_nx COMMAND make PLATFORM=PLATFORM_NX ${raylib_nx_SOURCE_DIR}/src)
+        include_directories(${raylib_nx_SOURCE_DIR}/src)
+        link_directories(${raylib_nx_SOURCE_DIR}/src)
+endif()
 
 add_executable(ChillyGB src/main.c
         src/modules/cpu.c
@@ -40,9 +53,26 @@ add_executable(ChillyGB src/main.c
         src/modules/open_dialog.c
         src/includes/savestates.h
         src/modules/savestates.c
+        src/modules/raylib-nuklear.c
         cJSON/cJSON.c
 )
 target_link_libraries(ChillyGB raylib m)
+
+if (${PLATFORM} MATCHES "NX")
+  target_link_libraries(ChillyGB EGL GLESv2 glapi drm_nouveau nx stdc++)
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.ncap
+    COMMAND nacptool --create "ChillyGB" "AuroraViola" "1.0.0" ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.nacp 
+    DEPENDS ChillyGB
+  )
+  add_custom_target(ChillyGB_ncap ALL SOURCES ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.ncap)
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.nro
+    COMMAND elf2nro ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.elf ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.nro --icon=${CMAKE_SOURCE_DIR}/res/icons/ChillyGB-512.png --nacp=${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.nacp --romfsdir=${CMAKE_SOURCE_DIR}/res/
+    DEPENDS ChillyGB ChillyGB_ncap
+  )
+  add_custom_target(ChillyGB_nro ALL SOURCES ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.nro)
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         target_link_libraries(ChillyGB gdi32 winmm comdlg32)
