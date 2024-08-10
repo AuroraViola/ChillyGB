@@ -17,9 +17,9 @@
     #include <emscripten/emscripten.h>
 #endif
 
-#define NK_INCLUDE_FONT_BAKING
-#define NK_INCLUDE_DEFAULT_FONT
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
+#include <stdlib.h>
+
 #include "../raylib-nuklear/include/raylib-nuklear.h"
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
@@ -75,9 +75,6 @@ void DrawNavBar() {
         nk_layout_row_begin(ctx, NK_STATIC, 25, 5);
         nk_layout_row_push(ctx, 60);
         if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(150, 200))) {
-            static size_t prog = 40;
-            static int slider = 10;
-            static int check = nk_true;
             nk_layout_row_dynamic(ctx, 25, 1);
             if (nk_menu_item_label(ctx, "Load ROM", NK_TEXT_LEFT)) {
                 char *path = do_open_rom_dialog();
@@ -108,9 +105,6 @@ void DrawNavBar() {
 
         nk_layout_row_push(ctx, 120);
         if (nk_menu_begin_label(ctx, "Emulation", NK_TEXT_LEFT, nk_vec2(150, 200))) {
-            static size_t prog = 40;
-            static int slider = 10;
-            static int check = nk_true;
             nk_layout_row_dynamic(ctx, 25, 1);
             if (nk_menu_item_label(ctx, "Reset", NK_TEXT_LEFT)) {
                 if (game_started) {
@@ -129,9 +123,6 @@ void DrawNavBar() {
         }
         nk_layout_row_push(ctx, 70);
         if (nk_menu_begin_label(ctx, "Tools", NK_TEXT_LEFT, nk_vec2(230, 200))) {
-            static size_t prog = 40;
-            static int slider = 10;
-            static int check = nk_true;
             nk_layout_row_dynamic(ctx, 25, 1);
             if (nk_menu_item_label(ctx, "Debugger", NK_TEXT_LEFT)) {
                 if (game_started) {
@@ -145,9 +136,6 @@ void DrawNavBar() {
         }
         nk_layout_row_push(ctx, 60);
         if (nk_menu_begin_label(ctx, "Help", NK_TEXT_LEFT, nk_vec2(150, 200))) {
-            static size_t prog = 40;
-            static int slider = 10;
-            static int check = nk_true;
             nk_layout_row_dynamic(ctx, 25, 1);
             if (nk_menu_item_label(ctx, "Github", NK_TEXT_LEFT)) {
                 #ifdef _WIN32
