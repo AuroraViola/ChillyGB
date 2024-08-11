@@ -180,6 +180,9 @@ void load_sprite_line() {
     memset(video.sprite_line, 0, 176*sizeof(sprite_px));
     for (int i = 0; i < video.buffer_size; i++) {
         uint8_t y = get_sprite_row(video.oam_buffer[i]);
+        if (y >= 16) {
+            continue;
+        }
         sprite selected_sprite = video.sprites[video.oam_buffer[i]];
         if (!video.obj_size) {
             for (int x = 0; x < 8; x++) {
