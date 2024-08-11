@@ -74,6 +74,7 @@ void load_default_settings() {
     set.integer_scaling = false;
     set.pixel_grid = false;
     set.frame_blending = false;
+    set.accurate_rtc = true;
     set.ch_on[0] = true;
     set.ch_on[1] = true;
     set.ch_on[2] = true;
@@ -134,6 +135,11 @@ void load_settings() {
         set.ch_on[3] = ch4->valueint;
     else
         set.ch_on[3] = true;
+    cJSON *accurate_rtc = cJSON_GetObjectItem(settings, "accurate_rtc");
+    if (cJSON_IsBool(accurate_rtc))
+        set.accurate_rtc = accurate_rtc->valueint;
+    else
+        set.accurate_rtc = true;
     cJSON *palette = cJSON_GetObjectItem(settings, "selected_palette");
     if (cJSON_IsNumber(palette))
         set.selected_palette = palette->valueint;
@@ -187,6 +193,7 @@ void load_settings() {
 void save_settings() {
     cJSON *settings = cJSON_CreateObject();
     cJSON_AddBoolToObject(settings, "bootrom", set.bootrom_enabled);
+    cJSON_AddBoolToObject(settings, "accurate_rtc", set.accurate_rtc);
     cJSON_AddNumberToObject(settings, "volume", set.volume);
     cJSON_AddBoolToObject(settings, "ch1", set.ch_on[0]);
     cJSON_AddBoolToObject(settings, "ch2", set.ch_on[1]);

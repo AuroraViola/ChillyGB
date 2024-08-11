@@ -39,6 +39,13 @@ typedef enum EmuModes{
     DEBUG,
 }EmuModes;
 
+typedef enum SettingsView {
+    SET_EMU = 0,
+    SET_VIDEO,
+    SET_AUDIO,
+    SET_INPUT,
+}SettingsView;
+
 cpu c = {};
 bool exited = false;
 bool game_started = false;
@@ -46,6 +53,7 @@ bool show_settings = false;
 bool show_about = false;
 char rom_name[256];
 uint8_t emulator_mode = MENU;
+uint8_t settings_view = SET_EMU;
 Color pixels_screen[144][160];
 Color pixels[144][160] = { 0 };
 Image display_image;
@@ -201,26 +209,96 @@ void update_frame() {
             #ifdef CUSTOM_OPEN_DIALOG
             DrawFileManager(ctx);
             #endif
-            if (show_settings){
-                if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 500, 200),
-                                                 NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_CLOSABLE)) {
-                    nk_layout_row_dynamic(ctx, 30, 2);
-                    nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
-                    nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+            if (show_settings) {
+                if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(24, 64, 500, 400),
+                                                 NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)) {
+                    nk_layout_row_dynamic(ctx, 30, 4);
+                    if (nk_button_label(ctx, "Emulation"))
+                        settings_view = SET_EMU;
+                    if (nk_button_label(ctx, "Audio"))
+                        settings_view = SET_AUDIO;
+                    if (nk_button_label(ctx, "Video"))
+                        settings_view = SET_VIDEO;
+                    if (nk_button_label(ctx, "Input"))
+                        settings_view = SET_INPUT;
                     struct nk_vec2 size = {250, 200};
-                    int comboxes_len = 0;
-                    for (int i = 0; i < set.palettes_size; i++) {
-                        stpcpy(comboxes + comboxes_len, set.palettes[i].name);
-                        comboxes_len += strlen(set.palettes[i].name)+1;
+                    nk_layout_row_dynamic(ctx, 15, 1);
+                    nk_label(ctx, "", NK_TEXT_CENTERED);
+                    switch (settings_view) {
+                        case SET_EMU:
+                            nk_layout_row_dynamic(ctx, 30, 1);
+                            nk_checkbox_label(ctx, "Accurate RTC (TODO)", &set.accurate_rtc);
+                            nk_checkbox_label(ctx, "Boot Rom", &set.bootrom_enabled);
+                            break;
+                        case SET_AUDIO:
+                            nk_layout_row_dynamic(ctx, 30, 1);
+                            nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                            nk_layout_row_dynamic(ctx, 30, 2);
+                            set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
+                            char str[5];
+                            sprintf(str, "%i%%", set.volume);
+                            nk_label(ctx, str, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                            nk_layout_row_dynamic(ctx, 30, 1);
+                            nk_checkbox_label(ctx, "Channel 1", &set.ch_on[0]);
+                            nk_checkbox_label(ctx, "Channel 2", &set.ch_on[1]);
+                            nk_checkbox_label(ctx, "Channel 3", &set.ch_on[2]);
+                            nk_checkbox_label(ctx, "Channel 4", &set.ch_on[3]);
+                            break;
+                        case SET_VIDEO:
+                            nk_layout_row_dynamic(ctx, 30, 1);
+                            nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+
+                            nk_layout_row_dynamic(ctx, 30, 2);
+                            int comboxes_len = 0;
+                            for (int i = 0; i < set.palettes_size; i++) {
+                                stpcpy(comboxes + comboxes_len, set.palettes[i].name);
+                                comboxes_len += strlen(set.palettes[i].name)+1;
+                            }
+                            nk_combobox_string(ctx, comboxes, &set.selected_palette, set.palettes_size, 20, size);
+                            nk_button_label(ctx, "Add Palette (TODO)");
+
+                            nk_layout_row_dynamic(ctx, 60, 4);
+                            struct nk_color colors[4] = {
+                                {
+                                    set.palettes[set.selected_palette].colors[0].r,
+                                    set.palettes[set.selected_palette].colors[0].g,
+                                    set.palettes[set.selected_palette].colors[0].b,
+                                    255
+                                },
+                                {
+                                    set.palettes[set.selected_palette].colors[1].r,
+                                    set.palettes[set.selected_palette].colors[1].g,
+                                    set.palettes[set.selected_palette].colors[1].b,
+                                    255
+                                },
+                                {
+                                    set.palettes[set.selected_palette].colors[2].r,
+                                    set.palettes[set.selected_palette].colors[2].g,
+                                    set.palettes[set.selected_palette].colors[2].b,
+                                    255
+                                },
+                                {
+                                    set.palettes[set.selected_palette].colors[3].r,
+                                    set.palettes[set.selected_palette].colors[3].g,
+                                    set.palettes[set.selected_palette].colors[3].b,
+                                    255
+                                },
+                            };
+                            nk_button_color(ctx, colors[0]);
+                            nk_button_color(ctx, colors[1]);
+                            nk_button_color(ctx, colors[2]);
+                            nk_button_color(ctx, colors[3]);
+
+                            nk_layout_row_dynamic(ctx, 30, 1);
+                            nk_checkbox_label(ctx, "Integer Scaling", &set.integer_scaling);
+                            nk_checkbox_label(ctx, "Frame Blending (TODO)", &set.frame_blending);
+                            nk_checkbox_label(ctx, "Pixel Grid (TODO)", &set.pixel_grid);
+                            break;
+                        case SET_INPUT:
+                            nk_layout_row_dynamic(ctx, 100, 1);
+                            nk_label(ctx, "TODO", NK_TEXT_ALIGN_CENTERED|NK_TEXT_ALIGN_MIDDLE);
+                            break;
                     }
-                    nk_combobox_string(ctx, comboxes, &set.selected_palette, set.palettes_size, 20, size);
-                    nk_label(ctx, "Integer Scaling", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    nk_checkbox_label(ctx, "", &set.integer_scaling);
-                    #ifndef PLATFORM_WEB
-                    nk_label(ctx, "Boot Rom", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    nk_checkbox_label(ctx, "", &set.bootrom_enabled);
-                    #endif
                 }
                 nk_end(ctx);
             }
@@ -590,10 +668,12 @@ int main(int argc, char **argv) {
     // Initialize Raylib and Nuklear
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(160*4, 144*4, "ChillyGB");
+    SetWindowIcon(LoadImage("res/icons/ChillyGB-128.png"));
     SetExitKey(KEY_NULL);
     SetWindowMinSize(160, 144);
     SetTargetFPS(60);
     ctx = InitNuklearEx(LoadFontEx(RES_DIR "fonts/UbuntuMono.ttf", 20, 0, 250), 20);
+    ctx->style.checkbox.border = 2;
 
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)

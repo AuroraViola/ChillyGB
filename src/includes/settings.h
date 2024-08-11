@@ -13,6 +13,7 @@ typedef struct {
 typedef struct {
     // Emulator settings
     bool bootrom_enabled;
+    bool accurate_rtc;
 
     // Audio settings
     int volume;
