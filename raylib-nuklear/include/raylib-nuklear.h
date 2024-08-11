@@ -812,6 +812,36 @@ nk_raylib_input_mouse(struct nk_context * ctx)
 }
 
 /**
+ * Update the Nuklear context for the touch input from raylib.
+ *
+ * @param ctx The nuklear context.
+ *
+ * @internal
+ */
+NK_API void
+nk_raylib_input_touch(struct nk_context * ctx)
+{
+    const float scale = GetNuklearScaling(ctx);
+
+    int tCount = GetTouchPointCount();
+
+    if (tCount == 1 || tCount == 2) {
+        Vector2 touchPosition = GetTouchPosition(0);
+        const int mouseX = (int)((float)touchPosition.x / scale);
+        const int mouseY = (int)((float)touchPosition.y / scale);
+
+        nk_input_motion(ctx, mouseX, mouseY);
+        // 2 finger, right click
+        nk_input_button(ctx, NK_BUTTON_RIGHT, mouseX, mouseY, tCount == 2);
+        // 1 finger, left click
+        nk_input_button(ctx, NK_BUTTON_LEFT, mouseX, mouseY, tCount == 1);
+    } else {
+        nk_input_button(ctx, NK_BUTTON_LEFT, 0, 0, 0);
+        nk_input_button(ctx, NK_BUTTON_RIGHT, 0, 0, 0);
+    }
+}
+
+/**
  * Update the Nuklear context for raylib's state.
  *
  * @param ctx The nuklear context to act upon.
@@ -825,7 +855,11 @@ UpdateNuklear(struct nk_context * ctx)
     // Update the input state.
     nk_input_begin(ctx);
     {
+        #ifdef PLATFORM_NX
+        nk_raylib_input_touch(ctx);
+        #else
         nk_raylib_input_mouse(ctx);
+        #endif
         nk_raylib_input_keyboard(ctx);
     }
     nk_input_end(ctx);
