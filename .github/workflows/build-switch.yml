@@ -26,6 +26,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Build
+          name: ChillyGB-release-switch
           path: |
             build/ChillyGB.nro

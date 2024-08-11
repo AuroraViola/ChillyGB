@@ -80,7 +80,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: Build
+        name: ChillyGB-release-linux-x86_64
         path: |
           build/ChillyGB
           build/res
