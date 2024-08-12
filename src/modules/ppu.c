@@ -152,9 +152,7 @@ void load_background() {
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 32; j++) {
             for (int y = 0; y < 8; y++) {
-                for (int x = 0; x < 8; x++) {
-                    video.background[i*8 + y][j*8 + x] = video.tiles[video.tilemap[video.bg_tilemap][32*i+j]][y][x];
-                }
+                memcpy(&video.background[i*8 + y][j*8], &video.tiles[video.tilemap[video.bg_tilemap][32*i+j]][y][0], 8);
             }
         }
     }
@@ -164,9 +162,7 @@ void load_window() {
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 32; j++) {
             for (int y = 0; y < 8; y++) {
-                for (int x = 0; x < 8; x++) {
-                    video.window[i*8 + y][j*8 + x] = video.tiles[video.tilemap[video.window_tilemap][32*i+j]][y][x];
-                }
+                memcpy(&video.window[i*8 + y][j*8], &video.tiles[video.tilemap[video.window_tilemap][32*i+j]][y][0], 8);
             }
         }
     }
@@ -267,9 +263,7 @@ void load_display(cpu *c) {
         }
         else {
             int y = video.scan_line;
-            for (uint8_t x = 0; x < 160; x++) {
-                video.display[y][x] = 0;
-            }
+            memset(&video.display[y][0], 0, 160 * sizeof(uint8_t));
         }
         // Window
         if (video.window_enable && video.wy_trigger) {
