@@ -7,18 +7,19 @@ ppu video;
 
 void decode_tile(cpu *c, uint16_t addr, uint8_t tile[8][8]) {
     uint8_t encoded_tile[16];
-    for (int i = 0; i < 16; i++) {
-        encoded_tile[i] = c->memory[addr + i];
-    }
+    memcpy(encoded_tile, &c->memory[addr], 16);
 
     for (int y = 0; y < 8; y++) {
         uint8_t byte1 = encoded_tile[y * 2];
         uint8_t byte2 = encoded_tile[y * 2 + 1];
-        for (int x = 0; x < 8; x++) {
-            uint8_t bit1 = (byte1 >> (7-x)) & 1;
-            uint8_t bit2 = (byte2 >> (7-x)) & 1;
-            tile[y][x] = (bit2 << 1) | bit1;
-        }
+        tile[y][0] = ((byte2 >> 7) & 1) << 1 | ((byte1 >> 7) & 1);
+        tile[y][1] = ((byte2 >> 6) & 1) << 1 | ((byte1 >> 6) & 1);
+        tile[y][2] = ((byte2 >> 5) & 1) << 1 | ((byte1 >> 5) & 1);
+        tile[y][3] = ((byte2 >> 4) & 1) << 1 | ((byte1 >> 4) & 1);
+        tile[y][4] = ((byte2 >> 3) & 1) << 1 | ((byte1 >> 3) & 1);
+        tile[y][5] = ((byte2 >> 2) & 1) << 1 | ((byte1 >> 2) & 1);
+        tile[y][6] = ((byte2 >> 1) & 1) << 1 | ((byte1 >> 1) & 1);
+        tile[y][7] = (byte2 & 1) << 1 | (byte1 & 1);
     }
 }
 
