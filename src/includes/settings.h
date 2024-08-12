@@ -34,7 +34,10 @@ typedef struct {
 }settings;
 
 extern settings set;
+extern char keys_names[8][10];
+extern char converted_keys[][10];
 
+void convert_key(char key_name[15], int key);
 void load_settings();
 void save_settings();
 

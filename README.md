@@ -57,8 +57,6 @@ Here is a list of planned features that need to be implemented for the first sta
   * Correct serial emulation
   * STAT IRQ blocking
   * Halt bug
-* **Graphical and particular features**
-  * Key editor
 
 ## Planned features with very low priority
 

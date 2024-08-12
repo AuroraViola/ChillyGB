@@ -55,6 +55,8 @@ char rom_name[256];
 uint8_t emulator_mode = MENU;
 uint8_t settings_view = SET_EMU;
 uint8_t palette_color_selected = 0;
+bool is_selected_input = false;
+uint8_t selected_input = 0;
 Color pixels_screen[144][160];
 Color pixels[144][160] = { 0 };
 Image display_image;
@@ -352,8 +354,33 @@ void update_frame() {
                             nk_checkbox_label(ctx, "Pixel Grid (TODO)", &set.pixel_grid);
                             break;
                         case SET_INPUT:
-                            nk_layout_row_dynamic(ctx, 100, 1);
-                            nk_label(ctx, "TODO", NK_TEXT_ALIGN_CENTERED|NK_TEXT_ALIGN_MIDDLE);
+                            nk_layout_row_dynamic(ctx, 30, 2);
+                            char input_value[15];
+                            for (int i = 0; i < 8; i++) {
+                                if (IsKeyDown(set.keyboard_keys[i])) {
+                                    nk_label_colored(ctx, keys_names[i], NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE, nk_rgb(255, 0, 0));
+                                }
+                                else {
+                                    nk_label(ctx, keys_names[i], NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                                }
+                                if (is_selected_input && i == selected_input) {
+                                    sprintf(input_value, "...");
+                                    int key_pressed = GetKeyPressed();
+                                    if (key_pressed != 0) {
+                                        set.keyboard_keys[i] = key_pressed;
+                                        is_selected_input = false;
+                                    }
+                                }
+                                else {
+                                    char key_name[15];
+                                    convert_key(key_name, set.keyboard_keys[i]);
+                                    sprintf(input_value, "%s", key_name);
+                                }
+                                if (nk_button_label(ctx, input_value)) {
+                                    selected_input = i;
+                                    is_selected_input = true;
+                                }
+                            }
                             break;
                     }
                 }

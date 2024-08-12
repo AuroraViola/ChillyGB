@@ -9,6 +9,147 @@ settings set = {};
 char color_names[4][10] = {"color1", "color2", "color3", "color4"};
 char keys_names[8][10] = {"right", "left", "up", "down", "a", "b", "select", "start"};
 
+void convert_key(char key_name[15], int key) {
+    switch (key) {
+        case 32:
+            strcpy(key_name, "Space");
+            break;
+        case 256:
+            strcpy(key_name, "Esc");
+            break;
+        case 257:
+            strcpy(key_name, "Enter");
+            break;
+        case 258:
+            strcpy(key_name, "Tab");
+            break;
+        case 259:
+            strcpy(key_name, "Backspace");
+            break;
+        case 260:
+            strcpy(key_name, "Ins");
+            break;
+        case 261:
+            strcpy(key_name, "Del");
+            break;
+        case 262:
+            strcpy(key_name, "Right Arrow");
+            break;
+        case 263:
+            strcpy(key_name, "Left Arrow");
+            break;
+        case 264:
+            strcpy(key_name, "Down Arrow");
+            break;
+        case 265:
+            strcpy(key_name, "Up Arrow");
+            break;
+        case 266:
+            strcpy(key_name, "Page Up");
+            break;
+        case 267:
+            strcpy(key_name, "Page down");
+            break;
+        case 268:
+            strcpy(key_name, "Home");
+            break;
+        case 269:
+            strcpy(key_name, "End");
+            break;
+        case 280:
+            strcpy(key_name, "Caps Lock");
+            break;
+        case 281:
+            strcpy(key_name, "Scroll lock");
+            break;
+        case 282:
+            strcpy(key_name, "Num lock");
+            break;
+        case 283:
+            strcpy(key_name, "Print screen");
+            break;
+        case 284:
+            strcpy(key_name, "Pause");
+            break;
+        case 290:
+            strcpy(key_name, "F1");
+            break;
+        case 291:
+            strcpy(key_name, "F2");
+            break;
+        case 292:
+            strcpy(key_name, "F3");
+            break;
+        case 293:
+            strcpy(key_name, "F4");
+            break;
+        case 294:
+            strcpy(key_name, "F5");
+            break;
+        case 295:
+            strcpy(key_name, "F6");
+            break;
+        case 296:
+            strcpy(key_name, "F7");
+            break;
+        case 297:
+            strcpy(key_name, "F8");
+            break;
+        case 298:
+            strcpy(key_name, "F9");
+            break;
+        case 299:
+            strcpy(key_name, "F10");
+            break;
+        case 300:
+            strcpy(key_name, "F11");
+            break;
+        case 301:
+            strcpy(key_name, "F12");
+            break;
+        case 340:
+            strcpy(key_name, "Shift left");
+            break;
+        case 341:
+            strcpy(key_name, "Ctrl left");
+            break;
+        case 342:
+            strcpy(key_name, "Alt left");
+            break;
+        case 343:
+            #ifdef _WIN32
+            strcpy(key_name, "Win left");
+            #else
+            strcpy(key_name, "Super left");
+            #endif
+            break;
+        case 344:
+            strcpy(key_name, "Shift right");
+            break;
+        case 345:
+            strcpy(key_name, "Ctrl right");
+            break;
+        case 346:
+            strcpy(key_name, "Alt right");
+            break;
+        case 347:
+            #ifdef _WIN32
+            strcpy(key_name, "Win right");
+            #else
+            strcpy(key_name, "Super right");
+            #endif
+            break;
+        case 348:
+            strcpy(key_name, "menu");
+            break;
+
+        default:
+            key_name[0] = key;
+            key_name[1] = '\0';
+            break;
+    }
+}
+
 void rgb_to_str(Color color, char string[10]) {
     sprintf(string, "#%02X%02X%02X", color.r, color.g, color.b);
 }
