@@ -54,6 +54,7 @@ bool show_about = false;
 char rom_name[256];
 uint8_t emulator_mode = MENU;
 uint8_t settings_view = SET_EMU;
+uint8_t palette_color_selected = 0;
 Color pixels_screen[144][160];
 Color pixels[144][160] = { 0 };
 Image display_image;
@@ -235,7 +236,7 @@ void update_frame() {
                             nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                             nk_layout_row_dynamic(ctx, 30, 2);
                             set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
-                            char str[5];
+                            char str[6];
                             sprintf(str, "%i%%", set.volume);
                             nk_label(ctx, str, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                             nk_layout_row_dynamic(ctx, 30, 1);
@@ -255,7 +256,26 @@ void update_frame() {
                                 comboxes_len += strlen(set.palettes[i].name)+1;
                             }
                             nk_combobox_string(ctx, comboxes, &set.selected_palette, set.palettes_size, 20, size);
-                            nk_button_label(ctx, "Add Palette (TODO)");
+                            if (nk_button_label(ctx, "Add Palette")) {
+                                if (set.palettes_size < 100) {
+                                    strcpy(set.palettes[set.palettes_size].name, "Custom Palette");
+                                    memcpy(set.palettes[set.palettes_size].colors, set.palettes[set.selected_palette].colors, 4*sizeof(Color));
+                                    set.selected_palette = set.palettes_size;
+                                    set.palettes_size++;
+                                }
+                            }
+                            nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
+                            if (set.selected_palette > 4) {
+                                if (nk_button_label(ctx, "Remove Palette")) {
+                                    for (int i = set.selected_palette; i < set.palettes_size; i++) {
+                                        strcpy(set.palettes[i].name, set.palettes[i+1].name);
+                                        memcpy(set.palettes[i].colors, set.palettes[i+1].colors, 4*sizeof(Color));
+                                    }
+                                    set.palettes_size--;
+                                    if (set.selected_palette == set.palettes_size)
+                                        set.selected_palette--;
+                                }
+                            }
 
                             nk_layout_row_dynamic(ctx, 60, 4);
                             struct nk_color colors[4] = {
@@ -284,10 +304,47 @@ void update_frame() {
                                     255
                                 },
                             };
-                            nk_button_color(ctx, colors[0]);
-                            nk_button_color(ctx, colors[1]);
-                            nk_button_color(ctx, colors[2]);
-                            nk_button_color(ctx, colors[3]);
+                            for (int i = 0; i < 4; i++) {
+                                if (nk_button_color(ctx, colors[i])) {
+                                    palette_color_selected = i;
+                                }
+                            }
+
+                            if (set.selected_palette > 4) {
+                                char rgb_value[6];
+                                // Red slider
+                                nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+                                nk_layout_row_push(ctx, 20);
+                                nk_label(ctx, "R:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                                nk_layout_row_push(ctx, 415);
+                                set.palettes[set.selected_palette].colors[palette_color_selected].r = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].r, 255, 1);
+                                nk_layout_row_push(ctx, 30);
+                                sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].r);
+                                nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                                nk_layout_row_end(ctx);
+
+                                // Green slider
+                                nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+                                nk_layout_row_push(ctx, 20);
+                                nk_label(ctx, "G:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                                nk_layout_row_push(ctx, 415);
+                                set.palettes[set.selected_palette].colors[palette_color_selected].g = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].g, 255, 1);
+                                nk_layout_row_push(ctx, 30);
+                                sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].g);
+                                nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                                nk_layout_row_end(ctx);
+
+                                // Blue slider
+                                nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+                                nk_layout_row_push(ctx, 20);
+                                nk_label(ctx, "B:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                                nk_layout_row_push(ctx, 415);
+                                set.palettes[set.selected_palette].colors[palette_color_selected].b = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].b, 255, 1);
+                                nk_layout_row_push(ctx, 30);
+                                sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].b);
+                                nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                                nk_layout_row_end(ctx);
+                            }
 
                             nk_layout_row_dynamic(ctx, 30, 1);
                             nk_checkbox_label(ctx, "Integer Scaling", &set.integer_scaling);
@@ -674,6 +731,7 @@ int main(int argc, char **argv) {
     SetTargetFPS(60);
     ctx = InitNuklearEx(LoadFontEx(RES_DIR "fonts/UbuntuMono.ttf", 20, 0, 250), 20);
     ctx->style.checkbox.border = 2;
+    ctx->style.button.border = 0;
 
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)

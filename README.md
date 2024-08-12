@@ -75,7 +75,6 @@ Here is a list of planned features that need to be implemented for the first sta
   * Screenshots
   * Frame blending
   * Pixel grid
-  * Palette editor
   * Rewind
   * Rom folder
 * **Debugger Improvements**
