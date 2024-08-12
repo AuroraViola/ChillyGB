@@ -45,9 +45,7 @@ void initialize_cpu_memory(cpu *c, settings *s) {
 
     video.is_on = false;
     video.lyc_select = false;
-    video.mode2_select = false;
-    video.mode0_select = false;
-    video.mode1_select = false;
+    video.mode_select = 0;
     video.scan_line = 0;
     timer1.scanline_timer = 456;
     c->memory[DMA] = 0xff;
@@ -165,9 +163,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     video.window_tilemap = false;
     video.is_on = true;
     video.lyc_select = false;
-    video.mode2_select = false;
-    video.mode0_select = false;
-    video.mode1_select = false;
+    video.mode_select = 0;
     video.mode = 1;
     c->memory[SCY] = 0x00;
     c->memory[SCX] = 0x00;
@@ -254,17 +250,10 @@ bool is_stat_condition() {
     if (video.ly_eq_lyc && video.lyc_select) {
         return true;
     }
-    else if (video.mode == 0 && video.mode0_select) {
-        return true;
-    }
-    else if (video.mode == 1 && video.mode1_select) {
-        return true;
-    }
-    else if (video.mode == 2 && video.mode2_select) {
+    else if ((video.mode_select >> video.mode) & 1) {
         return true;
     }
     return false;
-
 }
 
 void tick_scanline(cpu *c) {
@@ -277,7 +266,7 @@ void tick_scanline(cpu *c) {
         if (video.scan_line == 144) {
             video.mode = 1;
             c->memory[IF] |= 1;
-            if (video.mode2_select && !prev_stat)
+            if (video.mode_select >> 2 && !prev_stat)
                 c->memory[IF] |= 2;
             video.draw_screen = true;
         }

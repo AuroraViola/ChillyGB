@@ -24,9 +24,7 @@ typedef struct {
     bool obj_size;
 
     bool lyc_select;
-    bool mode0_select;
-    bool mode1_select;
-    bool mode2_select;
+    uint8_t mode_select;
     bool ly_eq_lyc;
 }savestate_ppu;
 

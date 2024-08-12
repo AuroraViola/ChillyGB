@@ -332,9 +332,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
         case STAT: // STAT Interrupt
             c->memory[IF] |= 2;
             video.lyc_select = (value >> 6) & 1;
-            video.mode2_select = (value >> 5) & 1;
-            video.mode1_select = (value >> 4) & 1;
-            video.mode0_select = (value >> 3) & 1;
+            video.mode_select = (value >> 3) & 7;
             break;
 
         case DMA: // OAM DMA transfer
@@ -679,9 +677,9 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->memory[addr] | 0xe0;
         case STAT:
             if (video.is_on)
-                return video.mode | (video.ly_eq_lyc << 2) | (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
+                return video.mode | (video.ly_eq_lyc << 2) | (video.mode_select << 3) | (video.lyc_select << 6) | 0x80;
             else
-                return (video.ly_eq_lyc << 2) | (video.mode0_select << 3) | (video.mode1_select << 4) | (video.mode2_select << 5) | (video.lyc_select << 6) | 0x80;
+                return (video.ly_eq_lyc << 2) | (video.mode_select << 3) | (video.lyc_select << 6) | 0x80;
 
         case LY:
             return video.scan_line;

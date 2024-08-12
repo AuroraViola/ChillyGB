@@ -54,9 +54,7 @@ void save_state(cpu *c, char rom_name[256]) {
     savestate1.ppu.window_tilemap = video.window_tilemap;
     savestate1.ppu.obj_size = video.obj_size;
     savestate1.ppu.lyc_select = video.lyc_select;
-    savestate1.ppu.mode0_select = video.mode0_select;
-    savestate1.ppu.mode1_select = video.mode1_select;
-    savestate1.ppu.mode2_select  = video.mode2_select;
+    savestate1.ppu.mode_select = video.mode_select;
     savestate1.ppu.ly_eq_lyc = video.ly_eq_lyc;
     memcpy(&savestate1.ppu.bgp, &video.bgp, (sizeof(uint8_t) * 4));
     memcpy(&savestate1.ppu.obp, &video.obp, (sizeof(uint8_t) * 8));
@@ -107,9 +105,7 @@ void load_state(cpu *c, char rom_name[256]) {
         video.window_tilemap = savestate1.ppu.window_tilemap;
         video.obj_size = savestate1.ppu.obj_size;
         video.lyc_select = savestate1.ppu.lyc_select;
-        video.mode0_select = savestate1.ppu.mode0_select;
-        video.mode1_select = savestate1.ppu.mode1_select;
-        video.mode2_select = savestate1.ppu.mode2_select;
+        video.mode_select = savestate1.ppu.mode_select;
         video.ly_eq_lyc = savestate1.ppu.ly_eq_lyc;
 
         video.need_sprites_reload = true;
