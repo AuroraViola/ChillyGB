@@ -31,11 +31,11 @@ sudo dnf install git cmake make raylib raylib-devel gcc
 sudo pacman -S git cmake make gcc raylib
 ```
 
-#### ChillyGB Installation
+#### ChillyGB Build
 
 Clone the ChillyGB repository
 ```bash
-git clone https://github.com/AuroraViola/ChillyGB && cd ChillyGB
+git clone https://github.com/AuroraViola/ChillyGB --recursive && cd ChillyGB
 ```
 Build ChillyGB
 ```bash
@@ -49,22 +49,18 @@ TODO
 
 ## Planned features
 
-Here is a list of planned features that need to be implemented for the first stable release
-
-* **Emulation Improvements**
-  * Pixel FIFO and more accurate PPU timing
-  * Accurate sound behaviours
-  * Correct serial emulation
-  * STAT IRQ blocking
-  * Halt bug
-
-## Planned features with very low priority
+Here is a list of planned features
 
 * **Cartridge support**
   * MBC1M
   * MBC5 Rumble
   * Pocket camera support
 * **Emulation Improvements**
+  * Pixel FIFO and more accurate PPU timing
+  * Accurate sound behaviours
+  * Correct serial emulation
+  * STAT IRQ blocking
+  * Halt bug
   * Stop Instruction
   * Accurate VRAM and OAM timing Access
   * DMA Conflicts
@@ -78,7 +74,7 @@ Here is a list of planned features that need to be implemented for the first sta
 * **Debugger Improvements**
   * Breakpoints
   * Watchpoints
-  * APU state
+  * APU and channel state
   * Stack viewer
   * VRAM viewer
   * Memory editor

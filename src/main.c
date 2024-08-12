@@ -70,6 +70,7 @@ debugtexts texts;
 int ff_speed = 1;
 struct nk_context *ctx;
 char comboxes[2500] = "";
+char version[20] = "v0.1.0";
 
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
@@ -390,7 +391,7 @@ void update_frame() {
                 show_settings = false;
 
             if (show_about) {
-                if(nk_begin_titled(ctx, "ctx-about","About", nk_rect((GetScreenWidth()/2-200), (GetScreenHeight()/2-250), 400, 500),
+                if(nk_begin_titled(ctx, "ctx-about","About", nk_rect((GetScreenWidth()/2-200), (GetScreenHeight()/2-250), 400, 520),
                                               NK_WINDOW_CLOSABLE)) {
                     nk_layout_row_begin(ctx, NK_STATIC, 256, 3);
                     /* padding */
@@ -409,6 +410,8 @@ void update_frame() {
                     nk_layout_row_dynamic(ctx, 20, 1);
                     nk_label(ctx, "",  NK_TEXT_CENTERED);
                     nk_label(ctx, "ChillyGB", NK_TEXT_CENTERED);
+                    nk_label(ctx, version, NK_TEXT_CENTERED);
+                    nk_label(ctx, "",  NK_TEXT_CENTERED);
                     nk_label(ctx, "By AuroraViola", NK_TEXT_CENTERED);
                     nk_label(ctx, "",  NK_TEXT_CENTERED);
                     nk_label(ctx, "ChillyGB is licensed under the",  NK_TEXT_CENTERED);
