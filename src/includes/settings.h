@@ -26,6 +26,11 @@ typedef struct {
     bool integer_scaling;
     bool frame_blending;
     bool pixel_grid;
+
+    // Input settings
+    KeyboardKey keyboard_keys[8];
+    GamepadButton gamepad_keys[8];
+    KeyboardKey fast_forward_key;
 }settings;
 
 extern settings set;

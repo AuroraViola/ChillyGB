@@ -70,27 +70,6 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     c->cart.ram_enable = false;
     c->cart.mbc1mode = false;
 
-    // Initialize Joypad keys
-    KeyboardKey keys[] = {KEY_D, KEY_A, KEY_W, KEY_S, KEY_L, KEY_K, KEY_BACKSPACE, KEY_ENTER};
-    GamepadButton joystick_keys[] = {
-            GAMEPAD_BUTTON_LEFT_FACE_RIGHT,
-            GAMEPAD_BUTTON_LEFT_FACE_LEFT,
-            GAMEPAD_BUTTON_LEFT_FACE_UP,
-            GAMEPAD_BUTTON_LEFT_FACE_DOWN,
-            GAMEPAD_BUTTON_RIGHT_FACE_RIGHT,
-            GAMEPAD_BUTTON_RIGHT_FACE_DOWN,
-            GAMEPAD_BUTTON_MIDDLE_LEFT,
-            GAMEPAD_BUTTON_MIDDLE_RIGHT
-    };
-    for (int i = 0; i < 4; i++) {
-        joypad1.keys_dpad[i] = keys[i];
-        joypad1.keys_btn[i] = keys[i+4];
-    }
-    for (int i = 0; i < 4; i++) {
-        joypad1.gamepad_dpad[i] = joystick_keys[i];
-        joypad1.gamepad_btn[i] = joystick_keys[i+4];
-    }
-
     // Randomize WRAM, HRAM
     for (uint16_t i = 0xc000; i <= 0xdfff; i++) {
         c->memory[i] = rand();
@@ -217,27 +196,6 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->cart.bank_select_ram = 0;
     c->cart.ram_enable = false;
     c->cart.mbc1mode = false;
-
-    // Initialize Joypad
-    KeyboardKey keys[] = {KEY_D, KEY_A, KEY_W, KEY_S, KEY_L, KEY_K, KEY_BACKSPACE, KEY_ENTER};
-    GamepadButton joystick_keys[] = {
-            GAMEPAD_BUTTON_LEFT_FACE_RIGHT,
-            GAMEPAD_BUTTON_LEFT_FACE_LEFT,
-            GAMEPAD_BUTTON_LEFT_FACE_UP,
-            GAMEPAD_BUTTON_LEFT_FACE_DOWN,
-            GAMEPAD_BUTTON_RIGHT_FACE_RIGHT,
-            GAMEPAD_BUTTON_RIGHT_FACE_DOWN,
-            GAMEPAD_BUTTON_MIDDLE_LEFT,
-            GAMEPAD_BUTTON_MIDDLE_RIGHT
-    };
-    for (int i = 0; i < 4; i++) {
-        joypad1.keys_dpad[i] = keys[i];
-        joypad1.keys_btn[i] = keys[i+4];
-    }
-    for (int i = 0; i < 4; i++) {
-        joypad1.gamepad_dpad[i] = joystick_keys[i];
-        joypad1.gamepad_btn[i] = joystick_keys[i+4];
-    }
 
     // Initialize WRAM
     for (uint16_t i = 0xc000; i <= 0xdfff; i++) {

@@ -7,6 +7,7 @@
 
 settings set = {};
 char color_names[4][10] = {"color1", "color2", "color3", "color4"};
+char keys_names[8][10] = {"right", "left", "up", "down", "a", "b", "select", "start"};
 
 void rgb_to_str(Color color, char string[10]) {
     sprintf(string, "#%02X%02X%02X", color.r, color.g, color.b);
@@ -16,6 +17,23 @@ Color str_to_rgb(char string[10]) {
     int r, g, b;
     sscanf(string, "#%02X%02X%02X", &r, &g, &b);
     return (Color) {r, g, b, 255};
+}
+
+void load_default_keys() {
+    KeyboardKey keys[] = {KEY_D, KEY_A, KEY_W, KEY_S, KEY_L, KEY_K, KEY_BACKSPACE, KEY_ENTER};
+    memcpy(set.keyboard_keys, keys, 8*sizeof(KeyboardKey));
+    GamepadButton joystick_keys[] = {
+            GAMEPAD_BUTTON_LEFT_FACE_RIGHT,
+            GAMEPAD_BUTTON_LEFT_FACE_LEFT,
+            GAMEPAD_BUTTON_LEFT_FACE_UP,
+            GAMEPAD_BUTTON_LEFT_FACE_DOWN,
+            GAMEPAD_BUTTON_RIGHT_FACE_RIGHT,
+            GAMEPAD_BUTTON_RIGHT_FACE_DOWN,
+            GAMEPAD_BUTTON_MIDDLE_LEFT,
+            GAMEPAD_BUTTON_MIDDLE_RIGHT
+    };
+    memcpy(set.gamepad_keys, joystick_keys, 8*sizeof(GamepadButton));
+    set.fast_forward_key = KEY_SPACE;
 }
 
 void load_default_palettes() {
@@ -80,6 +98,7 @@ void load_default_settings() {
     set.ch_on[2] = true;
     set.ch_on[3] = true;
     load_default_palettes();
+    load_default_keys();
 }
 
 void load_settings() {
@@ -182,6 +201,28 @@ void load_settings() {
     else {
         load_default_palettes();
     }
+    int keys_size = cJSON_GetArraySize(cJSON_GetObjectItem(settings, "keyboard_keys"));
+    int gamepad_size = cJSON_GetArraySize(cJSON_GetObjectItem(settings, "gamepad_keys"));
+
+    if (keys_size == 8 && gamepad_size == 8) {
+        cJSON *keys = cJSON_GetObjectItem(settings, "keyboard_keys");
+        cJSON *gamepad = cJSON_GetObjectItem(settings, "gamepad_keys");
+
+        for (int i = 0; i < 8; i++) {
+            cJSON *item = cJSON_GetArrayItem(keys, i);
+            cJSON *item2 = cJSON_GetArrayItem(gamepad, i);
+            set.keyboard_keys[i] = item->valueint;
+            set.gamepad_keys[i] = item2->valueint;
+        }
+    }
+    else {
+        load_default_keys();
+    }
+    cJSON *fast_forward_key = cJSON_GetObjectItem(settings, "fast_forward_key");
+    if (cJSON_IsNumber(fast_forward_key))
+        set.fast_forward_key = fast_forward_key->valueint;
+    else
+        set.fast_forward_key = KEY_SPACE;
 
     if (set.palettes_size <= set.selected_palette)
         set.selected_palette = 0;
@@ -219,6 +260,21 @@ void save_settings() {
     }
 
     cJSON_AddItemToObject(settings, "palettes", palettes_array);
+
+    cJSON *keys_array = cJSON_CreateArray();
+    for (int i = 0; i < 8; i++) {
+        cJSON_AddItemToArray(keys_array, cJSON_CreateNumber(set.keyboard_keys[i]));
+    }
+    cJSON_AddItemToObject(settings, "keyboard_keys", keys_array);
+
+    cJSON *gamepad_array = cJSON_CreateArray();
+    for (int i = 0; i < 8; i++) {
+        cJSON_AddItemToArray(gamepad_array, cJSON_CreateNumber(set.gamepad_keys[i]));
+    }
+    cJSON_AddItemToObject(settings, "gamepad_keys", gamepad_array);
+
+    cJSON_AddNumberToObject(settings, "fast_forward_key", set.fast_forward_key);
+
 
     #if defined(PLATFORM_WEB)
     FILE *file = fopen("/saves/settings.json", "w");

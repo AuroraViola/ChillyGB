@@ -4,10 +4,6 @@
 #define CHILLYGB_INPUT_H
 
 typedef struct {
-    KeyboardKey keys_dpad[4];
-    KeyboardKey keys_btn[4];
-    GamepadButton gamepad_dpad[4];
-    GamepadButton gamepad_btn[4];
     bool dpad[4];
     bool btn[4];
     bool dpad_on;
