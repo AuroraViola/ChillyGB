@@ -4,7 +4,7 @@
 
 ChillyGB is an experimental Game Boy (DMG) emulator written in C that aims to simplicity and accuracy
 
-You can try it now [here](https://chillygb.arci.me)
+You can try it now [here](https://chillygb.arci.me) (Note that this WASM port can be slow and/or instable)
 
 ## Screenshots
 
