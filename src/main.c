@@ -72,6 +72,9 @@ int ff_speed = 1;
 struct nk_context *ctx;
 char comboxes[2500] = "";
 char version[20] = "v0.1.0";
+int key_order[8] = {2, 5, 3, 4, 1, 6, 0, 7};
+struct nk_style_button tab_button_style = {};
+struct nk_style_button tab_button_active_style = {};
 
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
@@ -218,17 +221,38 @@ void update_frame() {
             DrawFileManager(ctx);
             #endif
             if (show_settings) {
-                if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(20, 60, 500, 505),
+                if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(20, 60, 550, 505),
                                                  NK_WINDOW_MOVABLE|NK_WINDOW_TITLE)) {
                     nk_layout_row_dynamic(ctx, 30, 4);
-                    if (nk_button_label(ctx, "Emulation"))
-                        settings_view = SET_EMU;
-                    if (nk_button_label(ctx, "Audio"))
-                        settings_view = SET_AUDIO;
-                    if (nk_button_label(ctx, "Video"))
-                        settings_view = SET_VIDEO;
-                    if (nk_button_label(ctx, "Input"))
-                        settings_view = SET_INPUT;
+                    if (settings_view == SET_EMU) {
+                        nk_button_label_styled(ctx, &tab_button_active_style, "Emulation");
+                    }
+                    else {
+                        if (nk_button_label_styled(ctx, &tab_button_style, "Emulation"))
+                            settings_view = SET_EMU;
+                    }
+                    if (settings_view == SET_AUDIO) {
+                        nk_button_label_styled(ctx, &tab_button_active_style, "Audio");
+                    }
+                    else {
+                        if (nk_button_label_styled(ctx, &tab_button_style, "Audio"))
+                            settings_view = SET_AUDIO;
+                    }
+                    if (settings_view == SET_VIDEO) {
+                        nk_button_label_styled(ctx, &tab_button_active_style, "Video");
+                    }
+                    else {
+                        if (nk_button_label_styled(ctx, &tab_button_style, "Video"))
+                            settings_view = SET_VIDEO;
+                    }
+                    if (settings_view == SET_INPUT) {
+                        nk_button_label_styled(ctx, &tab_button_active_style, "Input");
+                    }
+                    else {
+                        if (nk_button_label_styled(ctx, &tab_button_style, "Input"))
+                            settings_view = SET_INPUT;
+                    }
+
                     struct nk_vec2 size = {250, 200};
                     nk_layout_row_dynamic(ctx, 370, 1);
                     if (nk_group_begin(ctx, "settings_view", 0)) {
@@ -359,32 +383,34 @@ void update_frame() {
                                 nk_checkbox_label(ctx, "Pixel Grid (TODO)", &set.pixel_grid);
                                 break;
                             case SET_INPUT:
-                                nk_layout_row_dynamic(ctx, 30, 4);
-                                char input_value[15];
-                                for (int i = 0; i < 8; i++) {
-                                    if (IsKeyDown(set.keyboard_keys[i])) {
-                                        nk_label_colored(ctx, keys_names[i], NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE, nk_rgb(255, 0, 0));
-                                    }
-                                    else {
-                                        nk_label(ctx, keys_names[i], NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
-                                    }
-                                    if (is_selected_input && i == selected_input) {
-                                        sprintf(input_value, "...");
-                                        int key_pressed = GetKeyPressed();
-                                        if (key_pressed != 0) {
-                                            set.keyboard_keys[i] = key_pressed;
-                                            is_selected_input = false;
+                                nk_layout_row_dynamic(ctx, 150, 1);
+                                if (nk_group_begin(ctx, "key_management", 0)) {
+                                    nk_layout_row_dynamic(ctx, 30, 4);
+                                    char input_value[15];
+                                    for (int i = 0; i < 8; i++) {
+                                        nk_label(ctx, keys_names[key_order[i]], NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
+                                        if (is_selected_input && i == selected_input) {
+                                            sprintf(input_value, "...");
+                                            int key_pressed = GetKeyPressed();
+                                            if (key_pressed != 0) {
+                                                set.keyboard_keys[key_order[i]] = key_pressed;
+                                                is_selected_input = false;
+                                            }
+                                        }
+                                        else {
+                                            char key_name[15];
+                                            convert_key(key_name, set.keyboard_keys[key_order[i]]);
+                                            sprintf(input_value, "%s", key_name);
+                                        }
+                                        if (nk_button_label(ctx, input_value)) {
+                                            selected_input = i;
+                                            is_selected_input = true;
                                         }
                                     }
-                                    else {
-                                        char key_name[15];
-                                        convert_key(key_name, set.keyboard_keys[i]);
-                                        sprintf(input_value, "%s", key_name);
-                                    }
-                                    if (nk_button_label(ctx, input_value)) {
-                                        selected_input = i;
-                                        is_selected_input = true;
-                                    }
+                                    nk_group_end(ctx);
+                                }
+                                if (nk_group_begin(ctx, "gamepad_view", 0)) {
+                                    nk_group_end(ctx);
                                 }
                                 break;
                         }
@@ -780,7 +806,15 @@ int main(int argc, char **argv) {
     SetTargetFPS(60);
     ctx = InitNuklearEx(LoadFontEx(RES_DIR "fonts/UbuntuMono.ttf", 20, 0, 250), 20);
     ctx->style.checkbox.border = 2;
-    ctx->style.button.border = 0;
+    memcpy(&tab_button_style, &ctx->style.button, sizeof(struct nk_style_button));
+    memcpy(&tab_button_active_style, &ctx->style.button, sizeof(struct nk_style_button));
+    tab_button_style.border = 0;
+    tab_button_style.padding = nk_vec2(0,0);
+    tab_button_style.normal.data.color = nk_rgba(0,0,0,0);
+
+    tab_button_active_style.border = 0;
+    tab_button_active_style.padding = nk_vec2(0,0);
+    tab_button_active_style.normal.data.color.a = 192;
 
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)
