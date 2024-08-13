@@ -34,6 +34,7 @@ typedef struct {
 }settings;
 
 extern settings set;
+extern settings set_prev;
 extern char keys_names[8][10];
 extern char converted_keys[][10];
 

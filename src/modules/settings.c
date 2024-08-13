@@ -6,6 +6,7 @@
 #include "../../cJSON/cJSON.h"
 
 settings set = {};
+settings set_prev = {};
 char color_names[4][10] = {"color1", "color2", "color3", "color4"};
 char keys_names[8][10] = {"right", "left", "up", "down", "a", "b", "select", "start"};
 
