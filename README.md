@@ -66,7 +66,6 @@ Here is a list of planned features
   * DMA Conflicts
   * Online multiplayer support via emulated link cable
 * **Graphical and particular features**
-  * Screenshots
   * Frame blending
   * Pixel grid
   * Rewind

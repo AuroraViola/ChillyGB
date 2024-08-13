@@ -66,6 +66,7 @@ Texture2D display;
 char instructions[30][50];
 float scale;
 int scale_integer;
+float speed_mult = 1;
 debugtexts texts;
 int ff_speed = 1;
 struct nk_context *ctx;
@@ -234,7 +235,7 @@ void update_frame() {
                         switch (settings_view) {
                             case SET_EMU:
                                 nk_layout_row_dynamic(ctx, 30, 1);
-                                nk_checkbox_label(ctx, "Accurate RTC (TODO)", &set.accurate_rtc);
+                                nk_checkbox_label(ctx, "Sync RTC to gameboy clock (accurate)", &set.accurate_rtc);
                                 nk_checkbox_label(ctx, "Boot Rom", &set.bootrom_enabled);
                                 break;
                             case SET_AUDIO:
@@ -549,7 +550,8 @@ void update_frame() {
                 }
                 EndDrawing();
                 char str[80];
-                sprintf(str, "ChillyGB - %d FPS - %.1fx", GetFPS(), (float)(GetFPS())/60);
+                speed_mult = ((float)(GetFPS())/60) * joypad1.fast_forward;
+                sprintf(str, "ChillyGB - %d FPS - %.1fx", GetFPS(), speed_mult);
                 SetWindowTitle(str);
             }
             break;

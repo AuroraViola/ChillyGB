@@ -173,6 +173,8 @@ enum cond {
     condNZ = 0,
 };
 
+extern float speed_mult;
+
 void initialize_cpu_memory_no_bootrom(cpu *c, settings *s);
 void initialize_cpu_memory(cpu *c, settings *s);
 void execute(cpu *c);

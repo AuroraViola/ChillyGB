@@ -367,9 +367,17 @@ void add_ticks(cpu *c, uint16_t ticks) {
 
         if (!c->cart.rtc.is_halted) {
             timer1.rtc_timer += 4;
-            if (timer1.rtc_timer > 4194304) {
-                timer1.rtc_timer = 0;
-                c->cart.rtc.time++;
+            if (set.accurate_rtc) {
+                if (timer1.rtc_timer > 4194304) {
+                    timer1.rtc_timer = 0;
+                    c->cart.rtc.time++;
+                }
+            }
+            else {
+                if (timer1.rtc_timer > (4194304) * speed_mult) {
+                    timer1.rtc_timer = 0;
+                    c->cart.rtc.time++;
+                }
             }
         }
     }
