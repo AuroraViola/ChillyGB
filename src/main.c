@@ -304,7 +304,7 @@ void draw_settings_window() {
                         nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
                         nk_layout_row_push(ctx, 20);
                         nk_label(ctx, "R:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                        nk_layout_row_push(ctx, 400);
+                        nk_layout_row_push(ctx, 445);
                         set.palettes[set.selected_palette].colors[palette_color_selected].r = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].r, 255, 1);
                         nk_layout_row_push(ctx, 30);
                         sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].r);
@@ -315,7 +315,7 @@ void draw_settings_window() {
                         nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
                         nk_layout_row_push(ctx, 20);
                         nk_label(ctx, "G:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                        nk_layout_row_push(ctx, 400);
+                        nk_layout_row_push(ctx, 445);
                         set.palettes[set.selected_palette].colors[palette_color_selected].g = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].g, 255, 1);
                         nk_layout_row_push(ctx, 30);
                         sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].g);
@@ -326,7 +326,7 @@ void draw_settings_window() {
                         nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
                         nk_layout_row_push(ctx, 20);
                         nk_label(ctx, "B:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                        nk_layout_row_push(ctx, 400);
+                        nk_layout_row_push(ctx, 445);
                         set.palettes[set.selected_palette].colors[palette_color_selected].b = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].b, 255, 1);
                         nk_layout_row_push(ctx, 30);
                         sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].b);
@@ -336,8 +336,8 @@ void draw_settings_window() {
 
                     nk_layout_row_dynamic(ctx, 30, 1);
                     nk_checkbox_label(ctx, "Integer Scaling", &set.integer_scaling);
-                    nk_checkbox_label(ctx, "Frame Blending (TODO)", &set.frame_blending);
-                    nk_checkbox_label(ctx, "Pixel Grid (TODO)", &set.pixel_grid);
+                    //nk_checkbox_label(ctx, "Frame Blending", &set.frame_blending);
+                    //nk_checkbox_label(ctx, "Pixel Grid", &set.pixel_grid);
                     break;
                 case SET_INPUT:
                     nk_layout_row_dynamic(ctx, 150, 1);
