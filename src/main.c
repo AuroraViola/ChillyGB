@@ -75,6 +75,10 @@ char version[20] = "v0.1.0";
 int key_order[8] = {2, 5, 3, 4, 1, 6, 0, 7};
 struct nk_style_button tab_button_style = {};
 struct nk_style_button tab_button_active_style = {};
+struct nk_style_button button_dpad_style = {};
+struct nk_style_button button_dpad_pressed_style = {};
+struct nk_style_button button_buttons_style = {};
+struct nk_style_button button_buttons_pressed_style = {};
 
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
@@ -192,6 +196,249 @@ void DrawNavBar() {
     }
     nk_end(ctx);
 }
+
+void draw_settings_window() {
+    if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(20, 60, 550, 505),
+                NK_WINDOW_MOVABLE|NK_WINDOW_TITLE)) {
+        nk_layout_row_dynamic(ctx, 30, 4);
+        if (nk_button_label_styled(ctx, (settings_view != SET_EMU) ? &tab_button_style : &tab_button_active_style, "Emulation"))
+            settings_view = SET_EMU;
+        if (nk_button_label_styled(ctx, (settings_view != SET_AUDIO) ? &tab_button_style : &tab_button_active_style, "Audio"))
+            settings_view = SET_AUDIO;
+        if (nk_button_label_styled(ctx, (settings_view != SET_VIDEO) ? &tab_button_style : &tab_button_active_style, "Video"))
+            settings_view = SET_VIDEO;
+        if (nk_button_label_styled(ctx, (settings_view != SET_INPUT) ? &tab_button_style : &tab_button_active_style, "Input"))
+            settings_view = SET_INPUT;
+
+        struct nk_vec2 size = {250, 200};
+        nk_layout_row_dynamic(ctx, 370, 1);
+        if (nk_group_begin(ctx, "settings_view", 0)) {
+            switch (settings_view) {
+                case SET_EMU:
+                    nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_checkbox_label(ctx, "Sync RTC to gameboy clock (accurate)", &set.accurate_rtc);
+                    nk_checkbox_label(ctx, "Boot Rom", &set.bootrom_enabled);
+                    break;
+                case SET_AUDIO:
+                    nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
+                    char str[6];
+                    sprintf(str, "%i%%", set.volume);
+                    nk_label(ctx, str, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_checkbox_label(ctx, "Channel 1", &set.ch_on[0]);
+                    nk_checkbox_label(ctx, "Channel 2", &set.ch_on[1]);
+                    nk_checkbox_label(ctx, "Channel 3", &set.ch_on[2]);
+                    nk_checkbox_label(ctx, "Channel 4", &set.ch_on[3]);
+                    break;
+                case SET_VIDEO:
+                    nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    int comboxes_len = 0;
+                    for (int i = 0; i < set.palettes_size; i++) {
+                        stpcpy(comboxes + comboxes_len, set.palettes[i].name);
+                        comboxes_len += strlen(set.palettes[i].name)+1;
+                    }
+                    nk_combobox_string(ctx, comboxes, &set.selected_palette, set.palettes_size, 20, size);
+                    if (nk_button_label(ctx, "Add Palette")) {
+                        if (set.palettes_size < 100) {
+                            strcpy(set.palettes[set.palettes_size].name, "Custom Palette");
+                            memcpy(set.palettes[set.palettes_size].colors, set.palettes[set.selected_palette].colors, 4*sizeof(Color));
+                            set.selected_palette = set.palettes_size;
+                            set.palettes_size++;
+                        }
+                    }
+                    nk_spacer(ctx);
+                    if (set.selected_palette > 4) {
+                        if (nk_button_label(ctx, "Remove Palette")) {
+                            for (int i = set.selected_palette; i < set.palettes_size; i++) {
+                                strcpy(set.palettes[i].name, set.palettes[i+1].name);
+                                memcpy(set.palettes[i].colors, set.palettes[i+1].colors, 4*sizeof(Color));
+                            }
+                            set.palettes_size--;
+                            if (set.selected_palette == set.palettes_size)
+                                set.selected_palette--;
+                        }
+                    }
+
+                    nk_layout_row_dynamic(ctx, 60, 4);
+                    struct nk_color colors[4] = {
+                        {
+                            set.palettes[set.selected_palette].colors[0].r,
+                            set.palettes[set.selected_palette].colors[0].g,
+                            set.palettes[set.selected_palette].colors[0].b,
+                            255
+                        },
+                        {
+                            set.palettes[set.selected_palette].colors[1].r,
+                            set.palettes[set.selected_palette].colors[1].g,
+                            set.palettes[set.selected_palette].colors[1].b,
+                            255
+                        },
+                        {
+                            set.palettes[set.selected_palette].colors[2].r,
+                            set.palettes[set.selected_palette].colors[2].g,
+                            set.palettes[set.selected_palette].colors[2].b,
+                            255
+                        },
+                        {
+                            set.palettes[set.selected_palette].colors[3].r,
+                            set.palettes[set.selected_palette].colors[3].g,
+                            set.palettes[set.selected_palette].colors[3].b,
+                            255
+                        },
+                    };
+                    for (int i = 0; i < 4; i++) {
+                        if (nk_button_color(ctx, colors[i])) {
+                            palette_color_selected = i;
+                        }
+                    }
+
+                    if (set.selected_palette > 4) {
+                        char rgb_value[6];
+                        // Red slider
+                        nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+                        nk_layout_row_push(ctx, 20);
+                        nk_label(ctx, "R:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                        nk_layout_row_push(ctx, 400);
+                        set.palettes[set.selected_palette].colors[palette_color_selected].r = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].r, 255, 1);
+                        nk_layout_row_push(ctx, 30);
+                        sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].r);
+                        nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                        nk_layout_row_end(ctx);
+
+                        // Green slider
+                        nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+                        nk_layout_row_push(ctx, 20);
+                        nk_label(ctx, "G:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                        nk_layout_row_push(ctx, 400);
+                        set.palettes[set.selected_palette].colors[palette_color_selected].g = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].g, 255, 1);
+                        nk_layout_row_push(ctx, 30);
+                        sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].g);
+                        nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                        nk_layout_row_end(ctx);
+
+                        // Blue slider
+                        nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
+                        nk_layout_row_push(ctx, 20);
+                        nk_label(ctx, "B:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                        nk_layout_row_push(ctx, 400);
+                        set.palettes[set.selected_palette].colors[palette_color_selected].b = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].b, 255, 1);
+                        nk_layout_row_push(ctx, 30);
+                        sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].b);
+                        nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                        nk_layout_row_end(ctx);
+                    }
+
+                    nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_checkbox_label(ctx, "Integer Scaling", &set.integer_scaling);
+                    nk_checkbox_label(ctx, "Frame Blending (TODO)", &set.frame_blending);
+                    nk_checkbox_label(ctx, "Pixel Grid (TODO)", &set.pixel_grid);
+                    break;
+                case SET_INPUT:
+                    nk_layout_row_dynamic(ctx, 150, 1);
+                    if (nk_group_begin(ctx, "key_management", 0)) {
+                        nk_layout_row_dynamic(ctx, 30, 4);
+                        char input_value[15];
+                        for (int i = 0; i < 8; i++) {
+                            nk_label(ctx, keys_names[key_order[i]], NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
+                            if (is_selected_input && i == selected_input) {
+                                sprintf(input_value, "...");
+                                int key_pressed = GetKeyPressed();
+                                if (key_pressed != 0) {
+                                    set.keyboard_keys[key_order[i]] = key_pressed;
+                                    is_selected_input = false;
+                                }
+                            }
+                            else {
+                                char key_name[15];
+                                convert_key(key_name, set.keyboard_keys[key_order[i]]);
+                                sprintf(input_value, "%s", key_name);
+                            }
+                            if (nk_button_label(ctx, input_value)) {
+                                selected_input = i;
+                                is_selected_input = true;
+                            }
+                        }
+                        nk_group_end(ctx);
+                    }
+                    nk_layout_row_begin(ctx, NK_STATIC, 190, 2);
+                    nk_layout_row_push(ctx, 120);
+                    nk_spacer(ctx);
+                    nk_layout_row_push(ctx, 300);
+                    if (nk_group_begin(ctx, "gamepad_view", 0)) {
+                        nk_layout_space_begin(ctx, NK_STATIC, 170, 9);
+                        nk_layout_space_push(ctx, nk_rect(30, 45, 30, 30));
+                        nk_button_symbol_styled(ctx, &button_dpad_style, NK_SYMBOL_NONE);
+                        nk_layout_space_push(ctx, nk_rect(0, 45, 30, 30));
+                        nk_button_symbol_styled(ctx, (IsKeyDown(set.keyboard_keys[DPAD_LEFT])) ? &button_dpad_pressed_style : &button_dpad_style,NK_SYMBOL_TRIANGLE_LEFT);
+                        nk_layout_space_push(ctx, nk_rect(60, 45, 30, 30));
+                        nk_button_symbol_styled(ctx, (IsKeyDown(set.keyboard_keys[DPAD_RIGHT])) ? &button_dpad_pressed_style : &button_dpad_style, NK_SYMBOL_TRIANGLE_RIGHT);
+                        nk_layout_space_push(ctx, nk_rect(30, 15, 30, 30));
+                        nk_button_symbol_styled(ctx, (IsKeyDown(set.keyboard_keys[DPAD_UP])) ? &button_dpad_pressed_style : &button_dpad_style, NK_SYMBOL_TRIANGLE_UP);
+                        nk_layout_space_push(ctx, nk_rect(30, 75, 30, 30));
+                        nk_button_symbol_styled(ctx, (IsKeyDown(set.keyboard_keys[DPAD_DOWN])) ? &button_dpad_pressed_style : &button_dpad_style, NK_SYMBOL_TRIANGLE_DOWN);
+                        nk_layout_space_push(ctx, nk_rect(105, 165, 30, 10));
+                        nk_button_label_styled(ctx, (IsKeyDown(set.keyboard_keys[BUTTON_SELECT+4])) ? &button_buttons_pressed_style : &button_buttons_style, "");
+                        nk_layout_space_push(ctx, nk_rect(150, 165, 30, 10));
+                        nk_button_label_styled(ctx, (IsKeyDown(set.keyboard_keys[BUTTON_START+4])) ? &button_buttons_pressed_style : &button_buttons_style, "");
+                        nk_layout_space_push(ctx, nk_rect(180, 50, 40, 40));
+                        nk_button_label_styled(ctx, (IsKeyDown(set.keyboard_keys[BUTTON_B+4])) ? &button_buttons_pressed_style : &button_buttons_style, "B");
+                        nk_layout_space_push(ctx, nk_rect(240, 30, 40, 40));
+                        nk_button_label_styled(ctx, (IsKeyDown(set.keyboard_keys[BUTTON_A+4])) ? &button_buttons_pressed_style : &button_buttons_style, "A");
+                        nk_layout_space_end(ctx);
+                        nk_group_end(ctx);
+                    }
+                    nk_layout_row_end(ctx);
+                    break;
+            }
+            nk_group_end(ctx);
+        }
+        nk_layout_row_dynamic(ctx, 40, 4);
+        nk_spacer(ctx);
+        nk_spacer(ctx);
+        if (nk_button_label(ctx, "Cancel")) {
+            show_settings = false;
+            memcpy(&set, &set_prev, sizeof(settings));
+        }
+        if (nk_button_label(ctx, "Apply")) {
+            show_settings = false;
+            save_settings();
+            memcpy(&set_prev, &set, sizeof(settings));
+        }
+    }
+    nk_end(ctx);
+}
+
+void draw_about_window() {
+    if(nk_begin_titled(ctx, "ctx-about","About", nk_rect((GetScreenWidth()/2-200), (GetScreenHeight()/2-250), 400, 520),
+                                              NK_WINDOW_CLOSABLE)) {
+        nk_layout_row_begin(ctx, NK_STATIC, 256, 2);
+        nk_layout_row_push(ctx, (370-150)/2);
+        nk_spacer(ctx);
+
+        struct nk_image chillygb_logo = TextureToNuklear(logo);
+        nk_layout_row_push(ctx, 150);
+        nk_image(ctx, chillygb_logo);
+        nk_layout_row_end(ctx);
+
+        nk_layout_row_dynamic(ctx, 20, 1);
+        nk_spacer(ctx);
+        nk_label(ctx, "ChillyGB", NK_TEXT_CENTERED);
+        nk_label(ctx, version, NK_TEXT_CENTERED);
+        nk_spacer(ctx);
+        nk_label(ctx, "By AuroraViola", NK_TEXT_CENTERED);
+        nk_spacer(ctx);
+        nk_label(ctx, "ChillyGB is licensed under the",  NK_TEXT_CENTERED);
+        nk_label(ctx, "GNU General Public License v3.0.",  NK_TEXT_CENTERED);
+    }
+    nk_end(ctx);
+}
+
 void pause_game() {
     if (emulator_mode != GAME) return;
     emulator_mode = MENU;
@@ -221,248 +468,14 @@ void update_frame() {
             DrawFileManager(ctx);
             #endif
             if (show_settings) {
-                if(nk_begin_titled(ctx, "ctx-settings","Settings", nk_rect(20, 60, 550, 505),
-                                                 NK_WINDOW_MOVABLE|NK_WINDOW_TITLE)) {
-                    nk_layout_row_dynamic(ctx, 30, 4);
-                    if (settings_view == SET_EMU) {
-                        nk_button_label_styled(ctx, &tab_button_active_style, "Emulation");
-                    }
-                    else {
-                        if (nk_button_label_styled(ctx, &tab_button_style, "Emulation"))
-                            settings_view = SET_EMU;
-                    }
-                    if (settings_view == SET_AUDIO) {
-                        nk_button_label_styled(ctx, &tab_button_active_style, "Audio");
-                    }
-                    else {
-                        if (nk_button_label_styled(ctx, &tab_button_style, "Audio"))
-                            settings_view = SET_AUDIO;
-                    }
-                    if (settings_view == SET_VIDEO) {
-                        nk_button_label_styled(ctx, &tab_button_active_style, "Video");
-                    }
-                    else {
-                        if (nk_button_label_styled(ctx, &tab_button_style, "Video"))
-                            settings_view = SET_VIDEO;
-                    }
-                    if (settings_view == SET_INPUT) {
-                        nk_button_label_styled(ctx, &tab_button_active_style, "Input");
-                    }
-                    else {
-                        if (nk_button_label_styled(ctx, &tab_button_style, "Input"))
-                            settings_view = SET_INPUT;
-                    }
-
-                    struct nk_vec2 size = {250, 200};
-                    nk_layout_row_dynamic(ctx, 370, 1);
-                    if (nk_group_begin(ctx, "settings_view", 0)) {
-                        switch (settings_view) {
-                            case SET_EMU:
-                                nk_layout_row_dynamic(ctx, 30, 1);
-                                nk_checkbox_label(ctx, "Sync RTC to gameboy clock (accurate)", &set.accurate_rtc);
-                                nk_checkbox_label(ctx, "Boot Rom", &set.bootrom_enabled);
-                                break;
-                            case SET_AUDIO:
-                                nk_layout_row_dynamic(ctx, 30, 1);
-                                nk_label(ctx, "Sound Volume", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                                nk_layout_row_dynamic(ctx, 30, 2);
-                                set.volume = nk_slide_int(ctx, 0, set.volume, 100, 1);
-                                char str[6];
-                                sprintf(str, "%i%%", set.volume);
-                                nk_label(ctx, str, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                                nk_layout_row_dynamic(ctx, 30, 1);
-                                nk_checkbox_label(ctx, "Channel 1", &set.ch_on[0]);
-                                nk_checkbox_label(ctx, "Channel 2", &set.ch_on[1]);
-                                nk_checkbox_label(ctx, "Channel 3", &set.ch_on[2]);
-                                nk_checkbox_label(ctx, "Channel 4", &set.ch_on[3]);
-                                break;
-                            case SET_VIDEO:
-                                nk_layout_row_dynamic(ctx, 30, 1);
-                                nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-
-                                nk_layout_row_dynamic(ctx, 30, 2);
-                                int comboxes_len = 0;
-                                for (int i = 0; i < set.palettes_size; i++) {
-                                    stpcpy(comboxes + comboxes_len, set.palettes[i].name);
-                                    comboxes_len += strlen(set.palettes[i].name)+1;
-                                }
-                                nk_combobox_string(ctx, comboxes, &set.selected_palette, set.palettes_size, 20, size);
-                                if (nk_button_label(ctx, "Add Palette")) {
-                                    if (set.palettes_size < 100) {
-                                        strcpy(set.palettes[set.palettes_size].name, "Custom Palette");
-                                        memcpy(set.palettes[set.palettes_size].colors, set.palettes[set.selected_palette].colors, 4*sizeof(Color));
-                                        set.selected_palette = set.palettes_size;
-                                        set.palettes_size++;
-                                    }
-                                }
-                                nk_label(ctx, "", NK_TEXT_ALIGN_LEFT);
-                                if (set.selected_palette > 4) {
-                                    if (nk_button_label(ctx, "Remove Palette")) {
-                                        for (int i = set.selected_palette; i < set.palettes_size; i++) {
-                                            strcpy(set.palettes[i].name, set.palettes[i+1].name);
-                                            memcpy(set.palettes[i].colors, set.palettes[i+1].colors, 4*sizeof(Color));
-                                        }
-                                        set.palettes_size--;
-                                        if (set.selected_palette == set.palettes_size)
-                                            set.selected_palette--;
-                                    }
-                                }
-
-                                nk_layout_row_dynamic(ctx, 60, 4);
-                                struct nk_color colors[4] = {
-                                    {
-                                        set.palettes[set.selected_palette].colors[0].r,
-                                        set.palettes[set.selected_palette].colors[0].g,
-                                        set.palettes[set.selected_palette].colors[0].b,
-                                        255
-                                    },
-                                    {
-                                        set.palettes[set.selected_palette].colors[1].r,
-                                        set.palettes[set.selected_palette].colors[1].g,
-                                        set.palettes[set.selected_palette].colors[1].b,
-                                        255
-                                    },
-                                    {
-                                        set.palettes[set.selected_palette].colors[2].r,
-                                        set.palettes[set.selected_palette].colors[2].g,
-                                        set.palettes[set.selected_palette].colors[2].b,
-                                        255
-                                    },
-                                    {
-                                        set.palettes[set.selected_palette].colors[3].r,
-                                        set.palettes[set.selected_palette].colors[3].g,
-                                        set.palettes[set.selected_palette].colors[3].b,
-                                        255
-                                    },
-                                };
-                                for (int i = 0; i < 4; i++) {
-                                    if (nk_button_color(ctx, colors[i])) {
-                                        palette_color_selected = i;
-                                    }
-                                }
-
-                                if (set.selected_palette > 4) {
-                                    char rgb_value[6];
-                                    // Red slider
-                                    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
-                                    nk_layout_row_push(ctx, 20);
-                                    nk_label(ctx, "R:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                                    nk_layout_row_push(ctx, 400);
-                                    set.palettes[set.selected_palette].colors[palette_color_selected].r = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].r, 255, 1);
-                                    nk_layout_row_push(ctx, 30);
-                                    sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].r);
-                                    nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                                    nk_layout_row_end(ctx);
-
-                                    // Green slider
-                                    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
-                                    nk_layout_row_push(ctx, 20);
-                                    nk_label(ctx, "G:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                                    nk_layout_row_push(ctx, 400);
-                                    set.palettes[set.selected_palette].colors[palette_color_selected].g = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].g, 255, 1);
-                                    nk_layout_row_push(ctx, 30);
-                                    sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].g);
-                                    nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                                    nk_layout_row_end(ctx);
-
-                                    // Blue slider
-                                    nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
-                                    nk_layout_row_push(ctx, 20);
-                                    nk_label(ctx, "B:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                                    nk_layout_row_push(ctx, 400);
-                                    set.palettes[set.selected_palette].colors[palette_color_selected].b = nk_slide_int(ctx, 0, set.palettes[set.selected_palette].colors[palette_color_selected].b, 255, 1);
-                                    nk_layout_row_push(ctx, 30);
-                                    sprintf(rgb_value, "%i", set.palettes[set.selected_palette].colors[palette_color_selected].b);
-                                    nk_label(ctx, rgb_value, NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                                    nk_layout_row_end(ctx);
-                                }
-
-                                nk_layout_row_dynamic(ctx, 30, 1);
-                                nk_checkbox_label(ctx, "Integer Scaling", &set.integer_scaling);
-                                nk_checkbox_label(ctx, "Frame Blending (TODO)", &set.frame_blending);
-                                nk_checkbox_label(ctx, "Pixel Grid (TODO)", &set.pixel_grid);
-                                break;
-                            case SET_INPUT:
-                                nk_layout_row_dynamic(ctx, 150, 1);
-                                if (nk_group_begin(ctx, "key_management", 0)) {
-                                    nk_layout_row_dynamic(ctx, 30, 4);
-                                    char input_value[15];
-                                    for (int i = 0; i < 8; i++) {
-                                        nk_label(ctx, keys_names[key_order[i]], NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
-                                        if (is_selected_input && i == selected_input) {
-                                            sprintf(input_value, "...");
-                                            int key_pressed = GetKeyPressed();
-                                            if (key_pressed != 0) {
-                                                set.keyboard_keys[key_order[i]] = key_pressed;
-                                                is_selected_input = false;
-                                            }
-                                        }
-                                        else {
-                                            char key_name[15];
-                                            convert_key(key_name, set.keyboard_keys[key_order[i]]);
-                                            sprintf(input_value, "%s", key_name);
-                                        }
-                                        if (nk_button_label(ctx, input_value)) {
-                                            selected_input = i;
-                                            is_selected_input = true;
-                                        }
-                                    }
-                                    nk_group_end(ctx);
-                                }
-                                if (nk_group_begin(ctx, "gamepad_view", 0)) {
-                                    nk_group_end(ctx);
-                                }
-                                break;
-                        }
-                        nk_group_end(ctx);
-                    }
-                    nk_layout_row_dynamic(ctx, 40, 4);
-                    nk_label(ctx, "", 0);
-                    nk_label(ctx, "", 0);
-                    if (nk_button_label(ctx, "Cancel")) {
-                        show_settings = false;
-                        memcpy(&set, &set_prev, sizeof(settings));
-                    }
-                    if (nk_button_label(ctx, "Apply")) {
-                        show_settings = false;
-                        save_settings();
-                        memcpy(&set_prev, &set, sizeof(settings));
-                    }
-                }
-                nk_end(ctx);
+                draw_settings_window();
             }
             if (nk_window_is_hidden(ctx, "ctx-settings")) {
                 show_settings = false;
             }
 
             if (show_about) {
-                if(nk_begin_titled(ctx, "ctx-about","About", nk_rect((GetScreenWidth()/2-200), (GetScreenHeight()/2-250), 400, 520),
-                                              NK_WINDOW_CLOSABLE)) {
-                    nk_layout_row_begin(ctx, NK_STATIC, 256, 3);
-                    /* padding */
-                    nk_layout_row_push(ctx, (370-150)/2);
-                    nk_label(ctx, "", NK_TEXT_LEFT);
-
-                    /* header */
-                    struct nk_image chillygb_logo = TextureToNuklear(logo);
-                    nk_layout_row_push(ctx, 150);
-                    nk_image(ctx, chillygb_logo);
-
-                    /* padding */
-                    nk_layout_row_push(ctx, (370-150)/2);
-                    nk_label(ctx, "", NK_TEXT_LEFT);
-                    nk_layout_row_end(ctx);
-                    nk_layout_row_dynamic(ctx, 20, 1);
-                    nk_label(ctx, "",  NK_TEXT_CENTERED);
-                    nk_label(ctx, "ChillyGB", NK_TEXT_CENTERED);
-                    nk_label(ctx, version, NK_TEXT_CENTERED);
-                    nk_label(ctx, "",  NK_TEXT_CENTERED);
-                    nk_label(ctx, "By AuroraViola", NK_TEXT_CENTERED);
-                    nk_label(ctx, "",  NK_TEXT_CENTERED);
-                    nk_label(ctx, "ChillyGB is licensed under the",  NK_TEXT_CENTERED);
-                    nk_label(ctx, "GNU General Public License v3.0.",  NK_TEXT_CENTERED);
-                }
-                nk_end(ctx);
+                draw_about_window();
             }
             if (nk_window_is_hidden(ctx, "ctx-about"))
                 show_about = false;
@@ -814,7 +827,47 @@ int main(int argc, char **argv) {
 
     tab_button_active_style.border = 0;
     tab_button_active_style.padding = nk_vec2(0,0);
-    tab_button_active_style.normal.data.color.a = 192;
+    tab_button_active_style.normal.data.color.a = 191;
+
+    memcpy(&button_dpad_style, &ctx->style.button, sizeof(struct nk_style_button));
+    button_dpad_style.border = 0;
+    button_dpad_style.padding = nk_vec2(10, 10);
+    button_dpad_style.active.data.color = nk_rgb(63,63,63);
+    button_dpad_style.hover.data.color = nk_rgb(63,63,63);
+    button_dpad_style.normal.data.color = nk_rgb(63,63,63);
+    button_dpad_style.rounding = 0;
+    button_dpad_style.text_normal = nk_rgb(96, 96, 96);
+    button_dpad_style.text_active = nk_rgb(96, 96, 96);
+    button_dpad_style.text_background = nk_rgb(96, 96, 96);
+    button_dpad_style.text_hover = nk_rgb(96, 96, 96);
+
+    memcpy(&button_dpad_pressed_style, &ctx->style.button, sizeof(struct nk_style_button));
+    button_dpad_pressed_style.border = 0;
+    button_dpad_pressed_style.padding = nk_vec2(10, 10);
+    button_dpad_pressed_style.active.data.color = nk_rgb(191,63,63);
+    button_dpad_pressed_style.hover.data.color = nk_rgb(191,63,63);
+    button_dpad_pressed_style.normal.data.color = nk_rgb(191,63,63);
+    button_dpad_pressed_style.rounding = 0;
+
+    memcpy(&button_buttons_style, &ctx->style.button, sizeof(struct nk_style_button));
+    button_buttons_style.border = 0;
+    button_buttons_style.padding = nk_vec2(-40, -40);
+    button_buttons_style.active.data.color = nk_rgb(63,63,63);
+    button_buttons_style.hover.data.color = nk_rgb(63,63,63);
+    button_buttons_style.normal.data.color = nk_rgb(63,63,63);
+    button_buttons_style.rounding = 40;
+    button_buttons_style.text_normal = nk_rgb(96, 96, 96);
+    button_buttons_style.text_active = nk_rgb(96, 96, 96);
+    button_buttons_style.text_background = nk_rgb(96, 96, 96);
+    button_buttons_style.text_hover = nk_rgb(96, 96, 96);
+
+    memcpy(&button_buttons_pressed_style, &ctx->style.button, sizeof(struct nk_style_button));
+    button_buttons_pressed_style.border = 0;
+    button_buttons_pressed_style.padding = nk_vec2(-40, -40);
+    button_buttons_pressed_style.active.data.color = nk_rgb(191,63,63);
+    button_buttons_pressed_style.hover.data.color = nk_rgb(191,63,63);
+    button_buttons_pressed_style.normal.data.color = nk_rgb(191,63,63);
+    button_buttons_pressed_style.rounding = 40;
 
     for (int i = 0; i < 144; i++)
         for (int j = 0; j < 160; j++)
