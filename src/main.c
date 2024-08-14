@@ -479,6 +479,22 @@ void pause_game() {
     PauseAudioStream(audio.ch4.stream);
 }
 
+void draw_display() {
+    if (set.integer_scaling) {
+        DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, display.width, display.height},
+                       (Rectangle) {(GetScreenWidth() - (160 * scale_integer)) * 0.5f,
+                                    (GetScreenHeight() - (144 * scale_integer)) * 0.5f,
+                                    160 * scale_integer, 144 * scale_integer}, (Vector2) {0, 0}, 0.0f,
+                       WHITE);
+    }
+    else {
+        DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
+                       (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
+                                    (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
+                                    (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+    }
+}
+
 void update_frame() {
     if (IsFileDropped()) {
         FilePathList droppedFiles = LoadDroppedFiles();
@@ -535,26 +551,14 @@ void update_frame() {
             }
             UpdateTexture(display, pixels);
             BeginDrawing();
-            ClearBackground(BLACK);
-            if (set.integer_scaling) {
-                DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, display.width, display.height},
-                               (Rectangle) {(GetScreenWidth() - (160 * scale_integer)) * 0.5f,
-                                            (GetScreenHeight() - (144 * scale_integer)) * 0.5f,
-                                            160 * scale_integer, 144 * scale_integer}, (Vector2) {0, 0}, 0.0f,
-                               WHITE);
-            }
-            else {
-                DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
-                               (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
-                                            (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
-                                            (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
-            }
-            if (!game_started) {
-                float fontsize = (set.integer_scaling) ? (7 * scale_integer) : (7 * scale);
-                int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
-                DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, set.palettes[set.selected_palette].colors[3]);
-            }
-            DrawNuklear(ctx);
+                ClearBackground(BLACK);
+                draw_display();
+                if (!game_started) {
+                    float fontsize = (set.integer_scaling) ? (7 * scale_integer) : (7 * scale);
+                    int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
+                    DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, set.palettes[set.selected_palette].colors[3]);
+                }
+                DrawNuklear(ctx);
             DrawText(debug_text, 50, 50, 25, WHITE);
 
             EndDrawing();
@@ -603,21 +607,8 @@ void update_frame() {
                 }
                 UpdateTexture(display, pixels);
                 BeginDrawing();
-                ClearBackground(BLACK);
-                if (set.integer_scaling) {
-                    DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, display.width, display.height},
-                                   (Rectangle) {(GetScreenWidth() - (160 * scale_integer)) * 0.5f,
-                                                (GetScreenHeight() - (144 * scale_integer)) * 0.5f,
-                                                160 * scale_integer, 144 * scale_integer}, (Vector2) {0, 0}, 0.0f,
-                                   WHITE);
-                }
-                else {
-                    DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
-                                   (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
-                                                (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
-                                                (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f,
-                                   WHITE);
-                }
+                    ClearBackground(BLACK);
+                    draw_display();
                 EndDrawing();
                 char str[80];
                 speed_mult = ((float)(GetFPS())/60) * joypad1.fast_forward;
