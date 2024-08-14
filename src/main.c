@@ -46,6 +46,11 @@ typedef enum SettingsView {
     SET_INPUT,
 }SettingsView;
 
+typedef enum InputSettingsView {
+    INPUT_GAMEPAD = 0,
+    INPUT_ADVANCED,
+}InputSettingsView;
+
 cpu c = {};
 bool exited = false;
 bool game_started = false;
@@ -54,6 +59,7 @@ bool show_about = false;
 char rom_name[256];
 uint8_t emulator_mode = MENU;
 uint8_t settings_view = SET_EMU;
+uint8_t input_settings_view = INPUT_GAMEPAD;
 uint8_t palette_color_selected = 0;
 bool is_selected_input = false;
 uint8_t selected_input = 0;
@@ -195,6 +201,29 @@ void DrawNavBar() {
         nk_menubar_end(ctx);
     }
     nk_end(ctx);
+}
+
+void draw_input_editor(const char *text, int *key_variable, int option_number) {
+    char input_value[15];
+    nk_label(ctx, text, NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
+    if (is_selected_input && option_number == selected_input) {
+        sprintf(input_value, "...");
+        int key_pressed = GetKeyPressed();
+        if (key_pressed != 0) {
+            if (key_pressed != KEY_ESCAPE)
+                *key_variable = key_pressed;
+            is_selected_input = false;
+        }
+    }
+    else {
+        char key_name[15];
+        convert_key(key_name, *key_variable);
+        sprintf(input_value, "%s", key_name);
+    }
+    if (nk_button_label(ctx, input_value)) {
+        selected_input = option_number;
+        is_selected_input = true;
+    }
 }
 
 void draw_settings_window() {
@@ -340,39 +369,39 @@ void draw_settings_window() {
                     //nk_checkbox_label(ctx, "Pixel Grid", &set.pixel_grid);
                     break;
                 case SET_INPUT:
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    if (nk_button_label_styled(ctx, (input_settings_view != INPUT_GAMEPAD) ? &tab_button_style : &tab_button_active_style, "Gamepad"))
+                        input_settings_view = INPUT_GAMEPAD;
+                    if (nk_button_label_styled(ctx, (input_settings_view != INPUT_ADVANCED) ? &tab_button_style : &tab_button_active_style, "Advanced"))
+                        input_settings_view = INPUT_ADVANCED;
                     nk_layout_row_dynamic(ctx, 150, 1);
                     if (nk_group_begin(ctx, "key_management", 0)) {
                         nk_layout_row_dynamic(ctx, 30, 4);
-                        char input_value[15];
-                        for (int i = 0; i < 8; i++) {
-                            nk_label(ctx, keys_names[key_order[i]], NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
-                            if (is_selected_input && i == selected_input) {
-                                sprintf(input_value, "...");
-                                int key_pressed = GetKeyPressed();
-                                if (key_pressed != 0) {
-                                    set.keyboard_keys[key_order[i]] = key_pressed;
-                                    is_selected_input = false;
+                        switch (input_settings_view) {
+                            case INPUT_GAMEPAD:
+                                for (int i = 0; i < 8; i++) {
+                                    draw_input_editor(keys_names[key_order[i]], &set.keyboard_keys[key_order[i]], i);
                                 }
-                            }
-                            else {
-                                char key_name[15];
-                                convert_key(key_name, set.keyboard_keys[key_order[i]]);
-                                sprintf(input_value, "%s", key_name);
-                            }
-                            if (nk_button_label(ctx, input_value)) {
-                                selected_input = i;
-                                is_selected_input = true;
-                            }
+                                break;
+                            case INPUT_ADVANCED:
+                                draw_input_editor("Save state:", &set.save_state_key, 11);
+                                draw_input_editor("Fast forward:", &set.fast_forward_key, 10);
+                                //draw_input_editor("Rewind:", &set.rewind_key, 12);
+                                draw_input_editor("Load state:", &set.load_state_key, 13);
+                                draw_input_editor("Debugger:", &set.debugger_key, 14);
+                                break;
                         }
                         nk_group_end(ctx);
                     }
-                    nk_layout_row_begin(ctx, NK_STATIC, 190, 2);
+                    nk_layout_row_begin(ctx, NK_STATIC, 150, 2);
                     nk_layout_row_push(ctx, 120);
                     nk_spacer(ctx);
                     nk_layout_row_push(ctx, 300);
                     if (nk_group_begin(ctx, "gamepad_view", 0)) {
-                        nk_layout_space_begin(ctx, NK_STATIC, 170, 9);
-                        nk_layout_space_push(ctx, nk_rect(30, 45, 30, 30));
+                        nk_layout_space_begin(ctx, NK_STATIC, 130, 10);
+                        nk_layout_space_push(ctx, nk_rect(15, 45, 60, 30));
+                        nk_button_symbol_styled(ctx, &button_dpad_style, NK_SYMBOL_NONE);
+                        nk_layout_space_push(ctx, nk_rect(30, 30, 30, 60));
                         nk_button_symbol_styled(ctx, &button_dpad_style, NK_SYMBOL_NONE);
                         nk_layout_space_push(ctx, nk_rect(0, 45, 30, 30));
                         nk_button_symbol_styled(ctx, (IsKeyDown(set.keyboard_keys[DPAD_LEFT])) ? &button_dpad_pressed_style : &button_dpad_style,NK_SYMBOL_TRIANGLE_LEFT);
@@ -382,9 +411,9 @@ void draw_settings_window() {
                         nk_button_symbol_styled(ctx, (IsKeyDown(set.keyboard_keys[DPAD_UP])) ? &button_dpad_pressed_style : &button_dpad_style, NK_SYMBOL_TRIANGLE_UP);
                         nk_layout_space_push(ctx, nk_rect(30, 75, 30, 30));
                         nk_button_symbol_styled(ctx, (IsKeyDown(set.keyboard_keys[DPAD_DOWN])) ? &button_dpad_pressed_style : &button_dpad_style, NK_SYMBOL_TRIANGLE_DOWN);
-                        nk_layout_space_push(ctx, nk_rect(105, 165, 30, 10));
+                        nk_layout_space_push(ctx, nk_rect(105, 120, 30, 10));
                         nk_button_label_styled(ctx, (IsKeyDown(set.keyboard_keys[BUTTON_SELECT+4])) ? &button_buttons_pressed_style : &button_buttons_style, "");
-                        nk_layout_space_push(ctx, nk_rect(150, 165, 30, 10));
+                        nk_layout_space_push(ctx, nk_rect(150, 120, 30, 10));
                         nk_button_label_styled(ctx, (IsKeyDown(set.keyboard_keys[BUTTON_START+4])) ? &button_buttons_pressed_style : &button_buttons_style, "");
                         nk_layout_space_push(ctx, nk_rect(180, 50, 40, 40));
                         nk_button_label_styled(ctx, (IsKeyDown(set.keyboard_keys[BUTTON_B+4])) ? &button_buttons_pressed_style : &button_buttons_style, "B");
@@ -403,10 +432,12 @@ void draw_settings_window() {
         nk_spacer(ctx);
         if (nk_button_label(ctx, "Cancel")) {
             show_settings = false;
+            is_selected_input = false;
             memcpy(&set, &set_prev, sizeof(settings));
         }
         if (nk_button_label(ctx, "Apply")) {
             show_settings = false;
+            is_selected_input = false;
             save_settings();
             memcpy(&set_prev, &set, sizeof(settings));
         }
@@ -541,7 +572,7 @@ void update_frame() {
                     save_game(&c.cart, rom_name);
                     pause_game();
                 }
-                if (IsKeyPressed(KEY_F3)) {
+                if (IsKeyPressed(set.debugger_key)) {
                     emulator_mode = DEBUG;
                     PauseAudioStream(audio.ch1.stream);
                     PauseAudioStream(audio.ch2.stream);
@@ -549,10 +580,10 @@ void update_frame() {
                     PauseAudioStream(audio.ch4.stream);
                 }
 
-                if (IsKeyPressed(KEY_F2)) {
+                if (IsKeyPressed(set.save_state_key)) {
                     save_state(&c, rom_name);
                 }
-                if (IsKeyPressed(KEY_F1)) {
+                if (IsKeyPressed(set.load_state_key)) {
                     load_state(&c, rom_name);
                 }
                 video.draw_screen = false;
@@ -831,11 +862,10 @@ int main(int argc, char **argv) {
 
     memcpy(&button_dpad_style, &ctx->style.button, sizeof(struct nk_style_button));
     button_dpad_style.border = 0;
-    button_dpad_style.padding = nk_vec2(10, 10);
     button_dpad_style.active.data.color = nk_rgb(63,63,63);
     button_dpad_style.hover.data.color = nk_rgb(63,63,63);
     button_dpad_style.normal.data.color = nk_rgb(63,63,63);
-    button_dpad_style.rounding = 0;
+    button_dpad_style.rounding = 8;
     button_dpad_style.text_normal = nk_rgb(96, 96, 96);
     button_dpad_style.text_active = nk_rgb(96, 96, 96);
     button_dpad_style.text_background = nk_rgb(96, 96, 96);
@@ -843,11 +873,10 @@ int main(int argc, char **argv) {
 
     memcpy(&button_dpad_pressed_style, &ctx->style.button, sizeof(struct nk_style_button));
     button_dpad_pressed_style.border = 0;
-    button_dpad_pressed_style.padding = nk_vec2(10, 10);
     button_dpad_pressed_style.active.data.color = nk_rgb(191,63,63);
     button_dpad_pressed_style.hover.data.color = nk_rgb(191,63,63);
     button_dpad_pressed_style.normal.data.color = nk_rgb(191,63,63);
-    button_dpad_pressed_style.rounding = 0;
+    button_dpad_pressed_style.rounding = 8;
 
     memcpy(&button_buttons_style, &ctx->style.button, sizeof(struct nk_style_button));
     button_buttons_style.border = 0;

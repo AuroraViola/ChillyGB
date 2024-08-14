@@ -31,6 +31,10 @@ typedef struct {
     KeyboardKey keyboard_keys[8];
     GamepadButton gamepad_keys[8];
     KeyboardKey fast_forward_key;
+    KeyboardKey save_state_key;
+    KeyboardKey load_state_key;
+    KeyboardKey debugger_key;
+    KeyboardKey rewind_key;
 }settings;
 
 extern settings set;

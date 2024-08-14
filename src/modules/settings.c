@@ -176,6 +176,10 @@ void load_default_keys() {
     };
     memcpy(set.gamepad_keys, joystick_keys, 8*sizeof(GamepadButton));
     set.fast_forward_key = KEY_SPACE;
+    set.save_state_key = KEY_F2;
+    set.load_state_key = KEY_F1;
+    set.debugger_key = KEY_F3;
+    set.rewind_key = KEY_TAB;
 }
 
 void load_default_palettes() {
@@ -365,6 +369,26 @@ void load_settings() {
         set.fast_forward_key = fast_forward_key->valueint;
     else
         set.fast_forward_key = KEY_SPACE;
+    cJSON *rewind_key = cJSON_GetObjectItem(settings, "rewind_key");
+    if (cJSON_IsNumber(rewind_key))
+        set.rewind_key = rewind_key->valueint;
+    else
+        set.rewind_key = KEY_TAB;
+    cJSON *load_state_key = cJSON_GetObjectItem(settings, "load_state_key");
+    if (cJSON_IsNumber(load_state_key))
+        set.load_state_key = load_state_key->valueint;
+    else
+        set.load_state_key = KEY_F1;
+    cJSON *save_state_key = cJSON_GetObjectItem(settings, "save_state_key");
+    if (cJSON_IsNumber(save_state_key))
+        set.save_state_key = save_state_key->valueint;
+    else
+        set.save_state_key = KEY_F2;
+    cJSON *debugger_key = cJSON_GetObjectItem(settings, "debugger_key");
+    if (cJSON_IsNumber(debugger_key))
+        set.debugger_key = debugger_key->valueint;
+    else
+        set.debugger_key = KEY_F3;
 
     if (set.palettes_size <= set.selected_palette)
         set.selected_palette = 0;
@@ -416,7 +440,10 @@ void save_settings() {
     cJSON_AddItemToObject(settings, "gamepad_keys", gamepad_array);
 
     cJSON_AddNumberToObject(settings, "fast_forward_key", set.fast_forward_key);
-
+    cJSON_AddNumberToObject(settings, "save_state_key", set.save_state_key);
+    cJSON_AddNumberToObject(settings, "load_state_key", set.load_state_key);
+    cJSON_AddNumberToObject(settings, "debugger_key", set.debugger_key);
+    cJSON_AddNumberToObject(settings, "rewind_key", set.rewind_key);
 
     #if defined(PLATFORM_WEB)
     FILE *file = fopen("/saves/settings.json", "w");
