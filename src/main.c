@@ -77,7 +77,7 @@ debugtexts texts;
 int ff_speed = 1;
 struct nk_context *ctx;
 char comboxes[2500] = "";
-char version[20] = "v0.1.0";
+char version[20] = "v0.1.1";
 int key_order[8] = {2, 5, 3, 4, 1, 6, 0, 7};
 struct nk_style_button tab_button_style = {};
 struct nk_style_button tab_button_active_style = {};
