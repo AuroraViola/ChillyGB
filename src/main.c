@@ -203,7 +203,7 @@ void DrawNavBar() {
     nk_end(ctx);
 }
 
-void draw_input_editor(const char *text, int *key_variable, int option_number) {
+void draw_input_editor(const char *text, KeyboardKey *key_variable, int option_number) {
     char input_value[15];
     nk_label(ctx, text, NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
     if (is_selected_input && option_number == selected_input) {
