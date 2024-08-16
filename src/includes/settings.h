@@ -25,7 +25,7 @@ typedef struct {
     int selected_palette;
     bool integer_scaling;
     bool frame_blending;
-    bool pixel_grid;
+    int selected_effect;
 
     // Input settings
     KeyboardKey keyboard_keys[8];

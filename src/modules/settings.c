@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+
 #include "../../cJSON/cJSON.h"
 
 settings set = {};
@@ -236,7 +237,7 @@ void load_default_settings() {
     set.selected_palette = 0;
     set.bootrom_enabled = false;
     set.integer_scaling = false;
-    set.pixel_grid = false;
+    set.selected_effect = 0;
     set.frame_blending = false;
     set.accurate_rtc = true;
     set.ch_on[0] = true;
@@ -321,11 +322,11 @@ void load_settings() {
         set.frame_blending = frame_blending->valueint;
     else
         set.frame_blending = false;
-    cJSON *pixel_grid = cJSON_GetObjectItem(settings, "pixel_grid");
-    if (cJSON_IsBool(pixel_grid))
-        set.pixel_grid = pixel_grid->valueint;
+    cJSON *selected_effect = cJSON_GetObjectItem(settings, "selected_effect");
+    if (cJSON_IsBool(selected_effect))
+        set.selected_effect = selected_effect->valueint;
     else
-        set.pixel_grid = false;
+        set.selected_effect = 0;
     cJSON *int_scale = cJSON_GetObjectItem(settings, "int_scale");
     if (cJSON_IsBool(int_scale))
         set.integer_scaling = int_scale->valueint;
@@ -408,7 +409,7 @@ void save_settings() {
     cJSON_AddBoolToObject(settings, "ch4", set.ch_on[3]);
     cJSON_AddNumberToObject(settings, "selected_palette", set.selected_palette);
     cJSON_AddBoolToObject(settings, "frame_blending", set.frame_blending);
-    cJSON_AddBoolToObject(settings, "pixel_grid", set.pixel_grid);
+    cJSON_AddNumberToObject(settings, "selected_effect", set.selected_effect);
     cJSON_AddBoolToObject(settings, "int_scale", set.integer_scaling);
 
     cJSON *palettes_array = cJSON_CreateArray();

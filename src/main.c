@@ -51,6 +51,11 @@ typedef enum InputSettingsView {
     INPUT_ADVANCED,
 }InputSettingsView;
 
+typedef enum ShadersList {
+    SHADER_DEFAULT = 0,
+    SHADER_PIXEL_GRID,
+}ShadersList;
+
 cpu c = {};
 bool exited = false;
 bool game_started = false;
@@ -85,6 +90,7 @@ struct nk_style_button button_dpad_style = {};
 struct nk_style_button button_dpad_pressed_style = {};
 struct nk_style_button button_buttons_style = {};
 struct nk_style_button button_buttons_pressed_style = {};
+Shader shaders[2];
 
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
@@ -363,10 +369,12 @@ void draw_settings_window() {
                         nk_layout_row_end(ctx);
                     }
 
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    nk_label(ctx, "Video effect:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_combobox_string(ctx, "None\0Pixel grid", &set.selected_effect, 2, 20, size);
                     nk_layout_row_dynamic(ctx, 30, 1);
                     nk_checkbox_label(ctx, "Integer Scaling", &set.integer_scaling);
                     //nk_checkbox_label(ctx, "Frame Blending", &set.frame_blending);
-                    //nk_checkbox_label(ctx, "Pixel Grid", &set.pixel_grid);
                     break;
                 case SET_INPUT:
                     nk_layout_row_dynamic(ctx, 30, 2);
@@ -552,12 +560,14 @@ void update_frame() {
             UpdateTexture(display, pixels);
             BeginDrawing();
                 ClearBackground(BLACK);
-                draw_display();
-                if (!game_started) {
-                    float fontsize = (set.integer_scaling) ? (7 * scale_integer) : (7 * scale);
-                    int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
-                    DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, set.palettes[set.selected_palette].colors[3]);
-                }
+                BeginShaderMode(shaders[set.selected_effect]);
+                    draw_display();
+                    if (!game_started) {
+                        float fontsize = (set.integer_scaling) ? (7 * scale_integer) : (7 * scale);
+                        int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
+                        DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, set.palettes[set.selected_palette].colors[3]);
+                    }
+                EndShaderMode();
                 DrawNuklear(ctx);
             DrawText(debug_text, 50, 50, 25, WHITE);
 
@@ -608,7 +618,9 @@ void update_frame() {
                 UpdateTexture(display, pixels);
                 BeginDrawing();
                     ClearBackground(BLACK);
-                    draw_display();
+                    BeginShaderMode(shaders[set.selected_effect]);
+                        draw_display();
+                    EndShaderMode();
                 EndDrawing();
                 char str[80];
                 speed_mult = ((float)(GetFPS())/60) * joypad1.fast_forward;
@@ -902,6 +914,9 @@ int main(int argc, char **argv) {
     display = LoadTextureFromImage(display_image);
     logo_image = LoadImage(RES_DIR "icons/ChillyGB-256.png");
     logo = LoadTextureFromImage(logo_image);
+
+    shaders[SHADER_DEFAULT] = LoadShader(0, 0);
+    shaders[SHADER_PIXEL_GRID] = LoadShader(0, "res/shaders/pixel_grid.fs");
 
     // Initialize APU
     InitAudioDevice();
