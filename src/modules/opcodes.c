@@ -686,7 +686,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             if (video.scan_line == 153) {
                 return 0;
             }
-            if (timer1.scanline_timer == 4) {
+            if (timer1.scanline_timer == 0) {
                 return video.scan_line + 1;
             }
             return video.scan_line;
