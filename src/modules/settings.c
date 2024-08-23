@@ -323,7 +323,7 @@ void load_settings() {
     else
         set.frame_blending = false;
     cJSON *selected_effect = cJSON_GetObjectItem(settings, "selected_effect");
-    if (cJSON_IsBool(selected_effect))
+    if (cJSON_IsNumber(selected_effect))
         set.selected_effect = selected_effect->valueint;
     else
         set.selected_effect = 0;
