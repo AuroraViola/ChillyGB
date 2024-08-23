@@ -271,14 +271,13 @@ void tick_scanline(cpu *c) {
             video.draw_screen = true;
         }
 
-        if (video.scan_line > 152) {
+        if (video.scan_line > 153) {
             video.scan_line = 0;
             video.wy_trigger = false;
             video.window_internal_line = 0;
-            timer1.scanline_timer += 456;
         }
 
-        video.ly_eq_lyc = (video.scan_line == c->memory[LYC]);
+        video.ly_eq_lyc = (get_mem(c, LY) == c->memory[LYC]);
 
         if (update_keys())
             c->memory[IF] |= 16;

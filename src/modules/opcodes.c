@@ -6,6 +6,7 @@
 #include "../includes/ppu.h"
 #include "../includes/timer.h"
 #include "../includes/input.h"
+#include "../includes/opcodes.h"
 
 const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
 
@@ -319,7 +320,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
         case LYC:
             if (video.is_on) {
-                if (value == video.scan_line) {
+                if (value == get_mem(c, LY)) {
                     video.ly_eq_lyc = true;
                 }
                 else {
@@ -417,7 +418,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             // PPU turned ON
             else if (video.is_on && !prev_is_on) {
-                if (c->memory[LYC] == video.scan_line) {
+                if (c->memory[LYC] == get_mem(c, LY)) {
                     video.ly_eq_lyc = true;
                     if (video.lyc_select)
                         c->memory[IF] |= 2;
@@ -682,6 +683,12 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 return (video.ly_eq_lyc << 2) | (video.mode_select << 3) | (video.lyc_select << 6) | 0x80;
 
         case LY:
+            if (video.scan_line == 153) {
+                return 0;
+            }
+            if (timer1.scanline_timer == 4) {
+                return video.scan_line + 1;
+            }
             return video.scan_line;
         case LCDC:
             return video.bg_enable | (video.obj_enable << 1) | (video.obj_size << 2) | (video.bg_tilemap << 3) | (video.bg_tiles << 4) | (video.window_enable << 5) | (video.window_tilemap << 6) | (video.is_on << 7);

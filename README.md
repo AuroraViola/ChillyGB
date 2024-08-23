@@ -70,6 +70,7 @@ Here is a list of planned features
   * Pixel grid
   * Rewind
   * Rom folder
+  * Rumble
 * **Debugger Improvements**
   * Breakpoints
   * Watchpoints
