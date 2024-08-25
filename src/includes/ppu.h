@@ -40,7 +40,8 @@ typedef struct {
     uint8_t window_internal_line;
     bool wy_trigger;
 
-    uint8_t mode3_duration;
+    uint8_t mode0_delta;
+    uint8_t current_pixel;
 
     uint8_t bgp[4];
     uint8_t obp[2][4];
@@ -73,5 +74,6 @@ extern ppu video;
 void load_display(cpu *c);
 uint16_t get_mode3_duration(cpu *c);
 void oam_scan();
+void push_pixels();
 
 #endif //CHILLYGB_PPU_H

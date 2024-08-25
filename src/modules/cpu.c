@@ -269,7 +269,7 @@ void tick_scanline(cpu *c) {
     if (timer1.scanline_timer < 0) {
         timer1.scanline_timer += 456;
         video.scan_line++;
-        video.mode3_duration = 0;
+        video.mode0_delta = 0;
         if (video.scan_line == 144) {
             video.mode = 1;
             c->memory[IF] |= 1;
@@ -282,6 +282,7 @@ void tick_scanline(cpu *c) {
             video.scan_line = 0;
             video.wy_trigger = false;
             video.window_internal_line = 0;
+            video.mode = 2;
         }
 
         if (video.scan_line == 153 && c->memory[LYC] == 153 && timer1.scanline_timer == 452) {
@@ -296,23 +297,26 @@ void tick_scanline(cpu *c) {
     }
 
     if (video.scan_line < 144) {
-        // Mode 2
-        if (timer1.scanline_timer > 376 && video.mode != 2) {
-            oam_scan();
-            if (video.scan_line == c->memory[WY])
-                video.wy_trigger = true;
-            video.mode = 2;
-        }
-        // Mode 3
-        else if (timer1.scanline_timer >= (205 - video.mode3_duration) && timer1.scanline_timer <= 376 &&
-                 video.mode != 3) {
-            video.mode3_duration = get_mode3_duration(c);
-            video.mode = 3;
-        }
-        // Mode 0
-        else if (timer1.scanline_timer < (205 - video.mode3_duration) && video.mode != 0) {
-            load_display(c);
-            video.mode = 0;
+        switch (video.mode) {
+            case 2:
+                if (timer1.scanline_timer == 452) {
+                    oam_scan();
+                    if (video.scan_line == c->memory[WY])
+                        video.wy_trigger = true;
+                }
+                else if (timer1.scanline_timer == 372) {
+                    video.mode = 3;
+                }
+                break;
+            case 3:
+                push_pixels();
+                break;
+            case 0:
+                if (timer1.scanline_timer == 180)
+                    load_display(c);
+                else if (timer1.scanline_timer == 0)
+                    video.mode = 2;
+                break;
         }
     }
     if (is_stat_condition() && !prev_stat)

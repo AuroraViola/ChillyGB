@@ -1,5 +1,6 @@
 #include "../includes/cpu.h"
 #include "../includes/ppu.h"
+#include "../includes/timer.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -221,6 +222,16 @@ uint16_t get_mode3_duration(cpu *c) {
     if (c->memory[WX] < 167 && video.window_enable && video.wy_trigger)
         duration += 6;
     return duration;
+}
+
+void push_pixels() {
+    if (timer1.scanline_timer < 360) {
+        video.current_pixel += 4;
+        if (video.current_pixel >= 160) {
+            video.current_pixel = 0;
+            video.mode = 0;
+        }
+    }
 }
 
 void load_display(cpu *c) {
