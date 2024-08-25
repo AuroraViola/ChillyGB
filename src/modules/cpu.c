@@ -76,8 +76,12 @@ void initialize_cpu_memory(cpu *c, settings *s) {
         c->memory[i] = rand();
     }
     // Initialize VRAM
-    for (uint16_t i = 0x8000; i <= 0x9fff; i++) {
+    for (uint16_t i = 0x8000; i <= 0x97ff; i++) {
         c->memory[i] = 0;
+    }
+    for (uint16_t i = 0; i < 1024; i++) {
+        video.tilemap[0][i] = 0;
+        video.tilemap[1][i] = 0;
     }
 }
 
@@ -97,7 +101,6 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->ime_to_be_setted = 0;
     c->is_halted = false;
     video.need_bg_wn_reload = true;
-    video.tilemap_write = true;
     video.tiles_write = true;
     video.need_sprites_reload = true;
     c->bootrom.is_enabled = false;
@@ -204,16 +207,20 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     }
 
     // Initialize VRAM
-    for (uint16_t i = 0x8000; i <= 0x9fff; i++) {
+    for (uint16_t i = 0x8000; i <= 0x97ff; i++) {
         c->memory[i] = 0;
+    }
+    for (uint16_t i = 0; i < 1024; i++) {
+        video.tilemap[0][i] = 0;
+        video.tilemap[1][i] = 0;
     }
 
     // Initialize Background tiles
     for (uint16_t i = 0; i < 12; i++) {
-        c->memory[0x9904 + i] = i+1;
-        c->memory[0x9924 + i] = i+13;
+        video.tilemap[0][0x104 + i] = i+1;
+        video.tilemap[0][0x124 + i] = i+13;
     }
-    c->memory[0x9910] = 0x19;
+    video.tilemap[0][0x110] = 0x19;
 
     // Initialize tiles data
     uint8_t logo_tiles_initial[24][2];

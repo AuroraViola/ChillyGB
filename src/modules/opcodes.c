@@ -384,8 +384,10 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case 0x9800 ... 0x9fff: // Tile map
-            c->memory[addr] = value;
-            video.tilemap_write = true;
+            if (addr < 0x9c00)
+                video.tilemap[0][addr-0x9800] = value;
+            else
+                video.tilemap[1][addr-0x9c00] = value;
             video.need_bg_wn_reload = true;
             break;
 
@@ -429,7 +431,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
             video.need_bg_wn_reload = true;
             video.tiles_write = true;
-            video.tilemap_write = true;
             video.need_sprites_reload = true;
             break;
 
@@ -638,6 +639,11 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 255;
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
+
+        case 0x9800 ... 0x9bff:
+            return video.tilemap[0][addr-0x9800];
+        case 0x9c00 ... 0x9fff:
+            return video.tilemap[1][addr-0x9c00];
 
         case JOYP:
             if (joypad1.btn_on && joypad1.dpad_on) {

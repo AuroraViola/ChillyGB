@@ -58,7 +58,7 @@ typedef struct {
     bool is_scan_line;
     bool draw_screen;
     bool dma_transfer;
-    bool tilemap_write;
+    bool tilemap_write; // TODO: Remove from save states;
     bool tiles_write;
     bool need_bg_wn_reload;
     bool need_sprites_reload;

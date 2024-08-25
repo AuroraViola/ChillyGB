@@ -140,15 +140,6 @@ void load_tiles(cpu *c) {
     }
 }
 
-void load_tilemap(cpu *c) {
-    for (int i = 0; i < 1024 ; i++) {
-        video.tilemap[0][i] = c->memory[i + 0x9800];
-    }
-    for (int i = 0; i < 1024 ; i++) {
-        video.tilemap[1][i] = c->memory[i + 0x9c00];
-    }
-}
-
 void load_background() {
     for (int i = 0; i < 32; i++) {
         for (int j = 0; j < 32; j++) {
@@ -236,10 +227,6 @@ void load_display(cpu *c) {
     if (video.tiles_write) {
         video.tiles_write = false;
         load_tiles(c);
-    }
-    if (video.tilemap_write) {
-        video.tilemap_write = false;
-        load_tilemap(c);
     }
     if (video.need_bg_wn_reload) {
         video.need_bg_wn_reload = false;
