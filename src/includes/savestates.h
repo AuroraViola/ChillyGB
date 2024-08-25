@@ -40,6 +40,7 @@ typedef struct {
 }savestate_cart;
 
 typedef struct {
+    int version;
     registers r;
     uint16_t sp;
     uint16_t pc;
@@ -48,6 +49,7 @@ typedef struct {
     bool is_halted;
     bool first_halt;
     uint8_t memory[0x10000];
+    uint8_t tilemaps[2][1024];
     uint8_t apu_div;
 
     savestate_cart cart;
