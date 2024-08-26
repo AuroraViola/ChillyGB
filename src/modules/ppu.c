@@ -224,17 +224,7 @@ uint16_t get_mode3_duration(cpu *c) {
     return duration;
 }
 
-void push_pixels() {
-    if (timer1.scanline_timer < 360) {
-        video.current_pixel += 4;
-        if (video.current_pixel >= 160) {
-            video.current_pixel = 0;
-            video.mode = 0;
-        }
-    }
-}
-
-void load_display(cpu *c) {
+void reload_vram_oam(cpu *c) {
     if (video.tiles_write) {
         video.tiles_write = false;
         load_tiles(c);
@@ -248,8 +238,31 @@ void load_display(cpu *c) {
         video.need_sprites_reload = false;
         load_sprites(c);
     }
-    load_sprite_line();
+}
 
+void push_pixels(cpu *c) {
+    if (video.fifo.init_timer > 0) {
+        video.fifo.init_timer--;
+        if (video.fifo.init_timer == 0) {
+            video.fifo.scx_init = c->memory[SCX] % 8;
+            reload_vram_oam(c);
+            load_sprite_line();
+        }
+        return;
+    }
+    if (video.fifo.scx_init > 0) {
+        video.fifo.scx_init--;
+        return;
+    }
+    if (video.fifo.current_pixel < 160) {
+        video.fifo.current_pixel++;
+    }
+    else {
+        video.mode = 0;
+    }
+}
+
+void load_display(cpu *c) {
     if (video.is_on) {
         // Background
         if (video.bg_enable) {
@@ -282,15 +295,8 @@ void load_display(cpu *c) {
         if (video.obj_enable) {
             int y = video.scan_line;
             for (uint8_t x = 0; x < 160; x++) {
-                if (video.sprite_line[x+8].color != 0) {
-                    if (!video.sprite_line[x + 8].priority) {
-                        video.display[y][x] = video.obp[video.sprite_line[x+8].palette][video.sprite_line[x + 8].color];
-                    }
-                    else {
-                        if (video.display[y][x] == video.bgp[0]) {
-                            video.display[y][x] = video.obp[video.sprite_line[x+8].palette][video.sprite_line[x + 8].color];
-                        }
-                    }
+                if (video.sprite_line[x+8].color != 0 && (!video.sprite_line[x + 8].priority || video.display[y][x] == video.bgp[0])) {
+                    video.display[y][x] = video.obp[video.sprite_line[x+8].palette][video.sprite_line[x + 8].color];
                 }
             }
         }

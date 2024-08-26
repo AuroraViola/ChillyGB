@@ -269,7 +269,6 @@ void tick_scanline(cpu *c) {
     if (timer1.scanline_timer < 0) {
         timer1.scanline_timer += 456;
         video.scan_line++;
-        video.mode0_delta = 0;
         if (video.scan_line == 144) {
             video.mode = 1;
             c->memory[IF] |= 1;
@@ -305,17 +304,20 @@ void tick_scanline(cpu *c) {
                         video.wy_trigger = true;
                 }
                 else if (timer1.scanline_timer == 372) {
+                    video.fifo.current_pixel = 0;
+                    video.fifo.init_timer = 12;
                     video.mode = 3;
                 }
                 break;
             case 3:
-                push_pixels();
+                for (int i = 0; i < 4; i++)
+                    push_pixels(c);
                 break;
             case 0:
-                if (timer1.scanline_timer == 180)
+                if (timer1.scanline_timer == 0) {
                     load_display(c);
-                else if (timer1.scanline_timer == 0)
                     video.mode = 2;
+                }
                 break;
         }
     }
