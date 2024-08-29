@@ -38,7 +38,7 @@ typedef struct {
     pixel_fifo fifo;
     uint8_t background[256][256];
     uint8_t window[256][256];
-    uint8_t tiles[256][8][8];
+    bool tiles[384][2][8][8];
     uint8_t tilemap[2][1024];
     sprite sprites[40];
     sprite_px sprite_display[2][176][176];
@@ -79,7 +79,6 @@ typedef struct {
 extern ppu video;
 
 void load_display(cpu *c);
-uint16_t get_mode3_duration(cpu *c);
 void oam_scan();
 void push_pixels(cpu *c);
 

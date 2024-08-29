@@ -378,8 +378,11 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case 0x8000 ... 0x97ff: // Tiles
-            c->memory[addr] = value;
-            video.tiles_write = true;
+            int tileid = (addr - 0x8000) >> 4;
+            int tile_index = addr & 0xf;
+            for (int i = 0; i < 8; i++) {
+                video.tiles[tileid][(tile_index % 2 == 0) ? 0 : 1][tile_index >> 1][7-i] = (value >> i) & 1;
+            }
             video.need_bg_wn_reload = true;
             break;
 
@@ -640,6 +643,14 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
 
+        case 0x8000 ... 0x97ff:
+            int tileid = (addr - 0x8000) >> 4;
+            int tile_index = addr & 0xf;
+            uint8_t tile_value = 0;
+            for (int i = 0; i < 8; i++) {
+                tile_value |= video.tiles[tileid][(tile_index % 2 == 0) ? 0 : 1][tile_index >> 1][7-i] << i;
+            }
+            return tile_value;
         case 0x9800 ... 0x9bff:
             return video.tilemap[0][addr-0x9800];
         case 0x9c00 ... 0x9fff:
