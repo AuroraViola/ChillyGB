@@ -458,6 +458,19 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             video.obp[1][3] = (value >> 6) & 3;
             break;
 
+        case SCX:
+            video.scx = value;
+            break;
+        case SCY:
+            video.scy = value;
+            break;
+        case WX:
+            video.wx = value;
+            break;
+        case WY:
+            video.wy = value;
+            break;
+
         case NR11:
             audio.ch1.lenght = value & 0x3f;
             if (audio.is_on)
@@ -655,6 +668,15 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return video.tilemap[0][addr-0x9800];
         case 0x9c00 ... 0x9fff:
             return video.tilemap[1][addr-0x9c00];
+
+        case SCX:
+            return video.scx;
+        case SCY:
+            return video.scy;
+        case WX:
+            return video.wx;
+        case WY:
+            return video.wy;
 
         case JOYP:
             if (joypad1.btn_on && joypad1.dpad_on) {

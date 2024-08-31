@@ -50,6 +50,11 @@ typedef struct {
     uint8_t window_internal_line;
     bool wy_trigger;
 
+    uint8_t scx;
+    uint8_t scy;
+    uint8_t wx;
+    uint8_t wy;
+
     uint8_t bgp[4];
     uint8_t obp[2][4];
 

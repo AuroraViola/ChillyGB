@@ -65,14 +65,12 @@ void load_display(cpu *c) {
     if (video.is_on) {
         // Background
         if (video.bg_enable) {
-            uint8_t scx = c->memory[SCX];
-            uint8_t scy = c->memory[SCY];
             int y = video.scan_line;
             for (uint8_t x = 0; x < 160; x++) {
-                video.display[y][x] = video.bgp[video.background[(uint8_t) (y + scy)][(uint8_t) (x + scx)]];
+                video.display[y][x] = video.bgp[video.background[(uint8_t) (y + video.scy)][(uint8_t) (x + video.scx)]];
             }
         }
-        else {
+        else  {
             int y = video.scan_line;
             memset(&video.display[y][0], 0, 160 * sizeof(uint8_t));
         }

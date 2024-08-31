@@ -49,10 +49,10 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     video.scan_line = 0;
     timer1.scanline_timer = 456;
     c->memory[DMA] = 0xff;
-    c->memory[SCX] = 0;
-    c->memory[SCY] = 0;
-    c->memory[WX] = 0;
-    c->memory[WY] = 0;
+    video.scx = 0;
+    video.scy = 0;
+    video.wx = 0;
+    video.wy = 0;
     video.obp[0][0] = 3;
     video.obp[0][1] = 3;
     video.obp[0][2] = 3;
@@ -168,8 +168,8 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     video.lyc_select = false;
     video.mode_select = 0;
     video.mode = 1;
-    c->memory[SCY] = 0x00;
-    c->memory[SCX] = 0x00;
+    video.scx = 0x00;
+    video.scy = 0x00;
     video.scan_line = 0x00;
     timer1.scanline_timer = 456;
     c->memory[LYC] = 0x00;
@@ -187,8 +187,8 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     video.obp[1][1] = 3;
     video.obp[1][2] = 3;
     video.obp[1][3] = 3;
-    c->memory[WY] = 0x00;
-    c->memory[WX] = 0x00;
+    video.wx = 0x00;
+    video.wy = 0x00;
     c->memory[IE] = 0x00;
 
     c->cart.bank_select = 1;
