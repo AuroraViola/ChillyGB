@@ -43,7 +43,6 @@ void save_state(cpu *c, char rom_name[256]) {
     savestate1.cart.mbc1mode = c->cart.mbc1mode;
     memcpy(&savestate1.cart.rtc, &c->cart.rtc, sizeof(rtc_clock));
     memcpy(&savestate1.cart.ram, &c->cart.ram, (sizeof(uint8_t) * 16 * 0x2000));
-    memcpy(&savestate1.tilemaps, &video.tilemap, sizeof(uint8_t)*2*1024);
 
     savestate1.ppu.mode = video.mode;
     savestate1.ppu.scanline = video.scan_line;
@@ -101,7 +100,6 @@ void load_state(cpu *c, char rom_name[256]) {
             c->cart.mbc1mode = savestate1.cart.mbc1mode;
             memcpy(&c->cart.ram, &savestate1.cart.ram, (sizeof(uint8_t) * 16 * 0x2000));
             memcpy(&c->cart.rtc, &savestate1.cart.rtc, sizeof(rtc_clock));
-            memcpy(&video.tilemap, &savestate1.tilemaps, sizeof(uint8_t)*2*1024);
 
             video.mode = savestate1.ppu.mode;
             video.scan_line = savestate1.ppu.scanline;

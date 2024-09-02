@@ -23,9 +23,8 @@ typedef struct {
 }sprite_px;
 
 typedef struct {
-    uint8_t bg[8];
-    uint8_t sprite[8];
-    uint8_t current_pixel;
+    uint8_t values[16];
+    uint8_t pixel_count;
     uint8_t init_timer;
     uint8_t win_timer;
     uint8_t scx_init;
@@ -35,13 +34,10 @@ typedef struct {
     uint8_t mode;
     uint8_t scan_line;
     uint8_t display[144][160];
+    uint8_t line[160];
     pixel_fifo fifo;
-    uint8_t background[256][256];
-    uint8_t window[256][256];
-    bool tiles[384][2][8][8];
-    uint8_t tilemap[2][1024];
+    uint8_t current_pixel;
     sprite sprites[40];
-    sprite_px sprite_display[2][176][176];
 
     sprite_px sprite_line[176];
     uint8_t oam_buffer[40];
@@ -83,8 +79,8 @@ typedef struct {
 
 extern ppu video;
 
-void load_display(cpu *c);
+void load_line(cpu *c);
 void oam_scan();
-void push_pixels(cpu *c);
+void operate_fifo(cpu *c);
 
 #endif //CHILLYGB_PPU_H

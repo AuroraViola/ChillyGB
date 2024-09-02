@@ -76,12 +76,8 @@ void initialize_cpu_memory(cpu *c, settings *s) {
         c->memory[i] = rand();
     }
     // Initialize VRAM
-    for (uint16_t i = 0x8000; i <= 0x97ff; i++) {
+    for (uint16_t i = 0x8000; i <= 0x9fff; i++) {
         c->memory[i] = 0;
-    }
-    for (uint16_t i = 0; i < 1024; i++) {
-        video.tilemap[0][i] = 0;
-        video.tilemap[1][i] = 0;
     }
 }
 
@@ -207,6 +203,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     }
 
     // Initialize VRAM
+    /*
     for (uint16_t i = 0x8000; i <= 0x97ff; i++) {
         c->memory[i] = 0;
     }
@@ -221,6 +218,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
         video.tilemap[0][0x124 + i] = i+13;
     }
     video.tilemap[0][0x110] = 0x19;
+    */
 
     // Initialize tiles data
     uint8_t logo_tiles_initial[24][2];
@@ -304,18 +302,18 @@ void tick_scanline(cpu *c) {
                         video.wy_trigger = true;
                 }
                 else if (timer1.scanline_timer == 372) {
-                    video.fifo.current_pixel = 0;
+                    video.current_pixel = 0;
                     video.fifo.init_timer = 12;
                     video.mode = 3;
                 }
                 break;
             case 3:
                 for (int i = 0; i < 4; i++)
-                    push_pixels(c);
+                    operate_fifo(c);
                 break;
             case 0:
                 if (timer1.scanline_timer == 0) {
-                    load_display(c);
+                    load_line(c);
                     video.mode = 2;
                 }
                 break;
@@ -336,7 +334,7 @@ void add_ticks(cpu *c, uint16_t ticks) {
             timer1.lcdoff_timer -= 4;
             if (timer1.lcdoff_timer < 0) {
                 timer1.lcdoff_timer += 70224;
-                load_display(c);
+                load_line(c);
                 video.draw_screen = true;
                 if (update_keys())
                     c->memory[IF] |= 16;

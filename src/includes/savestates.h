@@ -49,7 +49,6 @@ typedef struct {
     bool is_halted;
     bool first_halt;
     uint8_t memory[0x10000];
-    uint8_t tilemaps[2][1024];
     uint8_t apu_div;
 
     savestate_cart cart;
