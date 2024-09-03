@@ -18,7 +18,7 @@ bool update_keys() {
     }
 
     if (IsKeyPressed(set.fast_forward_key))
-        joypad1.fast_forward = 5;
+        joypad1.fast_forward = 10;
     if (IsKeyReleased(set.fast_forward_key))
         joypad1.fast_forward = 1;
 
