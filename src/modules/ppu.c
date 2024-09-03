@@ -20,32 +20,50 @@ void oam_scan() {
 }
 
 void fetch_bg_to_fifo(cpu *c) {
-    uint8_t bgX = video.scx + (video.current_pixel + video.fifo.pixel_count);
-    uint8_t bgY = video.scy + video.scan_line;
-    uint16_t tile_id = c->memory[(video.bg_tilemap ? 0x9c00 : 0x9800) | (((uint16_t)bgY & 0x00f8) << 2) | (bgX >> 3)];
-    uint16_t tile_addr = (0x8000 | (tile_id << 4) | (video.bg_tiles || tile_id > 0x7f ? 0x0000 : 0x1000)) + ((bgY << 1) & 0x0f);
-    uint8_t lowerTileData = c->memory[tile_addr];
-    uint8_t upperTileData = c->memory[tile_addr+1];
+    if (video.bg_enable) {
+        uint8_t bgX = video.scx + (video.current_pixel + video.fifo.pixel_count);
+        uint8_t bgY = video.scy + video.scan_line;
+        uint16_t tile_id = c->memory[(video.bg_tilemap ? 0x9c00 : 0x9800) | (((uint16_t) bgY & 0x00f8) << 2) |
+                                     (bgX >> 3)];
+        uint16_t tile_addr =
+                (0x8000 | (tile_id << 4) | (video.bg_tiles || tile_id > 0x7f ? 0x0000 : 0x1000)) + ((bgY << 1) & 0x0f);
+        uint8_t lowerTileData = c->memory[tile_addr];
+        uint8_t upperTileData = c->memory[tile_addr + 1];
 
-    for (int i = 0; i < 8; i++) {
-        video.fifo.values[video.fifo.pixel_count + i] = (lowerTileData >> (7-i)) & 1;
-        video.fifo.values[video.fifo.pixel_count + i] |= (upperTileData >> (7-i) & 1) << 1;
+        for (int i = 0; i < 8; i++) {
+            video.fifo.values[video.fifo.pixel_count + i] = (lowerTileData >> (7 - i)) & 1;
+            video.fifo.values[video.fifo.pixel_count + i] |= (upperTileData >> (7 - i) & 1) << 1;
+        }
+    }
+    else {
+        for (int i = 0; i < 8; i++) {
+            video.fifo.values[video.fifo.pixel_count + i] = 0;
+        }
     }
 
     video.fifo.pixel_count += 8;
 }
 
 void fetch_win_to_fifo(cpu *c) {
-    uint8_t bgX = ((video.current_pixel + video.fifo.pixel_count) - video.wx) + 7;
-    uint8_t bgY = video.window_internal_line;
-    uint16_t tile_id = c->memory[(video.window_tilemap ? 0x9c00 : 0x9800) | (((uint16_t)bgY & 0x00f8) << 2) | (bgX >> 3)];
-    uint16_t tile_addr = (0x8000 | (tile_id << 4) | (video.bg_tiles || tile_id > 0x7f ? 0x0000 : 0x1000)) + ((bgY << 1) & 0x0f);
-    uint8_t lowerTileData = c->memory[tile_addr];
-    uint8_t upperTileData = c->memory[tile_addr+1];
+    if (video.bg_enable) {
+        uint8_t bgX = ((video.current_pixel + video.fifo.pixel_count) - video.wx) + 7;
+        uint8_t bgY = video.window_internal_line;
+        uint16_t tile_id = c->memory[(video.window_tilemap ? 0x9c00 : 0x9800) | (((uint16_t) bgY & 0x00f8) << 2) |
+                                     (bgX >> 3)];
+        uint16_t tile_addr =
+                (0x8000 | (tile_id << 4) | (video.bg_tiles || tile_id > 0x7f ? 0x0000 : 0x1000)) + ((bgY << 1) & 0x0f);
+        uint8_t lowerTileData = c->memory[tile_addr];
+        uint8_t upperTileData = c->memory[tile_addr + 1];
 
-    for (int i = 0; i < 8; i++) {
-        video.fifo.values[video.fifo.pixel_count + i] = (lowerTileData >> (7-i)) & 1;
-        video.fifo.values[video.fifo.pixel_count + i] |= (upperTileData >> (7-i) & 1) << 1;
+        for (int i = 0; i < 8; i++) {
+            video.fifo.values[video.fifo.pixel_count + i] = (lowerTileData >> (7 - i)) & 1;
+            video.fifo.values[video.fifo.pixel_count + i] |= (upperTileData >> (7 - i) & 1) << 1;
+        }
+    }
+    else {
+        for (int i = 0; i < 8; i++) {
+            video.fifo.values[video.fifo.pixel_count + i] = 0;
+        }
     }
 
     video.fifo.pixel_count += 8;
