@@ -377,15 +377,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             timer1.module = next_module;
             break;
 
-        case 0x8000 ... 0x9fff: // Tiles
-            c->memory[addr] = value;
-            break;
-
-        case 0xfe00 ... 0xfe9f: // OAM
-            c->memory[addr] = value;
-            video.need_sprites_reload = true;
-            break;
-
         case LCDC:
             video.bg_enable = value & 1;
             video.obj_enable = (value >> 1) & 1;
@@ -642,9 +633,6 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 255;
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
-
-        case 0x8000 ... 0x9fff:
-            return c->memory[addr];
 
         case SCX:
             return video.scx;

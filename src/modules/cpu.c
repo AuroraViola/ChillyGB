@@ -297,7 +297,7 @@ void tick_scanline(cpu *c) {
         switch (video.mode) {
             case 2:
                 if (timer1.scanline_timer == 452) {
-                    oam_scan();
+                    oam_scan(c);
                     if (video.scan_line == video.wy)
                         video.wy_trigger = true;
                 }
