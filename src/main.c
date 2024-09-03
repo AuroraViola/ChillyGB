@@ -745,8 +745,11 @@ void update_frame() {
                 for (int i = 0; i < 144; i++) {
                     for (int j = 0; j < 160; j++) {
                         pixels[i][j] = set.palettes[set.selected_palette].colors[video.display[i][j]];
-                        if (i == video.scan_line)
+                        if (i == video.scan_line) {
                             pixels[i][j].a = 127;
+                            if (j == video.current_pixel)
+                                pixels[i][j].a += 16;
+                        }
                         if (i == c.memory[LYC])
                             pixels[i][j].r += 20;
                     }
@@ -823,6 +826,7 @@ int main(int argc, char **argv) {
     };
 
     if (optind < argc) {
+        load_settings();
         load_cartridge(argv[optind]);
     }
 

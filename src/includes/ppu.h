@@ -28,6 +28,7 @@ typedef struct {
     uint8_t init_timer;
     uint8_t win_timer;
     uint8_t scx_init;
+    bool window_wx7;
 }pixel_fifo;
 
 typedef struct {
@@ -45,6 +46,7 @@ typedef struct {
 
     uint8_t window_internal_line;
     bool wy_trigger;
+    bool in_window;
 
     uint8_t scx;
     uint8_t scy;
