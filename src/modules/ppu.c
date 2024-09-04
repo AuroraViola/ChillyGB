@@ -99,14 +99,64 @@ void fetch_sprite_to_fifo(cpu *c) {
                     sprite[i].value = (lowerTileData >> i) & 1;
                     sprite[i].value |= (upperTileData >> i & 1) << 1;
                 }
-                sprite[i].palette = palette;
-                sprite[i].priority = priority;
             }
             for (int i = 0; i < 8; i++) {
                 if (sprite[i].value != 0 && video.fifo.pixels[i].palette == 0) {
-                    if (!sprite[i].priority || video.fifo.pixels[i].value == 0) {
+                    if (!priority || video.fifo.pixels[i].value == 0) {
                         video.fifo.pixels[i].value = sprite[i].value;
-                        video.fifo.pixels[i].palette = sprite[i].palette;
+                        video.fifo.pixels[i].palette = palette;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void fetch_sprite_to_fifo_minus_8(cpu *c) {
+    for (int i = 1; i < 8; i++) {
+        uint16_t buffer[10];
+        uint8_t buffer_size = 0;
+
+        for (int j = 0; j < video.buffer_size; j++) {
+            uint16_t sprite_addr = 0xfe00 | (video.oam_buffer[j] << 2);
+            if (c->memory[sprite_addr | 1] == i) {
+                buffer[buffer_size] = sprite_addr;
+                buffer_size++;
+            }
+        }
+        if (buffer_size > 0) {
+            for (int j = 0; j < buffer_size; j++) {
+                uint16_t sprite_addr = buffer[j];
+                uint8_t palette = ((c->memory[sprite_addr | 3] & 0x10) >> 4) + 1;
+                bool flip_X = ((c->memory[sprite_addr | 3] & 0x20) != 0);
+                bool flip_Y = ((c->memory[sprite_addr | 3] & 0x40) != 0);
+                bool priority = ((c->memory[sprite_addr | 3] & 0x80) != 0);
+
+                uint8_t tile_id = (!video.obj_size) ? c->memory[sprite_addr | 2] : c->memory[sprite_addr | 2] & 0xfe;
+                uint8_t tile_y = (video.scan_line + 16) - c->memory[sprite_addr];
+                if (flip_Y) {
+                    tile_y = (~tile_y) & ((video.obj_size) ? 0xf : 0x7);
+                }
+                uint16_t tile_addr = (0x8000 | (tile_id << 4) + ((tile_y << 1) & 0x1f));
+                uint8_t lowerTileData = c->memory[tile_addr];
+                uint8_t upperTileData = c->memory[tile_addr + 1];
+
+                pixel sprite[8];
+                for (int k = 0; k < 8; k++) {
+                    if (!flip_X) {
+                        sprite[k].value = (lowerTileData >> (7 - k)) & 1;
+                        sprite[k].value |= (upperTileData >> (7 - k) & 1) << 1;
+                    } else {
+                        sprite[k].value = (lowerTileData >> k) & 1;
+                        sprite[k].value |= (upperTileData >> k & 1) << 1;
+                    }
+                }
+                for (int k = 0; k < i; k++) {
+                    if (sprite[8-i+k].value != 0 && video.fifo.pixels[k].palette == 0) {
+                        if (!priority || video.fifo.pixels[k].value == 0) {
+                            video.fifo.pixels[k].value = sprite[8-i+k].value;
+                            video.fifo.pixels[k].palette = palette;
+                        }
                     }
                 }
             }
@@ -146,6 +196,10 @@ void operate_fifo(cpu *c) {
     if (video.fifo.init_timer > 0) {
         video.fifo.init_timer--;
         if (video.fifo.init_timer == 0) {
+            fetch_bg_to_fifo(c);
+            if (video.obj_enable) {
+                fetch_sprite_to_fifo_minus_8(c);
+            }
             video.fifo.scx_init = video.scx % 8;
         }
         return;

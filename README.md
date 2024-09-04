@@ -64,6 +64,7 @@ Here is a list of planned features
   * DMA Conflicts
   * Online multiplayer support via emulated link cable
 * **Graphical and particular features**
+  * Game Boy Color support
   * Frame blending
   * Rewind
   * Rom folder
@@ -80,7 +81,6 @@ Here is a list of planned features
 
 These features will not be implemented (at least in this repository)
 
-* Game Boy Color support
 * SGB borders
 
 ## License
