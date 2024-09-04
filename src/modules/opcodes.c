@@ -340,7 +340,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->memory[addr] = value;
             dma_transfer(c);
             video.dma_transfer = 640;
-            video.need_sprites_reload = true;
             break;
 
         case DIV: // divider register
@@ -410,9 +409,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     video.ly_eq_lyc = false;
             }
 
-            video.need_bg_wn_reload = true;
-            video.tiles_write = true;
-            video.need_sprites_reload = true;
             break;
 
         case BGP:

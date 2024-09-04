@@ -24,7 +24,7 @@ void get_save_state_name(char rom_name[256], char save_state_name[256]) {
 
 void save_state(cpu *c, char rom_name[256]) {
     savestate savestate1;
-    savestate1.version = 2;
+    savestate1.version = 3;
     savestate1.is_halted = c->is_halted;
     savestate1.sp = c->sp;
     savestate1.pc = c->pc;
@@ -81,7 +81,7 @@ void load_state(cpu *c, char rom_name[256]) {
         fread(&save_version, sizeof(int), 1, version);
         fclose(version);
 
-        if (save_version == 2) {
+        if (save_version == 3) {
             c->is_halted = savestate1.is_halted;
             c->sp = savestate1.sp;
             c->pc = savestate1.pc;
@@ -115,9 +115,6 @@ void load_state(cpu *c, char rom_name[256]) {
             video.mode_select = savestate1.ppu.mode_select;
             video.ly_eq_lyc = savestate1.ppu.ly_eq_lyc;
 
-            video.need_sprites_reload = true;
-            video.need_bg_wn_reload = true;
-            video.tiles_write = true;
             c->bootrom.is_enabled = false;
             memcpy(&video.bgp, &savestate1.ppu.bgp, (sizeof(uint8_t) * 4));
             memcpy(&video.obp, &savestate1.ppu.obp, (sizeof(uint8_t) * 8));

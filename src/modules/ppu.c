@@ -115,6 +115,7 @@ void fetch_sprite_to_fifo(cpu *c) {
 }
 
 void push_pixel() {
+    // Copy pixel to display
     if (video.bg_enable && video.fifo.pixels[0].palette == 0) {
         video.line[video.current_pixel] = video.bgp[video.fifo.pixels[0].value];
     }
@@ -124,11 +125,15 @@ void push_pixel() {
     else {
         video.line[video.current_pixel] = video.bgp[0];
     }
+
+    // Shift FIFO
     for (int i = 0; i < video.fifo.pixel_count-1; i++) {
         video.fifo.pixels[i].value = video.fifo.pixels[i+1].value;
         video.fifo.pixels[i].palette = video.fifo.pixels[i+1].palette;
     }
     video.fifo.pixel_count--;
+
+    // Advance current pixel index
     if (video.fifo.scx_init > 0 && !video.in_window) {
         video.fifo.scx_init--;
     }
@@ -184,7 +189,7 @@ void operate_fifo(cpu *c) {
     }
 }
 
-void load_line(cpu *c) {
+void load_line() {
     if (video.is_on) {
         for (int i = 0; i < 160; i++) {
             video.display[video.scan_line][i] = video.line[i];

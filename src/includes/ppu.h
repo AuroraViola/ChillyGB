@@ -6,23 +6,6 @@
 #define CHILLYGB_PPU_H
 
 typedef struct {
-    uint8_t x;
-    uint8_t y;
-    uint8_t tile[8][8];
-    uint8_t tile_16[16][8];
-
-    bool priority;
-    bool palette;
-}sprite;
-
-typedef struct {
-    uint8_t color;
-    bool priority;
-    bool palette;
-    uint8_t x;
-}sprite_px;
-
-typedef struct {
     uint8_t value;
     uint8_t palette;
     uint8_t priority;
@@ -44,9 +27,7 @@ typedef struct {
     uint8_t line[160];
     pixel_fifo fifo;
     uint8_t current_pixel;
-    sprite sprites[40];
 
-    sprite_px sprite_line[176];
     uint8_t oam_buffer[40];
     uint8_t buffer_size;
 
@@ -75,10 +56,6 @@ typedef struct {
     bool is_scan_line;
     bool draw_screen;
     bool dma_transfer;
-    bool tiles_write;
-    bool need_bg_wn_reload;
-    bool need_sprites_reload;
-    bool reset_sprite_display;
 
     bool lyc_select;
     uint8_t mode_select;
@@ -87,7 +64,7 @@ typedef struct {
 
 extern ppu video;
 
-void load_line(cpu *c);
+void load_line();
 void oam_scan(cpu *c);
 void operate_fifo(cpu *c);
 

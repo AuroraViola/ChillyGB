@@ -56,7 +56,6 @@ Here is a list of planned features
   * MBC5 Rumble
   * Pocket camera support
 * **Emulation Improvements**
-  * Pixel FIFO and more accurate PPU timing
   * Accurate sound behaviours
   * Correct serial emulation
   * STAT IRQ blocking
@@ -67,7 +66,6 @@ Here is a list of planned features
   * Online multiplayer support via emulated link cable
 * **Graphical and particular features**
   * Frame blending
-  * Pixel grid
   * Rewind
   * Rom folder
   * Rumble

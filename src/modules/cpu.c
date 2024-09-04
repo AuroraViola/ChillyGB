@@ -96,9 +96,6 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->ime = false;
     c->ime_to_be_setted = 0;
     c->is_halted = false;
-    video.need_bg_wn_reload = true;
-    video.tiles_write = true;
-    video.need_sprites_reload = true;
     c->bootrom.is_enabled = false;
 
     c->memory[SB] = 0x00;
@@ -307,7 +304,7 @@ void tick_scanline(cpu *c) {
                 break;
             case 0:
                 if (timer1.scanline_timer == 0) {
-                    load_line(c);
+                    load_line();
                     video.mode = 2;
                 }
                 break;
