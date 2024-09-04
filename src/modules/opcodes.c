@@ -308,6 +308,16 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->memory[addr - 0x2000] = value;
             break;
 
+        case 0x8000 ... 0x9fff: // VRAM
+            if (video.mode != 3)
+                c->memory[addr] = value;
+            break;
+
+        case 0xfe00 ... 0xfe9f:
+            if (video.mode != 3 || video.mode != 2)
+                c->memory[addr] = value;
+            break;
+
         case JOYP:
             if (((value >> 4) & 1) == 0)
                 joypad1.dpad_on = true;
@@ -629,6 +639,16 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 255;
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
+
+        case 0x8000 ... 0x9fff: // VRAM
+            if (video.mode != 3)
+                return c->memory[addr];
+            return 255;
+
+        case 0xfe00 ... 0xfe9f:
+            if (video.mode != 3 || video.mode != 2)
+                return c->memory[addr];
+            return 255;
 
         case SCX:
             return video.scx;
