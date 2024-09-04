@@ -4,7 +4,7 @@
 
 ChillyGB is an experimental Game Boy (DMG) emulator written in C that aims to simplicity and accuracy
 
-You can try it now [here](https://chillygb.arci.me) (Note that this WASM port can be slow and/or instable)
+You can try it now [here](https://chillygb.arci.me) (Note that the WASM port can be unstable)
 
 ## Screenshots
 
@@ -61,7 +61,6 @@ Here is a list of planned features
   * STAT IRQ blocking
   * Halt bug
   * Stop Instruction
-  * Accurate VRAM and OAM timing Access
   * DMA Conflicts
   * Online multiplayer support via emulated link cable
 * **Graphical and particular features**
@@ -81,7 +80,7 @@ Here is a list of planned features
 
 These features will not be implemented (at least in this repository)
 
-* Gameboy color support
+* Game Boy Color support
 * SGB borders
 
 ## License
