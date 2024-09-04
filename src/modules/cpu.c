@@ -325,7 +325,7 @@ void add_ticks(cpu *c, uint16_t ticks) {
             timer1.lcdoff_timer -= 4;
             if (timer1.lcdoff_timer < 0) {
                 timer1.lcdoff_timer += 70224;
-                load_line(c);
+                load_line();
                 video.draw_screen = true;
                 if (update_keys())
                     c->memory[IF] |= 16;
