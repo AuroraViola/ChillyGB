@@ -24,7 +24,7 @@ void get_save_state_name(char rom_name[256], char save_state_name[256]) {
 
 void save_state(cpu *c, char rom_name[256]) {
     savestate savestate1;
-    savestate1.version = 3;
+    savestate1.version = 4;
     savestate1.is_halted = c->is_halted;
     savestate1.sp = c->sp;
     savestate1.pc = c->pc;
@@ -81,7 +81,7 @@ void load_state(cpu *c, char rom_name[256]) {
         fread(&save_version, sizeof(int), 1, version);
         fclose(version);
 
-        if (save_version == 3) {
+        if (save_version == 4) {
             c->is_halted = savestate1.is_halted;
             c->sp = savestate1.sp;
             c->pc = savestate1.pc;

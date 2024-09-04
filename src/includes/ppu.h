@@ -14,6 +14,7 @@ typedef struct {
 typedef struct {
     pixel pixels[16];
     uint8_t pixel_count;
+    uint8_t tick_pause;
     uint8_t init_timer;
     uint8_t win_timer;
     uint8_t scx_init;

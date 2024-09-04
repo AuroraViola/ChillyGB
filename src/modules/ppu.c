@@ -108,6 +108,7 @@ void fetch_sprite_to_fifo(cpu *c) {
                     }
                 }
             }
+            video.fifo.tick_pause += 6;
         }
     }
 }
@@ -159,6 +160,7 @@ void fetch_sprite_to_fifo_minus_8(cpu *c) {
                         }
                     }
                 }
+                video.fifo.tick_pause += 6;
             }
         }
     }
@@ -204,6 +206,11 @@ void operate_fifo(cpu *c) {
         }
         return;
     }
+
+    if (video.fifo.tick_pause > 0) {
+        video.fifo.tick_pause--;
+        return;
+    }
     if (video.current_pixel < 160) {
         if (!video.in_window && video.window_enable && video.wy_trigger && video.current_pixel + 8 > video.wx) {
             video.in_window = true;
@@ -240,6 +247,7 @@ void operate_fifo(cpu *c) {
             video.window_internal_line++;
         video.in_window = false;
         video.mode = 0;
+        video.fifo.tick_pause = 0;
     }
 }
 
