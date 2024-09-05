@@ -309,13 +309,11 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case 0x8000 ... 0x9fff: // VRAM
-            if (video.mode != 3)
-                c->memory[addr] = value;
+            video.vram[video.vram_bank][addr-0x8000] = value;
             break;
 
         case 0xfe00 ... 0xfe9f:
-            if (video.mode != 3 || video.mode != 2)
-                c->memory[addr] = value;
+            c->memory[addr] = value;
             break;
 
         case JOYP:
@@ -419,27 +417,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     video.ly_eq_lyc = false;
             }
 
-            break;
-
-        case BGP:
-            video.bgp[0] = value & 3;
-            video.bgp[1] = (value >> 2) & 3;
-            video.bgp[2] = (value >> 4) & 3;
-            video.bgp[3] = (value >> 6) & 3;
-            break;
-
-        case OBP0:
-            video.obp[0][0] = value & 3;
-            video.obp[0][1] = (value >> 2) & 3;
-            video.obp[0][2] = (value >> 4) & 3;
-            video.obp[0][3] = (value >> 6) & 3;
-            break;
-
-        case OBP1:
-            video.obp[1][0] = value & 3;
-            video.obp[1][1] = (value >> 2) & 3;
-            video.obp[1][2] = (value >> 4) & 3;
-            video.obp[1][3] = (value >> 6) & 3;
             break;
 
         case SCX:
@@ -583,6 +560,32 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 c->memory[addr] = value;
             break;
 
+        case VBK:
+            video.vram_bank = value & 1;
+            break;
+
+        case BCPS:
+            video.bcps_inc = value >> 7;
+            video.bgp_addr = value & 0x3f;
+            break;
+        case BCPD:
+            video.bgp[video.bgp_addr] = value;
+            if (video.bcps_inc) {
+                video.bgp_addr = (video.bgp_addr + 1) & 0x3f;
+            }
+            break;
+
+        case OCPS:
+            video.ocps_inc = value >> 7;
+            video.obp_addr = value & 0x3f;
+            break;
+        case OCPD:
+            video.obp[video.obp_addr] = value;
+            if (video.ocps_inc) {
+                video.obp_addr = (video.obp_addr + 1) & 0x3f;
+            }
+            break;
+
         default:
             c->memory[addr] = value;
             break;
@@ -641,14 +644,10 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->memory[addr - 0x2000];
 
         case 0x8000 ... 0x9fff: // VRAM
-            if (video.mode != 3)
-                return c->memory[addr];
-            return 255;
+            return video.vram[video.vram_bank][addr-0x8000];
 
         case 0xfe00 ... 0xfe9f:
-            if (video.mode != 3 || video.mode != 2)
-                return c->memory[addr];
-            return 255;
+            return c->memory[addr];
 
         case SCX:
             return video.scx;
@@ -682,7 +681,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | enc | 0xc0;
             }
             else {
-                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | 0xcf;
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5);
             }
         case SC:
             return c->memory[addr] | 0x7e;
@@ -712,15 +711,6 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return video.scan_line;
         case LCDC:
             return video.bg_enable | (video.obj_enable << 1) | (video.obj_size << 2) | (video.bg_tilemap << 3) | (video.bg_tiles << 4) | (video.window_enable << 5) | (video.window_tilemap << 6) | (video.is_on << 7);
-
-        case BGP:
-            return video.bgp[0] | (video.bgp[1] << 2) | (video.bgp[2] << 4) | (video.bgp[3] << 6);
-
-        case OBP0:
-            return video.obp[0][0] | (video.obp[0][1] << 2) | (video.obp[0][2] << 4) | (video.obp[0][3] << 6);
-
-        case OBP1:
-            return video.obp[1][0] | (video.obp[1][1] << 2) | (video.obp[1][2] << 4) | (video.obp[1][3] << 6);
 
         case NR10:
             return c->memory[addr] | 0x80;
@@ -774,8 +764,8 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 return 0xff;
             return c->memory[addr];
 
-        case 0xff03: case 0xff08 ... 0xff0e: case 0xff15: case 0xff1f: case 0xff27 ... 0xff2f: case 0xff4c ... 0xff7f:
-            return 0xff;
+        case VBK:
+            return video.vram_bank | 0xfe;
 
 
         default:

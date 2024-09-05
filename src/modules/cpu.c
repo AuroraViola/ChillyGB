@@ -53,14 +53,6 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     video.scy = 0;
     video.wx = 0;
     video.wy = 0;
-    video.obp[0][0] = 3;
-    video.obp[0][1] = 3;
-    video.obp[0][2] = 3;
-    video.obp[0][3] = 3;
-    video.obp[1][0] = 3;
-    video.obp[1][1] = 3;
-    video.obp[1][2] = 3;
-    video.obp[1][3] = 3;
     c->memory[IE] = 0x00;
 
     c->cart.bank_select = 1;
@@ -83,14 +75,14 @@ void initialize_cpu_memory(cpu *c, settings *s) {
 
 void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     srand(time(NULL));
-    c->r.reg8[A] = 0x01;
+    c->r.reg8[A] = 0x11;
     c->r.reg8[B] = 0x00;
-    c->r.reg8[C] = 0x13;
+    c->r.reg8[C] = 0x00;
     c->r.reg8[D] = 0x00;
-    c->r.reg8[E] = 0xd8;
-    c->r.reg8[F] = 0xb0;
-    c->r.reg8[H] = 0x01;
-    c->r.reg8[L] = 0x4d;
+    c->r.reg8[E] = 0x08;
+    c->r.reg8[F] = 0x80;
+    c->r.reg8[H] = 0x00;
+    c->r.reg8[L] = 0x7c;
     c->pc = 0x100;
     c->sp = 0xfffe;
     c->ime = false;
@@ -165,21 +157,9 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     video.scy = 0x00;
     video.scan_line = 0x00;
     timer1.scanline_timer = 456;
+    video.vram_bank = 0;
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
-    c->memory[BGP] = 0xfc;
-    video.bgp[0] = 0;
-    video.bgp[1] = 3;
-    video.bgp[2] = 3;
-    video.bgp[3] = 3;
-    video.obp[0][0] = 3;
-    video.obp[0][1] = 3;
-    video.obp[0][2] = 3;
-    video.obp[0][3] = 3;
-    video.obp[1][0] = 3;
-    video.obp[1][1] = 3;
-    video.obp[1][2] = 3;
-    video.obp[1][3] = 3;
     video.wx = 0x00;
     video.wy = 0x00;
     c->memory[IE] = 0x00;

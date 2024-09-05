@@ -24,6 +24,7 @@ typedef struct {
 typedef struct {
     uint8_t mode;
     uint8_t scan_line;
+    uint8_t vram[2][0x2000];
     uint8_t display[144][160];
     uint8_t line[160];
     pixel_fifo fifo;
@@ -41,8 +42,12 @@ typedef struct {
     uint8_t wx;
     uint8_t wy;
 
-    uint8_t bgp[4];
-    uint8_t obp[2][4];
+    uint8_t bgp[64];
+    bool bcps_inc;
+    uint8_t bgp_addr;
+    uint8_t obp[64];
+    bool ocps_inc;
+    uint8_t obp_addr;
 
     bool is_on;
     bool bg_enable;
@@ -61,6 +66,8 @@ typedef struct {
     bool lyc_select;
     uint8_t mode_select;
     bool ly_eq_lyc;
+
+    bool vram_bank;
 }ppu;
 
 extern ppu video;

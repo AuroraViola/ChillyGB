@@ -138,6 +138,13 @@ enum mem_regs {
     WY = 0xff4a,
     WX = 0xff4b,
 
+    BCPS = 0xff68,
+    BCPD = 0xff69,
+    OCPS = 0xff6a,
+    OCPD = 0xff6b,
+
+    VBK = 0xff4f,
+
     IE = 0xffff,
 };
 
