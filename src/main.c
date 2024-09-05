@@ -10,6 +10,7 @@
 #include "includes/cartridge.h"
 #include "includes/open_dialog.h"
 #include "includes/savestates.h"
+#include "includes/opcodes.h"
 #include "../raylib-nuklear/include/raylib-nuklear.h"
 #include <stdio.h>
 #include <getopt.h>
@@ -78,7 +79,6 @@ char instructions[30][50];
 float scale;
 int scale_integer;
 float speed_mult = 1;
-debugtexts texts;
 int ff_speed = 1;
 struct nk_context *ctx;
 char comboxes[2500] = "";
@@ -95,9 +95,6 @@ Shader shaders[2];
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
     if(!load_game(&c.cart, rom_name)){
-        debugprint("Failed to load game: ");
-        debugprint(rom_name);
-        debugprint("\n");
         fprintf(stderr, "Failed to open game: %s\n", rom_name);
         return;
     }
@@ -632,74 +629,60 @@ void update_frame() {
         case DEBUG:
             UpdateNuklear(ctx);
 
-            generate_texts(&c, &texts);
             decode_instructions(&c, instructions);
 
-            if (nk_begin(ctx, "Registers", nk_rect(24, 24, 190, 224),
+            if (nk_begin(ctx, "Registers", nk_rect(24, 24, 160, 224),
                          NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
                 nk_layout_row_dynamic(ctx, 20, 1);
-                nk_label(ctx, texts.AFtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.BCtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.DEtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.HLtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.SPtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.PCtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.IMEtext, NK_TEXT_CENTERED);
+                nk_label(ctx, TextFormat("AF: %04X", c.r.reg16[AF]), NK_TEXT_CENTERED);
+                nk_label(ctx, TextFormat("BC: %04X", c.r.reg16[BC]), NK_TEXT_CENTERED);
+                nk_label(ctx, TextFormat("DE: %04X", c.r.reg16[DE]), NK_TEXT_CENTERED);
+                nk_label(ctx, TextFormat("HL: %04X", c.r.reg16[HL]), NK_TEXT_CENTERED);
+                nk_label(ctx, TextFormat("SP: %04X", c.sp), NK_TEXT_CENTERED);
+                nk_label(ctx, TextFormat("PC: %04X", c.pc), NK_TEXT_CENTERED);
+                nk_label(ctx, TextFormat("IME: %s", (c.ime) ? "ON" : "OFF"), NK_TEXT_CENTERED);
             }
             nk_end(ctx);
 
-            if (nk_begin(ctx, "PPU Info", nk_rect(24, 272, 190, 170),
+            if (nk_begin(ctx, "STAT", nk_rect(186, 250, 160, 250),
                          NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
                 nk_layout_row_dynamic(ctx, 20, 1);
-                nk_label(ctx, texts.LYtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.LYCtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.PPUMode, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.LCDCtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.STATtext, NK_TEXT_CENTERED);
+                nk_checkbox_label(ctx, "LY=LYC int", &video.lyc_select);
+                nk_checkbox_flags_label(ctx, "Mode 2 int", (unsigned int *)(&video.mode_select), 4);
+                nk_checkbox_flags_label(ctx, "Mode 1 int", (unsigned int *)(&video.mode_select), 2);
+                nk_checkbox_flags_label(ctx, "Mode 0 int", (unsigned int *)(&video.mode_select), 1);
+                nk_checkbox_label(ctx, "LY=LYC", &video.ly_eq_lyc);
+                nk_label(ctx, TextFormat("Mode: %i", video.mode), NK_TEXT_ALIGN_LEFT);
             }
             nk_end(ctx);
 
-            if (nk_begin(ctx, "Interrupts", nk_rect(24, 466, 190, 128),
+            if (nk_begin(ctx, "LCD", nk_rect(186, 24, 160, 224),
                          NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
                 nk_layout_row_dynamic(ctx, 20, 1);
-                nk_label(ctx, texts.IEtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.IFtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.IMEtext, NK_TEXT_CENTERED);
+                nk_label(ctx, TextFormat("LY: %02X", get_mem(&c, LY)), NK_TEXT_ALIGN_CENTERED);
+                nk_label(ctx, TextFormat("LYC: %02X", get_mem(&c, LYC)), NK_TEXT_ALIGN_CENTERED);
+                nk_label(ctx, TextFormat("SCX: %02X", video.scx), NK_TEXT_ALIGN_CENTERED);
+                nk_label(ctx, TextFormat("SCY: %02X", video.scy), NK_TEXT_ALIGN_CENTERED);
+                nk_label(ctx, TextFormat("WX: %02X", video.wx), NK_TEXT_ALIGN_CENTERED);
+                nk_label(ctx, TextFormat("WY: %02X", video.wy), NK_TEXT_ALIGN_CENTERED);
             }
             nk_end(ctx);
 
-            if (nk_begin(ctx, "Fast Forward", nk_rect(24, 618, 190, 80),
-                         NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
-                nk_layout_row_dynamic(ctx, 20, 2);
-                nk_label(ctx, "Speed", NK_TEXT_CENTERED);
-                ff_speed = nk_slide_int(ctx, 1, ff_speed, 1000, 1);
-            }
-            nk_end(ctx);
-
-            if (nk_begin(ctx, "Timer Info", nk_rect(238, 466, 210, 200),
+            if (nk_begin(ctx, "LCDC", nk_rect(24, 250, 160, 250),
                          NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
                 nk_layout_row_dynamic(ctx, 20, 1);
-                nk_label(ctx, texts.DIV, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.TIMA, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.TMA, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.TIMER_ON, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.MODULE, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.TSTATEStext, NK_TEXT_CENTERED);
+                nk_checkbox_label(ctx, "LCD", &video.is_on);
+                nk_checkbox_label(ctx, "Win Map", &video.window_tilemap);
+                nk_checkbox_label(ctx, "Win En", &video.window_enable);
+                nk_checkbox_label(ctx, "Tiles", &video.bg_tiles);
+                nk_checkbox_label(ctx, "Bg Map", &video.bg_tilemap);
+                nk_checkbox_label(ctx, "Obj size", &video.obj_size);
+                nk_checkbox_label(ctx, "Obj En", &video.obj_enable);
+                nk_checkbox_label(ctx, "Bg En", &video.bg_enable);
             }
             nk_end(ctx);
 
-
-            if (nk_begin(ctx, "Cart Info", nk_rect(472, 466, 190, 128),
-                         NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
-                nk_layout_row_dynamic(ctx, 20, 1);
-                nk_label(ctx, texts.BANKtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.RAMBANKtext, NK_TEXT_CENTERED);
-                nk_label(ctx, texts.RAMENtext, NK_TEXT_CENTERED);
-            }
-            nk_end(ctx);
-
-
-            if (nk_begin(ctx, "Memory Instructions", nk_rect(238, 24, 424, 418),
+            if (nk_begin(ctx, "Instructions", nk_rect(1000, 24, 424, 418),
                          NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_MINIMIZABLE)) {
                 nk_layout_row_dynamic(ctx, 20, 1);
                 for (int i = 0; i < 30; i++) {
@@ -708,12 +691,67 @@ void update_frame() {
             }
             nk_end(ctx);
 
-            if (nk_begin(ctx, "Memory Viewer", nk_rect(686, 648, 650, 300),
+            if (nk_begin(ctx, "Memory Viewer", nk_rect(1000, 444, 650, 300),
+                         NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_MINIMIZABLE)) {
+                nk_layout_row_begin(ctx, NK_STATIC, 20, 17);
+                for (int i = 0; i < 4096; i++) {
+                    nk_layout_row_push(ctx, 65);
+                    nk_label(ctx, TextFormat("%03X0:", i), NK_TEXT_LEFT);
+                    for (int j = 0; j < 16; j++) {
+                        nk_layout_row_push(ctx, 30);
+                        nk_label(ctx, TextFormat("%02X", get_mem(&c, (i << 4) | j)), NK_TEXT_LEFT);
+                    }
+                }
+                nk_layout_row_end(ctx);
+            }
+            nk_end(ctx);
+
+            if (nk_begin(ctx, "Stack Viewer", nk_rect(1426, 24, 224, 418),
                          NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_MINIMIZABLE)) {
                 nk_layout_row_dynamic(ctx, 20, 1);
-                for (int i = 0; i < 4096; i++) {
-                    nk_label(ctx, texts.memory[i], NK_TEXT_LEFT);
+                for (int i = 1; (c.sp + i -1) < 0xffff; i+=2) {
+                    nk_label(ctx, TextFormat("%04X: %02X%02X", (c.sp + i - 1), c.memory[c.sp+i], c.memory[c.sp+i-1]), NK_TEXT_ALIGN_LEFT);
                 }
+            }
+            nk_end(ctx);
+
+            if (nk_begin(ctx, "Interrupts", nk_rect(24, 502, 160, 224),
+                         NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
+                nk_layout_row_static(ctx, 20, 25, 2);
+                nk_label(ctx, "IF", NK_TEXT_ALIGN_LEFT);
+                nk_label(ctx, "IE", NK_TEXT_ALIGN_LEFT);
+
+                nk_layout_row_begin(ctx, NK_STATIC, 20, 3);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IF]), 16);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IE]), 16);
+                nk_layout_row_push(ctx, 80);
+                nk_label(ctx, "Joypad", NK_TEXT_ALIGN_LEFT);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IF]), 8);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IE]), 8);
+                nk_layout_row_push(ctx, 80);
+                nk_label(ctx, "Serial", NK_TEXT_ALIGN_LEFT);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IF]), 4);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IE]), 4);
+                nk_layout_row_push(ctx, 80);
+                nk_label(ctx, "Timer", NK_TEXT_ALIGN_LEFT);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IF]), 2);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IE]), 2);
+                nk_layout_row_push(ctx, 80);
+                nk_label(ctx, "STAT", NK_TEXT_ALIGN_LEFT);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IF]), 1);
+                nk_layout_row_push(ctx, 25);
+                nk_checkbox_flags_label(ctx, "", (unsigned int *)(&c.memory[IE]), 1);
+                nk_layout_row_push(ctx, 80);
+                nk_label(ctx, "VBlank", NK_TEXT_ALIGN_LEFT);
             }
             nk_end(ctx);
 
@@ -764,7 +802,7 @@ void update_frame() {
             }
             UpdateTexture(display, pixels);
             struct nk_image display_debug = TextureToNuklear(display);
-            if (nk_begin(ctx, "Display", nk_rect(686, 24, 650, 600),
+            if (nk_begin(ctx, "Display", nk_rect(348, 24, 650, 600),
                          NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|NK_WINDOW_MINIMIZABLE)) {
                 nk_layout_row_dynamic(ctx, nk_window_get_height(ctx)-56, 1);
                 nk_image_color(ctx, display_debug, (struct nk_color){255,255,255,255});
