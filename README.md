@@ -73,7 +73,6 @@ Here is a list of planned features
   * Breakpoints
   * Watchpoints
   * APU and channel state
-  * Stack viewer
   * VRAM viewer
   * Memory editor
 
