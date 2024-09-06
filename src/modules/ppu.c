@@ -27,6 +27,7 @@ void fetch_bg_to_fifo(cpu *c) {
     uint16_t tile_attribute = video.vram[1][(video.bg_tilemap ? 0x1c00 : 0x1800) | (((uint16_t) bgY & 0x00f8) << 2) | (bgX >> 3)];
     bool flip_X = ((tile_attribute & 0x20) != 0);
     bool flip_Y = ((tile_attribute & 0x40) != 0);
+    bool priority = ((tile_attribute & 0x80) != 0);
     if (flip_Y) {
         bgY = ~(bgY & 0xf);
     }
@@ -45,6 +46,7 @@ void fetch_bg_to_fifo(cpu *c) {
             video.fifo.pixels[video.fifo.pixel_count + i].value |= (upperTileData >> i & 1) << 1;
         }
         video.fifo.pixels[video.fifo.pixel_count + i].palette = tile_attribute & 7;
+        video.fifo.pixels[video.fifo.pixel_count + i].priority = priority;
     }
 
     video.fifo.pixel_count += 8;
@@ -210,6 +212,7 @@ void push_pixel() {
     for (int i = 0; i < video.fifo.pixel_count-1; i++) {
         video.fifo.pixels[i].value = video.fifo.pixels[i+1].value;
         video.fifo.pixels[i].palette = video.fifo.pixels[i+1].palette;
+        video.fifo.pixels[i].priority = video.fifo.pixels[i+1].priority;
     }
     video.fifo.pixel_count--;
 

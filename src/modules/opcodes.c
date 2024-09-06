@@ -304,6 +304,14 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
 
+        case 0xc000 ... 0xcfff: // WRAM0
+            c->wram[0][addr - 0xc000] = value;
+            break;
+
+        case 0xd000 ... 0xdfff: // WRAM1
+            c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000] = value;
+            break;
+
         case 0xe000 ... 0xfdff: // Echo ram
             c->memory[addr - 0x2000] = value;
             break;
@@ -585,6 +593,9 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 video.obp_addr = (video.obp_addr + 1) & 0x3f;
             }
             break;
+        case SVBK:
+            c->wram_bank = value & 7;
+            break;
 
         default:
             c->memory[addr] = value;
@@ -640,6 +651,13 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 255;
         case 0xfea0 ... 0xfeff:
             return 255;
+
+        case 0xc000 ... 0xcfff: // WRAM0
+            return c->wram[0][addr - 0xc000];
+
+        case 0xd000 ... 0xdfff: // WRAM1
+            return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000];
+
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
 
@@ -766,6 +784,18 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
 
         case VBK:
             return video.vram_bank | 0xfe;
+
+        case BCPS:
+            return (video.bcps_inc << 7) | video.bgp_addr;
+        case BCPD:
+            return video.bgp[video.bgp_addr];
+        case OCPS:
+            return (video.ocps_inc << 7) | video.obp_addr;
+        case OCPD:
+            return video.obp[video.obp_addr];
+
+        case SVBK:
+            return c->wram_bank | 0xf8;
 
 
         default:

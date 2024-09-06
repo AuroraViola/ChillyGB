@@ -89,6 +89,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->ime_to_be_setted = 0;
     c->is_halted = false;
     c->bootrom.is_enabled = false;
+    c->wram_bank = 1;
 
     c->memory[SB] = 0x00;
     c->memory[SC] = 0x7e;
@@ -158,6 +159,14 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     video.scan_line = 0x00;
     timer1.scanline_timer = 456;
     video.vram_bank = 0;
+    for (int i = 0; i < 64; i++) {
+        video.bgp[i] = 255;
+        video.obp[i] = 255;
+    }
+    video.bgp_addr = 0;
+    video.obp_addr = 0;
+    video.ocps_inc = false;
+    video.bcps_inc = false;
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
     video.wx = 0x00;

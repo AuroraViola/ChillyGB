@@ -55,6 +55,8 @@ typedef struct {
 
     cartridge cart;
     uint8_t memory[0x10000];
+    uint8_t wram[8][0x1000];
+    uint8_t wram_bank;
 
     uint8_t apu_div;
     bool envelope_sweep;
@@ -142,6 +144,7 @@ enum mem_regs {
     BCPD = 0xff69,
     OCPS = 0xff6a,
     OCPD = 0xff6b,
+    SVBK = 0xff70,
 
     VBK = 0xff4f,
 
