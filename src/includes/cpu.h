@@ -45,12 +45,22 @@ typedef struct {
 }rom;
 
 typedef struct {
+    uint16_t source;
+    uint16_t destination;
+    bool mode;
+    uint16_t status;
+    uint16_t lenght;
+    bool finished;
+}dma;
+
+typedef struct {
     registers r;
     uint16_t sp;
     uint16_t pc;
     bool ime;
     uint8_t ime_to_be_setted;
     bool is_halted;
+    bool gdma_halt;
     bool first_halt;
 
     cartridge cart;
@@ -66,6 +76,8 @@ typedef struct {
     bool sound_lenght;
 
     rom bootrom;
+
+    dma hdma;
 }cpu;
 
 typedef struct {
@@ -199,6 +211,7 @@ extern float speed_mult;
 void initialize_cpu_memory_no_bootrom(cpu *c, settings *s);
 void initialize_cpu_memory(cpu *c, settings *s);
 void execute(cpu *c);
+void hdma_transfer(cpu *c);
 void add_ticks(cpu *c, uint16_t ticks);
 void dma_transfer(cpu *c);
 bool load_bootrom(rom *bootrom);

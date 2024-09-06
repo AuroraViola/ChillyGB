@@ -178,9 +178,14 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->cart.ram_enable = false;
     c->cart.mbc1mode = false;
 
+    c->hdma.finished == true;
+    c->gdma_halt = false;
+
     // Initialize WRAM
-    for (uint16_t i = 0xc000; i <= 0xdfff; i++) {
-        c->memory[i] = rand();
+    for (int i = 0; i < 8; i++) {
+        for (uint16_t j = 0; j < 0x1000; j++) {
+            c->wram[i][j] = rand();
+        }
     }
 
     // Initialize HRAM
@@ -189,46 +194,25 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     }
 
     // Initialize VRAM
-    for (uint16_t i = 0x8000; i <= 0x9fff; i++) {
-        c->memory[i] = 0;
-    }
-
-    // Initialize Background tiles
-    for (uint16_t i = 0; i < 12; i++) {
-        c->memory[0x9904 + i] = i+1;
-        c->memory[0x9924 + i] = i+13;
-    }
-    c->memory[0x9910] = 0x19;
-
-    // Initialize tiles data
-    uint8_t logo_tiles_initial[24][2];
-    uint8_t logo_tiles[24][4];
-
-    for (uint16_t i = 0; i < 24; i++) {
-        logo_tiles_initial[i][0] = c->cart.data[0][0x104 + (i * 2)];
-        logo_tiles_initial[i][1] = c->cart.data[0][0x104 + (i * 2) + 1];
-    }
-    for (uint16_t i = 0; i < 24; i++) {
-        logo_tiles[i][0] = stretch_number(logo_tiles_initial[i][0] >> 4);
-        logo_tiles[i][1] = stretch_number(logo_tiles_initial[i][0] & 0xf);
-        logo_tiles[i][2] = stretch_number(logo_tiles_initial[i][1] >> 4);
-        logo_tiles[i][3] = stretch_number(logo_tiles_initial[i][1] & 0xf);
-    }
-
-    for (uint16_t i = 0; i < 24; i++) {
-        for (uint16_t j = 0; j < 4; j ++) {
-            c->memory[0x8010 + (i << 4) + (j*4)] = logo_tiles[i][j];
-            c->memory[0x8010 + (i << 4) + (j*4)+2] = logo_tiles[i][j];
-        }
-    }
-
-    uint8_t r_tile[] = {0x3c, 0x42, 0xb9, 0xa5, 0xb9, 0xa5, 0x42, 0x3c};
-    for (uint16_t i = 0; i < 8; i++) {
-        c->memory[0x8190 + (i * 2)] = r_tile[i];
+    for (uint16_t i = 0; i <= 0x2000; i++) {
+        video.vram[0][i] = 0;
+        video.vram[1][i] = 0;
     }
 
     // Initialize internal timer
     timer1.t_states = 23440324;
+}
+
+void hdma_transfer(cpu *c) {
+    if (!c->hdma.finished) {
+        uint16_t source = c->hdma.source & 0xfff0;
+        uint16_t destination = (c->hdma.destination & 0x1ff0) | 0x8000;
+        uint8_t value = get_mem(c, (source + c->hdma.status));
+        set_mem(c, (destination + c->hdma.status), value);
+        c->hdma.status++;
+        if (c->hdma.status >= c->hdma.lenght)
+            c->hdma.finished = true;
+    }
 }
 
 bool is_stat_condition() {
@@ -374,6 +358,10 @@ void add_ticks(cpu *c, uint16_t ticks) {
                     c->cart.rtc.time++;
                 }
             }
+        }
+        if (!c->hdma.mode) {
+            for (int j = 0; j < 2; j++)
+                hdma_transfer(c);
         }
     }
 }
@@ -580,9 +568,17 @@ void execute(cpu *c) {
     }
     else {
         add_ticks(c, 4);
-        if ((c->memory[IE] & c->memory[IF]) != 0) {
-            c->pc++;
-            c->is_halted = false;
+        if (!c->gdma_halt) {
+            if ((c->memory[IE] & c->memory[IF]) != 0) {
+                c->pc++;
+                c->is_halted = false;
+            }
+        }
+        else {
+           if (c->hdma.finished) {
+               c->is_halted = false;
+               c->gdma_halt = false;
+           }
         }
     }
 

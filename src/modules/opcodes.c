@@ -595,13 +595,28 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case HDMA1:
+            c->hdma.source = (c->hdma.source & 0xff) | (value << 8);
             break;
         case HDMA2:
+            c->hdma.source = (c->hdma.source & 0xff00) | value;
             break;
 
         case HDMA3:
+            c->hdma.destination = (c->hdma.destination & 0xff) | (value << 8);
             break;
         case HDMA4:
+            c->hdma.destination = (c->hdma.destination & 0xff00) | value;
+            break;
+
+        case HDMA5:
+            c->hdma.finished = false;
+            c->hdma.mode = value >> 7;
+            c->hdma.lenght = ((value & 0x7f) + 1) << 4;
+            c->hdma.status = 0;
+            if (c->hdma.mode == false) {
+                c->is_halted = true;
+                c->gdma_halt = true;
+            }
             break;
 
         default:
@@ -796,7 +811,9 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 0xff;
 
         case HDMA5:
-            return 0xff;
+            if (c->hdma.finished)
+                return 0xff;
+            return 0x00;
 
         case BCPS:
             return (video.bcps_inc << 7) | video.bgp_addr;

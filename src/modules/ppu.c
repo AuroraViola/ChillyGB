@@ -267,12 +267,19 @@ void operate_fifo(cpu *c) {
         }
     }
     else {
-        video.fifo.pixel_count = 0;
-        if (video.in_window)
-            video.window_internal_line++;
-        video.in_window = false;
-        video.mode = 0;
-        video.fifo.tick_pause = 0;
+        if (video.mode != 0) {
+            video.mode = 0;
+            video.fifo.pixel_count = 0;
+            if (video.in_window)
+                video.window_internal_line++;
+            video.in_window = false;
+            video.fifo.tick_pause = 0;
+            if (!c->hdma.finished && c->hdma.mode == 1) {
+                for (int i = 0; i < 16; i++) {
+                    hdma_transfer(c);
+                }
+            }
+        }
     }
 }
 
