@@ -398,10 +398,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             video.obj_size = (value >> 2) & 1;
             video.bg_tilemap = (value >> 3) & 1;
             video.bg_tiles = (value >> 4) & 1;
-            if (video.bg_enable)
-                video.window_enable = (value >> 5) & 1;
-            else
-                video.window_enable = false;
+            video.window_enable = (value >> 5) & 1;
             video.window_tilemap = (value >> 6) & 1;
 
             bool prev_is_on = video.is_on;
@@ -597,6 +594,16 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             c->wram_bank = value & 7;
             break;
 
+        case HDMA1:
+            break;
+        case HDMA2:
+            break;
+
+        case HDMA3:
+            break;
+        case HDMA4:
+            break;
+
         default:
             c->memory[addr] = value;
             break;
@@ -784,6 +791,12 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
 
         case VBK:
             return video.vram_bank | 0xfe;
+
+        case HDMA1: case HDMA2: case HDMA3: case HDMA4:
+            return 0xff;
+
+        case HDMA5:
+            return 0xff;
 
         case BCPS:
             return (video.bcps_inc << 7) | video.bgp_addr;

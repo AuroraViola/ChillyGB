@@ -8,7 +8,7 @@
 typedef struct {
     uint8_t value;
     uint8_t palette;
-    uint8_t priority;
+    bool priority;
 }pixel;
 
 typedef struct {

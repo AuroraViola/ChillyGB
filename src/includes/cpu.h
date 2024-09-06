@@ -140,13 +140,24 @@ enum mem_regs {
     WY = 0xff4a,
     WX = 0xff4b,
 
+    KEY1 = 0xff4d,
+
+    VBK = 0xff4f,
+
+    HDMA1 = 0xff51,
+    HDMA2 = 0xff52,
+    HDMA3 = 0xff53,
+    HDMA4 = 0xff54,
+    HDMA5 = 0xff55,
+
     BCPS = 0xff68,
     BCPD = 0xff69,
     OCPS = 0xff6a,
     OCPD = 0xff6b,
+    OPRI = 0xff6c,
+
     SVBK = 0xff70,
 
-    VBK = 0xff4f,
 
     IE = 0xffff,
 };

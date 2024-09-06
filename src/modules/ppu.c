@@ -59,6 +59,7 @@ void fetch_win_to_fifo(cpu *c) {
     uint16_t tile_attribute = video.vram[1][(video.window_tilemap ? 0x1c00 : 0x1800) | (((uint16_t) bgY & 0x00f8) << 2) | (bgX >> 3)];
     bool flip_X = ((tile_attribute & 0x20) != 0);
     bool flip_Y = ((tile_attribute & 0x40) != 0);
+    bool priority = ((tile_attribute & 0x80) != 0);
     if (flip_Y) {
         bgY = ~(bgY & 0xf);
     }
@@ -77,6 +78,7 @@ void fetch_win_to_fifo(cpu *c) {
             video.fifo.pixels[video.fifo.pixel_count + i].value |= (upperTileData >> i & 1) << 1;
         }
         video.fifo.pixels[video.fifo.pixel_count + i].palette = tile_attribute & 7;
+        video.fifo.pixels[video.fifo.pixel_count + i].priority = priority;
     }
 
     video.fifo.pixel_count += 8;
@@ -130,8 +132,8 @@ void fetch_sprite_to_fifo(cpu *c) {
                 }
             }
             for (int i = 0; i < 8; i++) {
-                if (sprite[i].value != 0 && video.fifo.pixels[i].palette < 8) {
-                    if (!priority || video.fifo.pixels[i].value == 0) {
+                if (sprite[i].value != 0) {
+                    if (!video.bg_enable || (!priority && !video.fifo.pixels[i].priority) || video.fifo.pixels[i].value == 0) {
                         video.fifo.pixels[i].value = sprite[i].value;
                         video.fifo.pixels[i].palette = palette;
                     }
@@ -183,7 +185,7 @@ void fetch_sprite_to_fifo_minus_8(cpu *c) {
                     }
                 }
                 for (int k = 0; k < i; k++) {
-                    if (sprite[8-i+k].value != 0 && video.fifo.pixels[k].palette < 8) {
+                    if (sprite[8-i+k].value != 0) {
                         if (!priority || video.fifo.pixels[k].value == 0) {
                             video.fifo.pixels[k].value = sprite[8-i+k].value;
                             video.fifo.pixels[k].palette = palette;
@@ -198,15 +200,7 @@ void fetch_sprite_to_fifo_minus_8(cpu *c) {
 
 void push_pixel() {
     // Copy pixel to display
-    if (video.bg_enable && video.fifo.pixels[0].palette < 8) {
-        video.line[video.current_pixel] = video.fifo.pixels[0].value + (video.fifo.pixels[0].palette << 2);
-    }
-    else if (video.fifo.pixels[0].palette >= 8) {
-        video.line[video.current_pixel] = video.fifo.pixels[0].value + (video.fifo.pixels[0].palette << 2);
-    }
-    else {
-        video.line[video.current_pixel] = 0;
-    }
+    video.line[video.current_pixel] = video.fifo.pixels[0].value + (video.fifo.pixels[0].palette << 2);
 
     // Shift FIFO
     for (int i = 0; i < video.fifo.pixel_count-1; i++) {
