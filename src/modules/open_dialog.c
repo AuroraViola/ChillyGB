@@ -91,7 +91,17 @@ char *do_open_rom_dialog(void) {
 
     void *filter = gtk_file_filter_new();
     gtk_file_filter_add_pattern(filter, "*.gb");
+    gtk_file_filter_add_pattern(filter, "*.GB");
+    gtk_file_filter_add_pattern(filter, "*.gB");
+    gtk_file_filter_add_pattern(filter, "*.Gb");
     gtk_file_filter_add_pattern(filter, "*.gbc");
+    gtk_file_filter_add_pattern(filter, "*.gbC");
+    gtk_file_filter_add_pattern(filter, "*.gBc");
+    gtk_file_filter_add_pattern(filter, "*.gBC");
+    gtk_file_filter_add_pattern(filter, "*.Gbc");
+    gtk_file_filter_add_pattern(filter, "*.GbC");
+    gtk_file_filter_add_pattern(filter, "*.GBc");
+    gtk_file_filter_add_pattern(filter, "*.GBC");
     gtk_file_filter_set_name(filter, "Game Boy ROMs");
     gtk_file_chooser_add_filter(dialog, filter);
 
