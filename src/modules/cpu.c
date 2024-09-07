@@ -90,6 +90,8 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->is_halted = false;
     c->bootrom.is_enabled = false;
     c->wram_bank = 1;
+    c->double_speed = false;
+    c->armed = false;
 
     c->memory[SB] = 0x00;
     c->memory[SC] = 0x7e;
@@ -226,7 +228,7 @@ bool is_stat_condition() {
 }
 
 void tick_scanline(cpu *c) {
-    timer1.scanline_timer -= 4;
+    timer1.scanline_timer -= (c->double_speed ? 2 : 4);
     bool prev_stat = is_stat_condition();
     if (timer1.scanline_timer < 0) {
         timer1.scanline_timer += 456;
@@ -272,8 +274,12 @@ void tick_scanline(cpu *c) {
                 }
                 break;
             case 3:
-                for (int i = 0; i < 4; i++)
+                operate_fifo(c);
+                operate_fifo(c);
+                if (!c->double_speed) {
                     operate_fifo(c);
+                    operate_fifo(c);
+                }
                 break;
             case 0:
                 if (timer1.scanline_timer == 0) {
@@ -311,18 +317,36 @@ void add_ticks(cpu *c, uint16_t ticks) {
             next_timer = 4;
         }
 
-        if ((timer1.t_states & 0x1000) > (next_timer & 0x1000)) {
-            c->apu_div++;
-            if (c->apu_div % 2 == 0) {
-                c->sound_lenght = true;
+        if (c->double_speed) {
+            if ((timer1.t_states & 0x2000) > (next_timer & 0x2000)) {
+                c->apu_div++;
+                if (c->apu_div % 2 == 0) {
+                    c->sound_lenght = true;
+                }
+                if (c->apu_div % 4 == 0) {
+                    c->freq_sweep = true;
+                    c->freq_sweep_pace++;
+                }
+                if (c->apu_div % 8 == 0) {
+                    c->envelope_sweep = true;
+                    c->envelope_sweep_pace++;
+                }
             }
-            if (c->apu_div % 4 == 0) {
-                c->freq_sweep = true;
-                c->freq_sweep_pace++;
-            }
-            if (c->apu_div % 8 == 0) {
-                c->envelope_sweep = true;
-                c->envelope_sweep_pace++;
+        }
+        else {
+            if ((timer1.t_states & 0x1000) > (next_timer & 0x1000)) {
+                c->apu_div++;
+                if (c->apu_div % 2 == 0) {
+                    c->sound_lenght = true;
+                }
+                if (c->apu_div % 4 == 0) {
+                    c->freq_sweep = true;
+                    c->freq_sweep_pace++;
+                }
+                if (c->apu_div % 8 == 0) {
+                    c->envelope_sweep = true;
+                    c->envelope_sweep_pace++;
+                }
             }
         }
 

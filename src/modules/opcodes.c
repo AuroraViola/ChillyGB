@@ -619,6 +619,10 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
 
+        case KEY1:
+            c->armed = value & 1;
+            break;
+
         default:
             c->memory[addr] = value;
             break;
@@ -803,6 +807,9 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             if (audio.ch3.is_active)
                 return 0xff;
             return c->memory[addr];
+
+        case KEY1:
+            return (c->double_speed << 7) | 0x7e | c->armed;
 
         case VBK:
             return video.vram_bank | 0xfe;
@@ -2176,6 +2183,10 @@ uint8_t halt(cpu *c, parameters *p) {
 }
 
 uint8_t stop(cpu *c, parameters *p) {
-    c->pc += 2;
+    if (c->armed) {
+        timer1.t_states = 0;
+        c->double_speed = (c->double_speed) ? false : true;
+    }
+    c->pc += 1;
     return 4;
 }

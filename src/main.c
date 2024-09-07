@@ -559,7 +559,7 @@ void update_frame() {
             break;
         case GAME:
             timer1.timer_global = 0;
-            while (timer1.timer_global < ((4194304/60) * joypad1.fast_forward)) {
+            while (timer1.timer_global < ((c.double_speed ? 139810 : 69905) * joypad1.fast_forward)) {
                 execute(&c);
                 Update_Audio(&c);
             }
