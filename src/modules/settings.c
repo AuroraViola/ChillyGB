@@ -234,6 +234,7 @@ void load_default_palettes() {
 
 void load_default_settings() {
     set.volume = 100;
+    set.selected_gameboy = 1;
     set.selected_palette = 0;
     set.bootrom_enabled = false;
     set.integer_scaling = false;
@@ -281,6 +282,11 @@ void load_settings() {
         set.volume = volume->valueint;
     else
         set.volume = 100;
+    cJSON *selected_gameboy = cJSON_GetObjectItem(settings, "selected_gameboy");
+    if (cJSON_IsNumber(selected_gameboy))
+        set.selected_gameboy = selected_gameboy->valueint;
+    else
+        set.selected_gameboy = 1;
     cJSON *ch1 = cJSON_GetObjectItem(settings, "ch1");
     if (cJSON_IsBool(ch1))
         set.ch_on[0] = ch1->valueint;
@@ -403,6 +409,7 @@ void save_settings() {
     cJSON_AddBoolToObject(settings, "bootrom", set.bootrom_enabled);
     cJSON_AddBoolToObject(settings, "accurate_rtc", set.accurate_rtc);
     cJSON_AddNumberToObject(settings, "volume", set.volume);
+    cJSON_AddNumberToObject(settings, "selected_gameboy", set.selected_gameboy);
     cJSON_AddBoolToObject(settings, "ch1", set.ch_on[0]);
     cJSON_AddBoolToObject(settings, "ch2", set.ch_on[1]);
     cJSON_AddBoolToObject(settings, "ch3", set.ch_on[2]);

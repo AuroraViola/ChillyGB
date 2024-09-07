@@ -242,12 +242,14 @@ void draw_settings_window() {
         if (nk_button_label_styled(ctx, (settings_view != SET_INPUT) ? &tab_button_style : &tab_button_active_style, "Input"))
             settings_view = SET_INPUT;
 
-        struct nk_vec2 size = {250, 200};
+        struct nk_vec2 size = {280, 200};
         nk_layout_row_dynamic(ctx, 370, 1);
         if (nk_group_begin(ctx, "settings_view", 0)) {
             switch (settings_view) {
                 case SET_EMU:
                     nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_label(ctx, "Emulated Model:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_combobox_string(ctx, "Game Boy (DMG)\0Game Boy Color (CGB)", &set.selected_gameboy, 2, 20, size);
                     nk_checkbox_label(ctx, "Sync RTC to gameboy clock (accurate)", &set.accurate_rtc);
                     nk_checkbox_label(ctx, "Boot Rom", &set.bootrom_enabled);
                     break;
@@ -267,7 +269,7 @@ void draw_settings_window() {
                     break;
                 case SET_VIDEO:
                     nk_layout_row_dynamic(ctx, 30, 1);
-                    nk_label(ctx, "Palette", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_label(ctx, "DMG Palette:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
 
                     nk_layout_row_dynamic(ctx, 30, 2);
                     int comboxes_len = 0;

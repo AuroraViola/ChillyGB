@@ -23,6 +23,7 @@ typedef struct {
     palette palettes[100];
     int palettes_size;
     int selected_palette;
+    int selected_gameboy;
     bool integer_scaling;
     bool frame_blending;
     int selected_effect;

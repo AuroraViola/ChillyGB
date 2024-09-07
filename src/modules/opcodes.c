@@ -2184,6 +2184,7 @@ uint8_t halt(cpu *c, parameters *p) {
 
 uint8_t stop(cpu *c, parameters *p) {
     if (c->armed) {
+        c->armed = false;
         timer1.t_states = 0;
         c->double_speed = (c->double_speed) ? false : true;
     }
