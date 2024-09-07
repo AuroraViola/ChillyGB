@@ -309,15 +309,28 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case 0xd000 ... 0xdfff: // WRAM1
-            c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000] = value;
+            if (c->is_color)
+                c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000] = value;
+            else
+                c->wram[1][addr - 0xd000] = value;
             break;
 
-        case 0xe000 ... 0xfdff: // Echo ram
-            c->memory[addr - 0x2000] = value;
+        case 0xe000 ... 0xefff: // EchoRAM0
+            c->wram[0][addr - 0xe000] = value;
+            break;
+
+        case 0xf000 ... 0xfdff: // EchoRAM1
+            if (c->is_color)
+                c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000] = value;
+            else
+                c->wram[1][addr - 0xf000] = value;
             break;
 
         case 0x8000 ... 0x9fff: // VRAM
-            video.vram[video.vram_bank][addr-0x8000] = value;
+            if (c->is_color)
+                video.vram[video.vram_bank][addr-0x8000] = value;
+            else
+                video.vram[0][addr-0x8000] = value;
             break;
 
         case 0xfe00 ... 0xfe9f:
@@ -422,6 +435,27 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     video.ly_eq_lyc = false;
             }
 
+            break;
+
+        case BGP:
+            video.bgp_dmg[0] = value & 3;
+            video.bgp_dmg[1] = (value >> 2) & 3;
+            video.bgp_dmg[2] = (value >> 4) & 3;
+            video.bgp_dmg[3] = (value >> 6) & 3;
+            break;
+
+        case OBP0:
+            video.obp_dmg[0][0] = value & 3;
+            video.obp_dmg[0][1] = (value >> 2) & 3;
+            video.obp_dmg[0][2] = (value >> 4) & 3;
+            video.obp_dmg[0][3] = (value >> 6) & 3;
+            break;
+
+        case OBP1:
+            video.obp_dmg[1][0] = value & 3;
+            video.obp_dmg[1][1] = (value >> 2) & 3;
+            video.obp_dmg[1][2] = (value >> 4) & 3;
+            video.obp_dmg[1][3] = (value >> 6) & 3;
             break;
 
         case SCX:
@@ -566,61 +600,78 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case VBK:
-            video.vram_bank = value & 1;
+            if (c->is_color)
+                video.vram_bank = value & 1;
             break;
 
         case BCPS:
-            video.bcps_inc = value >> 7;
-            video.bgp_addr = value & 0x3f;
+            if (c->is_color) {
+                video.bcps_inc = value >> 7;
+                video.bgp_addr = value & 0x3f;
+            }
             break;
         case BCPD:
-            video.bgp[video.bgp_addr] = value;
-            if (video.bcps_inc) {
-                video.bgp_addr = (video.bgp_addr + 1) & 0x3f;
+            if (c->is_color) {
+                video.bgp[video.bgp_addr] = value;
+                if (video.bcps_inc) {
+                    video.bgp_addr = (video.bgp_addr + 1) & 0x3f;
+                }
             }
             break;
 
         case OCPS:
-            video.ocps_inc = value >> 7;
-            video.obp_addr = value & 0x3f;
+            if (c->is_color) {
+                video.ocps_inc = value >> 7;
+                video.obp_addr = value & 0x3f;
+            }
             break;
         case OCPD:
-            video.obp[video.obp_addr] = value;
-            if (video.ocps_inc) {
-                video.obp_addr = (video.obp_addr + 1) & 0x3f;
+            if (c->is_color) {
+                video.obp[video.obp_addr] = value;
+                if (video.ocps_inc) {
+                    video.obp_addr = (video.obp_addr + 1) & 0x3f;
+                }
             }
             break;
         case SVBK:
-            c->wram_bank = value & 7;
+            if (c->is_color)
+                c->wram_bank = value & 7;
             break;
 
         case HDMA1:
-            c->hdma.source = (c->hdma.source & 0xff) | (value << 8);
+            if (c->is_color)
+                c->hdma.source = (c->hdma.source & 0xff) | (value << 8);
             break;
         case HDMA2:
-            c->hdma.source = (c->hdma.source & 0xff00) | value;
+            if (c->is_color)
+                c->hdma.source = (c->hdma.source & 0xff00) | value;
             break;
 
         case HDMA3:
-            c->hdma.destination = (c->hdma.destination & 0xff) | (value << 8);
+            if (c->is_color)
+                c->hdma.destination = (c->hdma.destination & 0xff) | (value << 8);
             break;
         case HDMA4:
-            c->hdma.destination = (c->hdma.destination & 0xff00) | value;
+            if (c->is_color)
+                c->hdma.destination = (c->hdma.destination & 0xff00) | value;
             break;
 
         case HDMA5:
-            c->hdma.finished = false;
-            c->hdma.mode = value >> 7;
-            c->hdma.lenght = ((value & 0x7f) + 1) << 4;
-            c->hdma.status = 0;
-            if (c->hdma.mode == false) {
-                c->is_halted = true;
-                c->gdma_halt = true;
+            if (c->is_color) {
+                c->hdma.finished = false;
+                c->hdma.mode = value >> 7;
+                c->hdma.lenght = ((value & 0x7f) + 1) << 4;
+                c->hdma.status = 0;
+                if (c->hdma.mode == false) {
+                    c->is_halted = true;
+                    c->gdma_halt = true;
+                }
             }
             break;
 
         case KEY1:
-            c->armed = value & 1;
+            if (c->is_color)
+                c->armed = value & 1;
             break;
 
         default:
@@ -682,13 +733,17 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->wram[0][addr - 0xc000];
 
         case 0xd000 ... 0xdfff: // WRAM1
-            return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000];
+            if (c->is_color)
+                return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000];
+            return c->wram[1][addr - 0xd000];
 
         case 0xe000 ... 0xfdff:
             return c->memory[addr - 0x2000];
 
         case 0x8000 ... 0x9fff: // VRAM
-            return video.vram[video.vram_bank][addr-0x8000];
+            if (c->is_color)
+                return video.vram[video.vram_bank][addr-0x8000];
+            return video.vram[0][addr-0x8000];
 
         case 0xfe00 ... 0xfe9f:
             return c->memory[addr];
@@ -756,6 +811,15 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case LCDC:
             return video.bg_enable | (video.obj_enable << 1) | (video.obj_size << 2) | (video.bg_tilemap << 3) | (video.bg_tiles << 4) | (video.window_enable << 5) | (video.window_tilemap << 6) | (video.is_on << 7);
 
+        case BGP:
+            return video.bgp_dmg[0] | (video.bgp_dmg[1] << 2) | (video.bgp_dmg[2] << 4) | (video.bgp_dmg[3] << 6);
+
+        case OBP0:
+            return video.obp_dmg[0][0] | (video.obp_dmg[0][1] << 2) | (video.obp_dmg[0][2] << 4) | (video.obp_dmg[0][3] << 6);
+
+        case OBP1:
+            return video.obp_dmg[1][0] | (video.obp_dmg[1][1] << 2) | (video.obp_dmg[1][2] << 4) | (video.obp_dmg[1][3] << 6);
+
         case NR10:
             return c->memory[addr] | 0x80;
         case NR11:
@@ -809,10 +873,14 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->memory[addr];
 
         case KEY1:
-            return (c->double_speed << 7) | 0x7e | c->armed;
+            if (c->is_color)
+                return (c->double_speed << 7) | 0x7e | c->armed;
+            return 0xff;
 
         case VBK:
-            return video.vram_bank | 0xfe;
+            if (c->is_color)
+                return video.vram_bank | 0xfe;
+            return 0xff;
 
         case HDMA1: case HDMA2: case HDMA3: case HDMA4:
             return 0xff;
@@ -823,16 +891,26 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 0x00;
 
         case BCPS:
-            return (video.bcps_inc << 7) | video.bgp_addr;
+            if (c->is_color)
+                return (video.bcps_inc << 7) | video.bgp_addr;
+            return 0xff;
         case BCPD:
-            return video.bgp[video.bgp_addr];
+            if (c->is_color)
+                return video.bgp[video.bgp_addr];
+            return 0xff;
         case OCPS:
-            return (video.ocps_inc << 7) | video.obp_addr;
+            if (c->is_color)
+                return (video.ocps_inc << 7) | video.obp_addr;
+            return 0xff;
         case OCPD:
-            return video.obp[video.obp_addr];
+            if (c->is_color)
+                return video.obp[video.obp_addr];
+            return 0xff;
 
         case SVBK:
-            return c->wram_bank | 0xf8;
+            if (c->is_color)
+                return c->wram_bank | 0xf8;
+            return 0xff;
 
 
         default:

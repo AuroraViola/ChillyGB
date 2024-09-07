@@ -42,6 +42,9 @@ typedef struct {
     uint8_t wx;
     uint8_t wy;
 
+    uint8_t bgp_dmg[4];
+    uint8_t obp_dmg[2][4];
+
     uint8_t bgp[64];
     bool bcps_inc;
     uint8_t bgp_addr;

@@ -75,14 +75,19 @@ void initialize_cpu_memory(cpu *c, settings *s) {
 
 void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     srand(time(NULL));
-    c->r.reg8[A] = 0x11;
-    c->r.reg8[B] = 0x00;
-    c->r.reg8[C] = 0x00;
-    c->r.reg8[D] = 0x00;
-    c->r.reg8[E] = 0x08;
-    c->r.reg8[F] = 0x80;
-    c->r.reg8[H] = 0x00;
-    c->r.reg8[L] = 0x7c;
+    c->is_color = (set.selected_gameboy == 1 && (c->cart.data[0][0x0143] == 0xc0 || c->cart.data[0][0x0143] == 0x80));
+    if (c->is_color) {
+        c->r.reg16[AF] = 0x1180;
+        c->r.reg16[BC] = 0x0000;
+        c->r.reg16[DE] = 0xff56;
+        c->r.reg16[HL] = 0x000d;
+    }
+    else {
+        c->r.reg16[AF] = 0x01c0;
+        c->r.reg16[BC] = 0x0013;
+        c->r.reg16[DE] = 0x00d8;
+        c->r.reg16[HL] = 0x014d;
+    }
     c->pc = 0x100;
     c->sp = 0xfffe;
     c->ime = false;
@@ -145,6 +150,15 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->memory[NR52] = 0xf1;
 
     c->memory[LCDC] = 0x91;
+
+    video.bgp_dmg[0] = 0;
+    video.bgp_dmg[1] = 3;
+    video.bgp_dmg[2] = 3;
+    video.bgp_dmg[3] = 3;
+    for (int i = 0 ; i < 4; i++) {
+        video.obp_dmg[0][i] = 3;
+        video.obp_dmg[1][i] = 3;
+    }
     video.bg_enable = true;
     video.obj_enable = false;
     video.obj_size = false;
@@ -180,7 +194,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->cart.ram_enable = false;
     c->cart.mbc1mode = false;
 
-    c->hdma.finished == true;
+    c->hdma.finished = true;
     c->gdma_halt = false;
 
     // Initialize WRAM

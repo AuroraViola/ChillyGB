@@ -66,6 +66,8 @@ typedef struct {
     bool double_speed;
     bool armed;
 
+    bool is_color;
+
     cartridge cart;
     uint8_t memory[0x10000];
     uint8_t wram[8][0x1000];
