@@ -2,20 +2,20 @@
 
 # ChillyGB
 
-ChillyGB is an experimental Game Boy (DMG) emulator written in C that aims to simplicity and accuracy
+ChillyGB is a Game Boy (DMG) and Game Boy Color (CGB) emulator written in C that aims to simplicity and accuracy
 
-You can try it now [here](https://chillygb.arci.me) (Note that the WASM port can be unstable)
+You can try it now [here](https://chillygb.arci.me) (Note that the audio in WASM port is a little bugged)
 
 ## Screenshots
 
-<a><img src="https://github.com/user-attachments/assets/0b785828-f86e-42ae-841f-d68086bce08f" width="24.25%"/></a>
-<a><img src="https://github.com/user-attachments/assets/97c05b28-3f57-47eb-a9e1-470bca86d64b" width="24.25%"/></a>
+<a><img src="https://github.com/user-attachments/assets/fc0cefd5-0471-4fe1-8094-4e0eb3a62c69" width="24.25%"/></a>
+<a><img src="https://github.com/user-attachments/assets/08582981-7ebc-43d6-8062-c1875530edc5" width="24.25%"/></a>
 <a><img src="https://github.com/user-attachments/assets/396220db-a16d-4cd9-bfab-f00d0c73d651" width="24.25%"/></a>
-<a><img src="https://github.com/user-attachments/assets/965404b6-5013-4c7d-9c30-a23d2c231f7d" width="24.25%"/></a>
-<a><img src="https://github.com/user-attachments/assets/dba6679c-6609-4471-bd09-8c26f88ce187" width="24.25%"/></a>
-<a><img src="https://github.com/user-attachments/assets/552f2f20-bf1d-4359-af1f-8f3f7b8a9f73" width="24.25%"/></a>
-<a><img src="https://github.com/user-attachments/assets/e81491da-a1f8-4a3d-bff8-0878b83720f3" width="24.25%"/></a>
-<a><img src="https://github.com/user-attachments/assets/a69b77fc-d871-4eef-9e77-e508e4f7d7e9" width="24.25%"/></a>
+<a><img src="https://github.com/user-attachments/assets/a9933d2c-0f7a-43c9-90c3-0dad71591d75" width="24.25%"/></a>
+<a><img src="https://github.com/user-attachments/assets/52486c65-411b-47d4-9e90-80a797080feb" width="24.25%"/></a>
+<a><img src="https://github.com/user-attachments/assets/1d16d7a2-b4e2-4c41-ba9e-7f8b267d3a89" width="24.25%"/></a>
+<a><img src="https://github.com/user-attachments/assets/597f0adb-b9a2-4703-9ca7-d61644ab40d3" width="24.25%"/></a>
+<a><img src="https://github.com/user-attachments/assets/5c182dfd-0f7d-4cfb-b299-af0314bbc167" width="24.25%"/></a>
 
 ## Building
 
@@ -60,11 +60,11 @@ Here is a list of planned features
   * Correct serial emulation
   * STAT IRQ blocking
   * Halt bug
-  * Stop Instruction
+  * Accurate Stop Instruction
   * DMA Conflicts
   * Online multiplayer support via emulated link cable
 * **Graphical and particular features**
-  * Game Boy Color support
+  * Improve Game Boy Color support
   * Frame blending
   * Rewind
   * Rom folder
