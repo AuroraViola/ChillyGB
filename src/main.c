@@ -616,9 +616,18 @@ void update_frame() {
                     }
                 }
                 else {
-                    for (int i = 0; i < 144; i++) {
-                        for (int j = 0; j < 160; j++) {
-                            pixels[i][j] = set.palettes[set.selected_palette].colors[0];
+                    if (c.is_color) {
+                        for (int i = 0; i < 144; i++) {
+                            for (int j = 0; j < 160; j++) {
+                                pixels[i][j] = (Color) {255, 255, 255, 255};
+                            }
+                        }
+                    }
+                    else {
+                        for (int i = 0; i < 144; i++) {
+                            for (int j = 0; j < 160; j++) {
+                                pixels[i][j] = set.palettes[set.selected_palette].colors[0];
+                            }
                         }
                     }
                 }
