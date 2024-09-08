@@ -25,8 +25,8 @@ typedef struct {
     uint8_t mode;
     uint8_t scan_line;
     uint8_t vram[2][0x2000];
-    uint8_t display[144][160];
-    uint8_t line[160];
+    uint16_t display[144][160];
+    uint16_t line[160];
     pixel_fifo fifo;
     uint8_t current_pixel;
 

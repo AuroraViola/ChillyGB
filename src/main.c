@@ -589,21 +589,11 @@ void update_frame() {
                     if (c.is_color) {
                         for (int i = 0; i < 144; i++) {
                             for (int j = 0; j < 160; j++) {
-                                if (video.display[i][j] < 32) {
-                                    uint8_t px_addr = video.display[i][j] << 1;
-                                    uint16_t rgb555_color = (video.bgp[px_addr | 1] << 8) | (video.bgp[px_addr]);
-                                    pixels[i][j].r = (rgb555_color & 0x001f) << 3;
-                                    pixels[i][j].g = (rgb555_color & 0x03e0) >> 2;
-                                    pixels[i][j].b = (rgb555_color & 0x7c00) >> 7;
-                                    pixels[i][j].a = 255;
-                                } else {
-                                    uint8_t px_addr = (video.display[i][j] << 1) & 0x3f;
-                                    uint16_t rgb555_color = (video.obp[px_addr | 1] << 8) | (video.obp[px_addr]);
-                                    pixels[i][j].r = (rgb555_color & 0x001f) << 3;
-                                    pixels[i][j].g = (rgb555_color & 0x03e0) >> 2;
-                                    pixels[i][j].b = (rgb555_color & 0x7c00) >> 7;
-                                    pixels[i][j].a = 255;
-                                }
+                                uint16_t rgb555_color = video.display[i][j];
+                                pixels[i][j].r = (rgb555_color & 0x001f) << 3;
+                                pixels[i][j].g = (rgb555_color & 0x03e0) >> 2;
+                                pixels[i][j].b = (rgb555_color & 0x7c00) >> 7;
+                                pixels[i][j].a = 255;
                             }
                         }
                     }
@@ -798,24 +788,52 @@ void update_frame() {
                 ResumeAudioStream(audio.ch4.stream);
             }
 
-            if (video.is_on) {
-                for (int i = 0; i < 144; i++) {
-                    for (int j = 0; j < 160; j++) {
-                        pixels[i][j] = set.palettes[set.selected_palette].colors[video.display[i][j]];
-                        if (i == video.scan_line) {
-                            pixels[i][j].a = 127;
-                            if (j == video.current_pixel)
-                                pixels[i][j].a += 16;
+            if (c.is_color) {
+                if (video.is_on) {
+                    for (int i = 0; i < 144; i++) {
+                        for (int j = 0; j < 160; j++) {
+                            uint16_t rgb555_color = video.display[i][j];
+                            pixels[i][j].r = (rgb555_color & 0x001f) << 3;
+                            pixels[i][j].g = (rgb555_color & 0x03e0) >> 2;
+                            pixels[i][j].b = (rgb555_color & 0x7c00) >> 7;
+                            pixels[i][j].a = 255;
+                            if (i == video.scan_line) {
+                                pixels[i][j].a = 127;
+                                if (j == video.current_pixel)
+                                    pixels[i][j].a += 16;
+                            }
+                            if (i == c.memory[LYC])
+                                pixels[i][j].r += 20;
                         }
-                        if (i == c.memory[LYC])
-                            pixels[i][j].r += 20;
+                    }
+                } else {
+                    for (int i = 0; i < 144; i++) {
+                        for (int j = 0; j < 160; j++) {
+                            pixels[i][j] = (Color){255, 255, 255, 255};
+                        }
                     }
                 }
             }
             else {
-                for (int i = 0; i < 144; i++) {
-                    for (int j = 0; j < 160; j++) {
-                        pixels[i][j] = set.palettes[set.selected_palette].colors[0];
+                if (video.is_on) {
+                    for (int i = 0; i < 144; i++) {
+                        for (int j = 0; j < 160; j++) {
+                            pixels[i][j] = set.palettes[set.selected_palette].colors[video.display[i][j]];
+                            if (i == video.scan_line) {
+                                pixels[i][j].a = 127;
+                                if (j == video.current_pixel)
+                                    pixels[i][j].a += 16;
+                            }
+                            if (i == c.memory[LYC])
+                                pixels[i][j].r += 20;
+
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < 144; i++) {
+                        for (int j = 0; j < 160; j++) {
+                            pixels[i][j] = set.palettes[set.selected_palette].colors[0];
+                        }
                     }
                 }
             }

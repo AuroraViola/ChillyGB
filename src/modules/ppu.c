@@ -221,7 +221,14 @@ void fetch_sprite_to_fifo_minus_8(cpu *c) {
 void push_pixel(cpu *c) {
     // Copy pixel to display
     if (c->is_color) {
-        video.line[video.current_pixel] = video.fifo.pixels[0].value + (video.fifo.pixels[0].palette << 2);
+        uint8_t px_addr = (video.fifo.pixels[0].value + (video.fifo.pixels[0].palette << 2)) << 1;
+        if (px_addr < 64) {
+            video.line[video.current_pixel] = (video.bgp[px_addr | 1] << 8) | (video.bgp[px_addr]);
+        }
+        else {
+            px_addr &= 0x3f;
+            video.line[video.current_pixel] = (video.obp[px_addr | 1] << 8) | (video.obp[px_addr]);
+        }
     } else if (video.bg_enable && video.fifo.pixels[0].palette == 0) {
         video.line[video.current_pixel] = video.bgp_dmg[video.fifo.pixels[0].value];
     } else if (video.fifo.pixels[0].palette != 0) {
