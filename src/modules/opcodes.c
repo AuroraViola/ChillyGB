@@ -738,8 +738,14 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000];
             return c->wram[1][addr - 0xd000];
 
-        case 0xe000 ... 0xfdff:
-            return c->memory[addr - 0x2000];
+        case 0xe000 ... 0xefff: // EchoRAM0
+            return c->wram[0][addr - 0xe000];
+
+        case 0xf000 ... 0xfdff: // EchoRAM1
+            if (c->is_color)
+                return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xf000];
+            return c->wram[1][addr - 0xf000];
+
 
         case 0x8000 ... 0x9fff: // VRAM
             if (c->is_color)
@@ -913,6 +919,18 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 return c->wram_bank | 0xf8;
             return 0xff;
 
+        case 0xff03:
+        case 0xff08 ... 0xff0e:
+        case 0xff15:
+        case 0xff1f:
+        case 0xff27 ... 0xff2f:
+        case 0xff4c:
+        case 0xff4e:
+        case 0xff50:
+        case 0xff56:
+        case 0xff57 ... 0xff67:
+        case 0xff71 ... 0xff7f:
+            return 0xff;
 
         default:
             return c->memory[addr];
