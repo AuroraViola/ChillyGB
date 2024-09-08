@@ -8,27 +8,6 @@
 #define CHILLYGB_SAVESTATES_H
 
 typedef struct {
-    uint8_t scanline;
-    uint8_t mode;
-    uint8_t bgp[4];
-    uint8_t obp[2][4];
-
-    bool is_on;
-    bool bg_enable;
-    bool window_enable;
-    bool obj_enable;
-
-    bool bg_tiles;
-    bool bg_tilemap;
-    bool window_tilemap;
-    bool obj_size;
-
-    bool lyc_select;
-    uint8_t mode_select;
-    bool ly_eq_lyc;
-}savestate_ppu;
-
-typedef struct {
     uint16_t bank_select;
     uint8_t bank_select_ram;
 
@@ -47,13 +26,22 @@ typedef struct {
     bool ime;
     uint8_t ime_to_be_setted;
     bool is_halted;
+    bool gdma_halt;
     bool first_halt;
     uint8_t memory[0x10000];
     uint8_t apu_div;
 
+    uint8_t wram[8][0x1000];
+    uint8_t wram_bank;
+
+    bool double_speed;
+    bool armed;
+
+    dma hdma;
+
     savestate_cart cart;
 
-    savestate_ppu ppu;
+    ppu savestate_ppu;
 
     timer timer_save;
 }savestate;
