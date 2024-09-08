@@ -23,31 +23,9 @@ void get_save_state_name(char rom_name[256], char save_state_name[256]) {
 }
 
 void save_state(cpu *c, char rom_name[256]) {
-    savestate savestate1;
-    savestate1.version = 5;
-    savestate1.is_halted = c->is_halted;
-    savestate1.sp = c->sp;
-    savestate1.pc = c->pc;
-    savestate1.ime = c->ime;
-    savestate1.ime_to_be_setted = c->ime_to_be_setted;
-    savestate1.is_halted = c->is_halted;
-    savestate1.first_halt = c->first_halt;
-    savestate1.wram_bank = c->wram_bank;
-    savestate1.double_speed = c->double_speed;
-    savestate1.gdma_halt = c->gdma_halt;
-    savestate1.armed = c->armed;
-    savestate1.apu_div = c->apu_div;
-    memcpy(&savestate1.r, &c->r, sizeof(registers));
-    memcpy(&savestate1.memory, &c->memory, (0x10000*sizeof(uint8_t)));
+    /*
     memcpy(&savestate1.timer_save, &timer1, sizeof(timer));
-    memcpy(&savestate1.wram, &c->wram, (0x8000*sizeof(uint8_t)));
-    memcpy(&savestate1.hdma, &c->hdma, sizeof(dma));
 
-    savestate1.cart.bank_select = c->cart.bank_select;
-    savestate1.cart.bank_select_ram = c->cart.bank_select_ram;
-    savestate1.cart.ram_enable = c->cart.ram_enable;
-    savestate1.cart.mbc1mode = c->cart.mbc1mode;
-    memcpy(&savestate1.cart.rtc, &c->cart.rtc, sizeof(rtc_clock));
     memcpy(&savestate1.cart.ram, &c->cart.ram, (sizeof(uint8_t) * 16 * 0x2000));
 
     memcpy(&savestate1.savestate_ppu, &video, sizeof(ppu));
@@ -56,6 +34,37 @@ void save_state(cpu *c, char rom_name[256]) {
     get_save_state_name(rom_name, save_state_name);
     FILE *save = fopen(save_state_name, "wb");
     fwrite(&savestate1, sizeof(savestate), 1, save);
+    fclose(save);
+     */
+    char save_state_name[256];
+    get_save_state_name(rom_name, save_state_name);
+    FILE *save = fopen(save_state_name, "wb");
+
+    fwrite(&c->r, sizeof(registers), 1, save);
+    fwrite(&c->pc, sizeof(uint16_t), 1, save);
+    fwrite(&c->sp, sizeof(uint16_t), 1, save);
+    fwrite(&c->ime, sizeof(bool), 1, save);
+    fwrite(&c->ime_to_be_setted, sizeof(uint8_t), 1, save);
+    fwrite(&c->is_halted, sizeof(bool), 1, save);
+    fwrite(&c->is_color, sizeof(bool), 1, save);
+    fwrite(&c->gdma_halt, sizeof(bool), 1, save);
+    fwrite(&c->double_speed, sizeof(bool), 1, save);
+    fwrite(&c->hdma, sizeof(dma), 1, save);
+    fwrite(&c->armed, sizeof(bool), 1, save);
+    fwrite(&c->apu_div, sizeof(uint8_t), 1, save);
+    fwrite(&c->wram, (c->is_color ? 0x8000 : 0x2000)*sizeof(uint8_t), 1, save);
+    fwrite(&c->wram_bank, sizeof(uint8_t), 1, save);
+    fwrite(&c->memory[0xfe00], 0x200*sizeof(uint8_t), 1, save);
+
+    fwrite(&c->cart.rtc, sizeof(rtc_clock), 1, save);
+    fwrite(&c->cart.bank_select, sizeof(uint16_t), 1, save);
+    fwrite(&c->cart.mbc1mode, sizeof(bool), 1, save);
+    fwrite(&c->cart.ram_enable, sizeof(bool), 1, save);
+    fwrite(&c->cart.bank_select_ram, sizeof(uint8_t), 1, save);
+    fwrite(&c->cart.ram, sizeof(uint8_t)*0x2000*c->cart.banks_ram, 1, save);
+    fwrite(&timer1, sizeof(timer), 1, save);
+    fwrite(&video, sizeof(ppu), 1, save);
+
     fclose(save);
 }
 
@@ -66,6 +75,31 @@ void load_state(cpu *c, char rom_name[256]) {
     get_save_state_name(rom_name, save_state_name);
     FILE *save = fopen(save_state_name, "rb");
     if (save != NULL) {
+        fread(&c->r, sizeof(registers), 1, save);
+        fread(&c->pc, sizeof(uint16_t), 1, save);
+        fread(&c->sp, sizeof(uint16_t), 1, save);
+        fread(&c->ime, sizeof(bool), 1, save);
+        fread(&c->ime_to_be_setted, sizeof(uint8_t), 1, save);
+        fread(&c->is_halted, sizeof(bool), 1, save);
+        fread(&c->is_color, sizeof(bool), 1, save);
+        fread(&c->gdma_halt, sizeof(bool), 1, save);
+        fread(&c->double_speed, sizeof(bool), 1, save);
+        fread(&c->hdma, sizeof(dma), 1, save);
+        fread(&c->armed, sizeof(bool), 1, save);
+        fread(&c->apu_div, sizeof(uint8_t), 1, save);
+        fread(&c->wram, (c->is_color ? 0x8000 : 0x2000)*sizeof(uint8_t), 1, save);
+        fread(&c->wram_bank, sizeof(uint8_t), 1, save);
+        fread(&c->memory[0xfe00], 0x200*sizeof(uint8_t), 1, save);
+
+        fread(&c->cart.rtc, sizeof(rtc_clock), 1, save);
+        fread(&c->cart.bank_select, sizeof(uint16_t), 1, save);
+        fread(&c->cart.mbc1mode, sizeof(bool), 1, save);
+        fread(&c->cart.ram_enable, sizeof(bool), 1, save);
+        fread(&c->cart.bank_select_ram, sizeof(uint8_t), 1, save);
+        fread(&c->cart.ram, sizeof(uint8_t)*0x2000*c->cart.banks_ram, 1, save);
+        fread(&timer1, sizeof(timer), 1, save);
+        fread(&video, sizeof(ppu), 1, save);
+        /*
         fread(&savestate1, sizeof(savestate), 1, save);
         fclose(save);
 
@@ -101,7 +135,7 @@ void load_state(cpu *c, char rom_name[256]) {
 
             memcpy(&video, &savestate1.savestate_ppu, sizeof(ppu));
 
-            c->bootrom.is_enabled = false;
         }
+        */
     }
 }
