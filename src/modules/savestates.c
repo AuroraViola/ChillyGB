@@ -51,7 +51,13 @@ void save_state(cpu *c, char rom_name[256]) {
     fwrite(&c->cart.mbc1mode, sizeof(bool), 1, save);
     fwrite(&c->cart.ram_enable, sizeof(bool), 1, save);
     fwrite(&c->cart.bank_select_ram, sizeof(uint8_t), 1, save);
-    fwrite(&c->cart.ram, sizeof(uint8_t)*0x2000*c->cart.banks_ram, 1, save);
+
+    if (c->cart.type == 5 || c->cart.type == 6) {
+        fwrite(&c->cart.ram, sizeof(uint8_t) * 0x200, 1, save);
+    }
+    else {
+        fwrite(&c->cart.ram, sizeof(uint8_t)*0x2000*c->cart.banks_ram, 1, save);
+    }
     fwrite(&timer1, sizeof(timer), 1, save);
     fwrite(&video, sizeof(ppu), 1, save);
 
@@ -87,7 +93,12 @@ void load_state(cpu *c, char rom_name[256]) {
             fread(&c->cart.mbc1mode, sizeof(bool), 1, save);
             fread(&c->cart.ram_enable, sizeof(bool), 1, save);
             fread(&c->cart.bank_select_ram, sizeof(uint8_t), 1, save);
-            fread(&c->cart.ram, sizeof(uint8_t)*0x2000*c->cart.banks_ram, 1, save);
+            if (c->cart.type == 5 || c->cart.type == 6) {
+                fread(&c->cart.ram, sizeof(uint8_t) * 0x200, 1, save);
+            }
+            else {
+                fread(&c->cart.ram, sizeof(uint8_t) * 0x2000 * c->cart.banks_ram, 1, save);
+            }
             fread(&timer1, sizeof(timer), 1, save);
             fread(&video, sizeof(ppu), 1, save);
         }
