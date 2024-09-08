@@ -875,6 +875,10 @@ int main(int argc, char **argv) {
 
     if (optind < argc) {
         load_settings();
+        if (n_ticks > 0) {
+            set.selected_gameboy = 0;
+            set.bootrom_enabled = false;
+        }
         load_cartridge(argv[optind]);
     }
 
