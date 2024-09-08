@@ -134,8 +134,7 @@ void fetch_sprite_to_fifo(cpu *c) {
             for (int i = 0; i < 8; i++) {
                 if (c->is_color) {
                     if (sprite[i].value != 0) {
-                        if (!video.bg_enable || (!priority && !video.fifo.pixels[i].priority) ||
-                            video.fifo.pixels[i].value == 0) {
+                        if (!video.bg_enable || (!priority && !video.fifo.pixels[i].priority) || video.fifo.pixels[i].value == 0) {
                             video.fifo.pixels[i].value = sprite[i].value;
                             video.fifo.pixels[i].palette = palette;
                         }
@@ -198,7 +197,7 @@ void fetch_sprite_to_fifo_minus_8(cpu *c) {
                 for (int k = 0; k < i; k++) {
                     if (c->is_color) {
                         if (sprite[8 - i + k].value != 0) {
-                            if (!priority || video.fifo.pixels[k].value == 0) {
+                            if (!video.bg_enable || (!priority && !video.fifo.pixels[k].priority) || video.fifo.pixels[k].value == 0) {
                                 video.fifo.pixels[k].value = sprite[8 - i + k].value;
                                 video.fifo.pixels[k].palette = palette;
                             }
