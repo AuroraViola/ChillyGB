@@ -271,10 +271,13 @@ char *do_open_rom_dialog(void) {
 }
 
 void open_dir(char* dir) {
-    strcat(file_manager.cwd, "/");
+    if (file_manager.cwd[strlen(file_manager.cwd) -1] != '/' )
+      strcat(file_manager.cwd, "/");
     strcat(file_manager.cwd, dir);
     #ifndef PLATFORM_NX // TODO: Figure out why this broken on libnx
-    realpath(file_manager.cwd, file_manager.cwd);
+    char buff[256];
+    realpath(file_manager.cwd, buff);
+    strcpy(file_manager.cwd, buff);
     #endif
     refresh_manager();
 }

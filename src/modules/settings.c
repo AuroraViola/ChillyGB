@@ -1,7 +1,7 @@
 #include "../includes/settings.h"
 #include "../includes/apu.h"
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../../cJSON/cJSON.h"
