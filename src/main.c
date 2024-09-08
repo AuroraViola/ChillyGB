@@ -190,7 +190,7 @@ void DrawNavBar() {
                     system("xdg-open https://github.com/AuroraViola/ChillyGB");
                 #elif defined(PLATFORM_WEB)
                 EM_ASM(
-                    window.open("https://github.com/AuroraViola/ChillyGB").focus();
+                    window.open("https://github.com/AuroraViola/ChillyGB")?.focus();
                 );
                 #else
                     printf("Failed to open GitHub link: Unsupported OS\n");
@@ -836,6 +836,10 @@ void update_frame() {
     }
 }
 
+bool in_game() {
+    return emulator_mode == GAME;
+}
+
 int main(int argc, char **argv) {
     int n_ticks = 0;
     char *test_image_path;
@@ -910,7 +914,9 @@ int main(int argc, char **argv) {
         return 0;
     }
     // Initialize Raylib and Nuklear
+    #ifndef PLATFORM_WEB
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    #endif
     InitWindow(160*4, 144*4, "ChillyGB");
     SetWindowIcon(LoadImage("res/icons/ChillyGB-128.png"));
     SetExitKey(KEY_NULL);

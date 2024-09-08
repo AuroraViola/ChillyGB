@@ -1,135 +1,620 @@
 <!doctype html>
 <html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <link rel="icon" type="image/x-icon" href="icon.svg">
-    <title>ChillyGB</title>
-    <style>
-      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
-      textarea.emscripten { font-family: monospace; width: 80%; }
-      div.emscripten { text-align: center; }
-      div.emscripten_border { border: 1px solid black; }
-      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-      canvas.emscripten { border: 0px none; background-color: black; }
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="icon" type="image/x-icon" href="icon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no">
+  <title>ChillyGB</title>
+  <style>
+    html {
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      -moz-user-select: -moz-none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
 
-      body {
-        margin: 0;
-      }
-      .spinner {
-        height: 50px;
-        width: 50px;
-        margin: 0px auto;
-        -webkit-animation: rotation .8s linear infinite;
-        -moz-animation: rotation .8s linear infinite;
-        -o-animation: rotation .8s linear infinite;
-        animation: rotation 0.8s linear infinite;
-        border-left: 10px solid rgb(0,150,240);
-        border-right: 10px solid rgb(0,150,240);
-        border-bottom: 10px solid rgb(0,150,240);
-        border-top: 10px solid rgb(100,0,200);
-        border-radius: 100%;
-        background-color: rgb(200,100,250);
-      }
-      @-webkit-keyframes rotation {
-        from {-webkit-transform: rotate(0deg);}
-        to {-webkit-transform: rotate(360deg);}
-      }
-      @-moz-keyframes rotation {
-        from {-moz-transform: rotate(0deg);}
-        to {-moz-transform: rotate(360deg);}
-      }
-      @-o-keyframes rotation {
-        from {-o-transform: rotate(0deg);}
-        to {-o-transform: rotate(360deg);}
-      }
-      @keyframes rotation {
-        from {transform: rotate(0deg);}
-        to {transform: rotate(360deg);}
-      }
+    :root {
+      --gb-zoom: 1;
+      --controls-zoom: 1;
+    }
 
-    </style>
-  </head>
-  <body>
-    <div class="emscripten" id="status">Downloading...</div>
-    <div class="emscripten">
-      <progress value="0" max="100" id="progress" hidden=1></progress>  
+    body {
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
+      background-color: #202020;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      display: flex;
+      overflow: hidden;
+      -webkit-overflow-scrolling: touch;
+      touch-action:none;
+    }
+
+    .gameboy {
+      margin: auto;
+      background-color: #d9d9d9;
+      width: calc(var(--gb-zoom)*289px);
+      height: calc(var(--gb-zoom)*483px);
+      border-radius: calc(var(--gb-zoom)*18px);
+      border-bottom-right-radius: calc(var(--gb-zoom)*85px);
+      box-shadow: 0px calc(var(--gb-zoom)*16px) #b3b3b3;
+      border: calc(var(--gb-zoom)*2px) solid #9e9e9e61;
+    }
+    .gameboy.compact {
+      border: none;
+      height: calc(var(--gb-zoom)*500px);
+    }
+
+    .header {
+      height: calc(var(--gb-zoom)*17px);
+      width: 100%;
+      border-bottom: 3px solid #c7c7c7;
+      display: flex;
+    }
+
+    .header.compact {
+      display: none;
+    }
+
+    .angle-left {
+      width: calc(var(--gb-zoom)*17px);
+      border-right: calc(var(--gb-zoom)*3px) solid #c7c7c7;
+    }
+
+    .angle-right {
+      width: calc(var(--gb-zoom)*17px);
+      border-left: 3px solid #c7c7c7;
+    }
+
+    .screen:not(.compact) {
+      width: calc(var(--gb-zoom)*260px);
+      height: calc(var(--gb-zoom)*203px);
+      margin: calc(var(--gb-zoom)*23px) auto;
+      margin-bottom: 0;
+      background-color: #767a8a;
+      border-radius: calc(var(--gb-zoom)*18px);
+      border-bottom-right-radius: calc(var(--gb-zoom)*40px);
+      box-shadow: inset 0px 0px calc(var(--gb-zoom)*8px) #555, 0px 0px calc(var(--gb-zoom)*5px) #555;
+      display: flex;
+    }
+
+    #canvas {
+      width: calc(var(--gb-zoom)*160px);
+      height: calc(var(--gb-zoom)*144px);
+      background-color: #c8edba;
+      margin: auto;
+      border-radius: calc(var(--gb-zoom)*7px);
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      outline: none;
+      -webkit-tap-highlight-color: rgba(255, 255, 255, 0); /* mobile webkit */
+    }
+
+    #canvas.compact {
+      width: 100%;
+      height: auto;
+      border-radius: 0;
+    }
+
+    .power-led {
+      margin: calc(var(--gb-zoom)*64px) calc(var(--gb-zoom)*12px);
+      position: absolute;
+      width: calc(var(--gb-zoom)*12px);
+      height: calc(var(--gb-zoom)*12px);
+      border-radius: 50%;
+    }
+
+    .power-led.compact {
+      display: none;
+    }
+
+    .power-led.on {
+      background-color: #bb0000;
+      box-shadow: 0px 0px calc(var(--gb-zoom)*5px) #ff0000;
+    }
+
+    .power-led.off {
+      background-color: #853939;
+      box-shadow: inset 0px 0px calc(var(--gb-zoom)*5px) #513b3b;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      margin-top: calc(var(--gb-zoom)*13px);
+    }
+
+    .dpad {
+      background-color: #d2d2d2;
+      border-radius: 50%;
+      width: calc(var(--gb-zoom)*80px*var(--controls-zoom));
+      height: calc(var(--gb-zoom)*80px*var(--controls-zoom));
+      box-shadow: inset 0px calc(var(--gb-zoom)*4px*var(--controls-zoom)) #b3b3b3;
+      margin-left: calc(var(--gb-zoom)*20px);
+    }
+
+    .buttons {
+      display: flex;
+      background-color: #d2d2d2;
+      border-radius: calc(var(--gb-zoom)*30px);
+      width: calc(var(--gb-zoom)*102px*var(--controls-zoom));
+      height: calc(var(--gb-zoom)*46px*var(--controls-zoom));
+      box-shadow: inset 0px calc(var(--gb-zoom)*4px*var(--controls-zoom)) #b3b3b3;
+      margin-right: calc(var(--gb-zoom)*15px);
+      rotate: -26deg;
+      margin-top: calc(var(--gb-zoom)*11px*var(--controls-zoom));
+    }
+
+    .round-button {
+      margin: auto;
+      background-color: #853939;
+      border-radius: 50%;
+      width: calc(var(--gb-zoom)*36px*var(--controls-zoom));
+      height: calc(var(--gb-zoom)*36px*var(--controls-zoom));
+      margin-left: calc(var(--gb-zoom)*10px*var(--controls-zoom));
+      border: none;
+      box-shadow: inset 0px calc(var(--gb-zoom)*-4px*var(--controls-zoom)) #713030;
+    }
+
+    .wide-buttons {
+      display: flex;
+      margin-top: calc(var(--gb-zoom)*29px*var(--controls-zoom));
+    }
+
+    .wide-button {
+      display: flex;
+      margin: auto;
+      background-color: #d2d2d2;
+      border-radius: calc(var(--gb-zoom)*30px*var(--controls-zoom));
+      width: calc(var(--gb-zoom)*40px*var(--controls-zoom));
+      height: calc(var(--gb-zoom)*20px*var(--controls-zoom));
+      box-shadow: inset 0px calc(var(--gb-zoom)*2px*var(--controls-zoom)) #b3b3b3;
+      rotate: -26deg;
+    }
+
+    .wide-button .inner-button {
+      margin: auto;
+      background-color: #767a8a;
+      border-radius: calc(var(--gb-zoom)*30px*var(--controls-zoom));
+      width: 85%;
+      height: 50%;
+      border: none;
+      box-shadow: inset 0px calc(var(--gb-zoom)*-4px*var(--controls-zoom)) #646875;
+    }
+
+    .round-button.active,
+    .inner-button.active {
+      box-shadow: none;
+    }
+
+    .grill {
+      display: flex;
+      flex-direction: column;
+      rotate: 55deg;
+      margin-left: calc(var(--gb-zoom)*200px);
+      margin-top: calc(var(--gb-zoom)*-14px);
+    }
+
+    .grill.compact {
+      display: none;
+    }
+
+    .hole {
+      background-color: #d2d2d2;
+      border-radius: calc(var(--gb-zoom)*30px);
+      width: calc(var(--gb-zoom)*50px);
+      height: calc(var(--gb-zoom)*9px);
+      margin-bottom: calc(var(--gb-zoom)*5px);
+      box-shadow: inset calc(var(--gb-zoom)*2px) calc(var(--gb-zoom)*1px) #b3b3b3;
+    }
+
+    .dpad-button {
+      background-color: #3d3d3d;
+      border-radius: calc(var(--gb-zoom)*5px*var(--controls-zoom));
+      width: calc(var(--gb-zoom)*20px*var(--controls-zoom));
+      height: calc(var(--gb-zoom)*20px*var(--controls-zoom));
+    }
+
+    #up-button {
+      margin-left: calc(var(--gb-zoom)*30px*var(--controls-zoom));
+      margin-top: calc(var(--gb-zoom)*10px*var(--controls-zoom));
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    #up-button.lifted {
+      box-shadow: inset calc(var(--gb-zoom)*2px*var(--controls-zoom)) calc(var(--gb-zoom)*2px*var(--controls-zoom)) #2d2d2d;
+    }
+
+    #down-button {
+      margin-left: calc(var(--gb-zoom)*30px*var(--controls-zoom));
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+
+    #down-button.lifted {
+      box-shadow: inset calc(var(--gb-zoom)*2px*var(--controls-zoom)) calc(var(--gb-zoom)*-2px*var(--controls-zoom)) #2d2d2d;
+    }
+
+    #left-button {
+      width: calc(var(--gb-zoom)*20px*var(--controls-zoom));
+      border-bottom-right-radius: 0;
+      border-top-right-radius: 0;
+    }
+
+    #left-button.lifted {
+      box-shadow: inset calc(var(--gb-zoom)*2px*var(--controls-zoom)) calc(var(--gb-zoom)*-2px*var(--controls-zoom)) #2d2d2d;
+    }
+
+    #right-button {
+      width: calc(var(--gb-zoom)*20px*var(--controls-zoom));
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
+    }
+
+    #right-button.lifted {
+      box-shadow: inset calc(var(--gb-zoom)*-2px*var(--controls-zoom)) calc(var(--gb-zoom)*-2px*var(--controls-zoom)) #2d2d2d;
+    }
+
+    .text {
+      margin-left:calc(var(--gb-zoom)*17px);
+      margin-top:calc(var(--gb-zoom)*5px);
+      color:#38429e;
+      font-family: sans;
+      line-height: calc(var(--gb-zoom)*16px);
+    }
+
+    .emscripten {
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="emscripten" id="status">Downloading...</div>
+  <div class="gameboy">
+    <div class="header">
+      <div class="angle-left"></div>
+      <div style="flex-grow: 1;"></div>
+      <div class="angle-right"></div>
     </div>
-    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
-    <input style="display: none" type="file" id="open_romfile">
-    <script type='text/javascript'>
-      document.addEventListener("visibilitychange", () => {
-        if (document.hidden) {
-          ccall('pause_game', 'v');
-        }
-      });
+    <div class="screen">
+      <div class="power-led off"></div>
+      <canvas width="640" height="576" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+    </div>
+    <div class="text">
+      <span style="font-size:calc(var(--gb-zoom)*11px)">AuroraViola</span>
+      <span style="font-size:calc(var(--gb-zoom)*16px);font-weight: bold;font-style: italic;">ChillyGB</span>
+    </div>
+    <div class="controls">
+      <div class="dpad">
+        <div class="dpad-button lifted" id="up-button"></div>
+        <div style="display:flex;margin-left:calc(var(--gb-zoom)*10px*var(--controls-zoom));">
+          <div class="dpad-button lifted" id="left-button"></div>
+          <div class="dpad-button" style="border-radius: 0;"></div>
+          <div class="dpad-button lifted" id="right-button"></div>
+        </div>
+        <div class="dpad-button lifted" id="down-button"></div>
+      </div>
+      <div style="flex-grow:1"></div>
+      <div class="buttons">
+        <div class="round-button" id="a"></div>
+        <div class="round-button" id="b"></div>
+      </div>
+    </div>
+    <div class="wide-buttons">
+      <div style="display:flex;margin:auto">
+        <div class="wide-button">
+          <div class="inner-button" id="select"></div>
+        </div>
+        <div style="margin-left:5px;"></div>
+        <div class="wide-button">
+          <div class="inner-button" id="start"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grill" id="grill">
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole"></div>
+    </div>
+  </div>
+  <input style="display: none" type="file" id="open_romfile">
+  <script type='text/javascript'>
+    const gameboy = document.querySelector('.gameboy');
+    const r = document.querySelector(':root');
+    let compact = false;
 
-      const open_romfile = document.getElementById('open_romfile'); 
-      open_romfile.onchange = (e) => {
-        const file = e.target.files[0];
-        console.log(file);
-
-        file.arrayBuffer().then((buffer) => {
-          const path = `/file_picker_uploads/${file.name}`
-          FS.writeFile(path, new Uint8Array(buffer));
-          ccall("load_cartridge", "v", ["string"], [path]);
-        });
-      };
-
-      function openDialog() {
-        open_romfile.click();
+    function setZoom() {
+      let zoom;
+      if (!compact){
+        zoom = Math.min(window.innerWidth / 289, window.innerHeight / 500) - 0.2;
+      } else {
+        zoom = Math.min(window.innerWidth / 289, window.innerHeight / 289*(160/144));
       }
+      r.style.setProperty('--gb-zoom', zoom);
+    }
+    setZoom();
+    window.addEventListener('resize', setZoom);
 
-      var statusElement = document.getElementById('status');
-      var progressElement = document.getElementById('progress');
+    const powerled = document.querySelector('.power-led');
+    setInterval(() => {
+      powerled.classList.toggle('on');
+      powerled.classList.toggle('off');
+    }, 500);
 
-      var Module = {
-        print:
-            console.log,
-        canvas: (() => {
-          var canvas = document.getElementById('canvas');
+    const dpad = document.querySelector('.dpad');
+    var dpadPressed = false;
+    const LEFT = 0;
+    const RIGHT = 1;
+    const UP = 1;
+    const DOWN = 0;
+    const NOTHING = -1;
+    var x_pressed = NOTHING;
+    var y_pressed = NOTHING;
 
-          // As a default initial behavior, pop up an alert when webgl context is lost. To make your
-          // application robust, you may want to override this behavior before shipping!
-          // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
-          canvas.addEventListener("webglcontextlost", (e) => { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+    // Prevent mouse events from working if a touch event has been detected
+    let touchOnly = false;
+    function handleDpadPress(e) {
+      e.preventDefault();
+      if (window.TouchEvent && e instanceof TouchEvent) {
+        touchOnly = true;
+      }
+      dpadPressed = true;
+      handleDpadMove(e);
+    }
 
-          return canvas;
-        })(),
-        setStatus: (text) => {
-          if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
-          if (text === Module.setStatus.last.text) return;
-          var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-          var now = Date.now();
-          if (m && now - Module.setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
-          Module.setStatus.last.time = now;
-          Module.setStatus.last.text = text;
-          if (m) {
-            text = m[1];
-            progressElement.value = parseInt(m[2])*100;
-            progressElement.max = parseInt(m[4])*100;
-            progressElement.hidden = false;
-          } else {
-            progressElement.value = null;
-            progressElement.max = null;
-            progressElement.hidden = true;
-          }
-          statusElement.innerHTML = text;
-        },
-        totalDependencies: 0,
-        monitorRunDependencies: (left) => {
-          this.totalDependencies = Math.max(this.totalDependencies, left);
-          Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+    function handleDpadRelease(e) {
+      e.preventDefault();
+      handleDpadMove(e);
+      dpadPressed = false;
+      x_pressed = NOTHING;
+      y_pressed = NOTHING;
+      toggleIf(false, "left-button", "lifted", 65);
+      toggleIf(false, "right-button", "lifted", 68);
+      toggleIf(false, "up-button", "lifted", 87);
+      toggleIf(false, "down-button", "lifted", 83);
+    }
+
+    function toggleIf(condition, elementId, className, keyCode) {
+      const element = document.getElementById(elementId);
+      if (condition) {
+        element.classList.remove(className);
+        window.dispatchEvent(new KeyboardEvent("keydown", {
+          keyCode: keyCode
+        }));
+      } else {
+        element.classList.add(className);
+        window.dispatchEvent(new KeyboardEvent("keyup", {
+          keyCode: keyCode
+        }));
+      }
+    }
+
+    function handleDpadMove(e) {
+      e.preventDefault();
+      if (window.TouchEvent && e instanceof TouchEvent) {
+        e = e.targetTouches[0];
+      }
+      if (!e) return;
+      if (!dpadPressed) return;
+      let rect = dpad.getBoundingClientRect();
+      const zoom = parseFloat(getComputedStyle(r).getPropertyValue('--gb-zoom'));
+      const controls_zoom = parseFloat(getComputedStyle(r).getPropertyValue('--controls-zoom'));
+      const total_zoom = zoom + (controls_zoom - 1);
+      const x = (e.clientX - rect.left) / total_zoom;
+      const y = (e.clientY - rect.top) / total_zoom;
+
+      if (x > 30 || x < 50) {
+        if (y > 50) {
+          y_pressed = DOWN;
+        } else if (y < 30) {
+          y_pressed = UP;
+        } else {
+          y_pressed = NOTHING;
         }
+      }
+      if (y > 30 || y < 50) {
+        if (x > 50) {
+          x_pressed = RIGHT;
+        } else if (x < 30) {
+          x_pressed = LEFT;
+        } else {
+          x_pressed = NOTHING;
+        }
+      }
+      toggleIf(x_pressed == LEFT, "left-button", "lifted", 65);
+      toggleIf(x_pressed == RIGHT, "right-button", "lifted", 68);
+      toggleIf(y_pressed == UP, "up-button", "lifted", 87);
+      toggleIf(y_pressed == DOWN, "down-button", "lifted", 83);
+    }
+    dpad.addEventListener("mousedown", (e) => {touchOnly || handleDpadPress(e)});
+    dpad.addEventListener("mouseup", (e) =>{touchOnly || handleDpadRelease(e)});
+    dpad.addEventListener("mousemove", handleDpadMove);
+    dpad.addEventListener("mouseleave", handleDpadRelease);
+    dpad.addEventListener("touchstart", handleDpadPress);
+    dpad.addEventListener("touchend", handleDpadRelease);
+    dpad.addEventListener("touchcancel", handleDpadRelease);
+    dpad.addEventListener("touchmove", handleDpadMove);
+
+    function registerButton(elementId, keyCode, conditionFunction) {
+      const element = document.getElementById(elementId);
+      const handleDown = (e) => {
+        e.preventDefault();
+        // Check if the event is a touch event
+        if (window.TouchEvent && e instanceof TouchEvent) {
+          touchOnly = true;
+        }
+        if (conditionFunction && !conditionFunction()) return;
+        element.classList.add("active");
+        window.dispatchEvent(new KeyboardEvent("keydown", {
+          keyCode: keyCode
+        }));
       };
-      Module.setStatus('Downloading...');
-      window.onerror = () => {
-        Module.setStatus('Exception thrown, see JavaScript console');
-        Module.setStatus = (text) => {
-          if (text) console.error('[post-exception status] ' + text);
+      const handleUp = (e) => {
+        e.preventDefault();
+        element.classList.remove("active");
+        window.dispatchEvent(new KeyboardEvent("keyup", {
+          keyCode: keyCode
+        }));
+      };
+      element.addEventListener("mousedown", (e) => {touchOnly || handleDown(e)});
+      element.addEventListener("mouseup", (e) => {touchOnly || handleUp(e)});
+      element.addEventListener("mouseleave", handleUp);
+      element.addEventListener("touchstart", handleDown);
+      element.addEventListener("touchend", handleUp);
+      element.addEventListener("touchcancel", handleUp);
+    }
+
+    registerButton("a", 75); // k
+    registerButton("b", 76); // l
+    registerButton("start", 13); // enter
+    registerButton("select", 8); // backspace
+    registerButton("grill", 27); // escape
+
+    registerButton("canvas", 32, () => ccall('in_game', 'number') === 1); // space
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        ccall('pause_game', 'v');
+      }
+    });
+
+    const open_romfile = document.getElementById('open_romfile');
+    open_romfile.onchange = (e) => {
+      const file = e.target.files[0];
+      file.arrayBuffer().then((buffer) => {
+        const path = `/file_picker_uploads/${file.name}`
+        FS.writeFile(path, new Uint8Array(buffer));
+        ccall("load_cartridge", "v", ["string"], [path]);
+      });
+    };
+
+    let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    function openDialog() {
+      if (isSafari){
+        let handler = () => {
+          open_romfile.click();
+          window.removeEventListener("click", handler);
+          window.removeEventListener("touchend", handler);
         };
+        window.addEventListener("click", handler);
+        window.addEventListener("touchend", handler);
+        return;
+      }
+      open_romfile.click();
+    }
+
+    function toggleCompactView() {
+      const elements = document.querySelectorAll('.screen, .power-led, #canvas, .gameboy, .grill, .header');
+      elements.forEach((element) => {
+        element.classList.toggle('compact');
+      });
+      compact = !compact;
+      localStorage.setItem('compact', compact);
+      setZoom();
+      r.style.setProperty('--controls-zoom', compact ? 1.3 : 1);
+    }
+
+    // Compact view by default on mobile
+    if (localStorage.getItem('compact') === null) {
+      localStorage.setItem('compact', window.innerWidth < 600);
+    }
+    
+    if (localStorage.getItem('compact') === 'true') {
+      toggleCompactView();
+    }
+
+    // Double tap to toggle compact view
+    let lastTouch = 0;
+    let canvas = document.getElementById('canvas');
+    canvas.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      // Debounce double tap
+      if (now - lastTouch < 400) {
+        toggleCompactView();
+      }
+      lastTouch = now;
+    });
+
+    document.getElementById('canvas').addEventListener('click', (e) => {
+      if (e.detail === 2) {
+        toggleCompactView();
+      }
+    });
+
+    var statusElement = document.getElementById('status');
+
+    var Module = {
+      forcedAspectRatio: 160/144,
+      print:
+        console.log,
+      canvas: (() => {
+        let canvas = document.getElementById('canvas');
+        // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+        // application robust, you may want to override this behavior before shipping!
+        // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+        canvas.addEventListener("webglcontextlost", (e) => { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+        const w = canvas.width;
+        const h = canvas.height;
+        ["width", "clientWidth"].forEach((prop) => {
+          Object.defineProperty(canvas, prop, {
+            get: () => w,
+            set: (value) => () => {}
+          });
+        });
+        ["height", "clientHeight"].forEach((prop) => {
+          Object.defineProperty(canvas, prop, {
+            get: () => h,
+            set: (value) => () => {}
+          });
+        });
+
+        return canvas;
+      })(),
+      setStatus: (text) => {
+        if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+        if (text === Module.setStatus.last.text) return;
+        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+        var now = Date.now();
+        if (m && now - Module.setStatus.last.time < 30) return; // if this is a progress update, skip it if too soon
+        Module.setStatus.last.time = now;
+        Module.setStatus.last.text = text;
+        if (m) {
+          text = m[1];
+        }
+        statusElement.innerHTML = text;
+      },
+      totalDependencies: 0,
+      monitorRunDependencies: (left) => {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+      }
+    };
+    Module.setStatus('Downloading...');
+    window.onerror = () => {
+      Module.setStatus('Exception thrown, see JavaScript console');
+      Module.setStatus = (text) => {
+        if (text) console.error('[post-exception status] ' + text);
       };
-    </script>
-    {{{ SCRIPT }}}
-  </body>
+    };
+  </script>
+  {{{ SCRIPT }}}
+</body>
 </html>
