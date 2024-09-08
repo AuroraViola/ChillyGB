@@ -383,7 +383,7 @@ void add_ticks(cpu *c, uint16_t ticks) {
         timer1.t_states = next_timer;
 
         if (!c->cart.rtc.is_halted) {
-            timer1.rtc_timer += 4;
+            timer1.rtc_timer += c->double_speed ? 2 : 4;
             if (set.accurate_rtc) {
                 if (timer1.rtc_timer > 4194304) {
                     timer1.rtc_timer = 0;
