@@ -215,6 +215,42 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
         video.vram[1][i] = 0;
     }
 
+    if (!c->is_color) {
+        // Initialize Background tiles
+        for (uint16_t i = 0; i < 12; i++) {
+            video.vram[0][0x1904 + i] = i + 1;
+            video.vram[0][0x1924 + i] = i + 13;
+        }
+        video.vram[0][0x1910] = 0x19;
+
+        // Initialize tiles data
+        uint8_t logo_tiles_initial[24][2];
+        uint8_t logo_tiles[24][4];
+
+        for (uint16_t i = 0; i < 24; i++) {
+            logo_tiles_initial[i][0] = c->cart.data[0][0x104 + (i * 2)];
+            logo_tiles_initial[i][1] = c->cart.data[0][0x104 + (i * 2) + 1];
+        }
+        for (uint16_t i = 0; i < 24; i++) {
+            logo_tiles[i][0] = stretch_number(logo_tiles_initial[i][0] >> 4);
+            logo_tiles[i][1] = stretch_number(logo_tiles_initial[i][0] & 0xf);
+            logo_tiles[i][2] = stretch_number(logo_tiles_initial[i][1] >> 4);
+            logo_tiles[i][3] = stretch_number(logo_tiles_initial[i][1] & 0xf);
+        }
+
+        for (uint16_t i = 0; i < 24; i++) {
+            for (uint16_t j = 0; j < 4; j++) {
+                video.vram[0][0x10 + (i << 4) + (j * 4)] = logo_tiles[i][j];
+                video.vram[0][0x10 + (i << 4) + (j * 4) + 2] = logo_tiles[i][j];
+            }
+        }
+
+        uint8_t r_tile[] = {0x3c, 0x42, 0xb9, 0xa5, 0xb9, 0xa5, 0x42, 0x3c};
+        for (uint16_t i = 0; i < 8; i++) {
+            video.vram[0][0x190 + (i * 2)] = r_tile[i];
+        }
+    }
+
     // Initialize internal timer
     timer1.t_states = 23440324;
 }
