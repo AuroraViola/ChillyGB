@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
-const int savestate_version = 6;
+const int savestate_version = 7;
 
 void get_save_state_name(char rom_name[256], char save_state_name[256]) {
     strcpy(save_state_name, rom_name);
