@@ -346,6 +346,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 joypad1.btn_on = true;
             else
                 joypad1.btn_on = false;
+            break;
 
         case LYC:
             if (video.is_on) {
