@@ -55,6 +55,7 @@ typedef enum InputSettingsView {
 typedef enum ShadersList {
     SHADER_DEFAULT = 0,
     SHADER_PIXEL_GRID,
+    SHADER_COLOR_CORRECTION,
 }ShadersList;
 
 cpu c = {};
@@ -90,7 +91,7 @@ struct nk_style_button button_dpad_style = {};
 struct nk_style_button button_dpad_pressed_style = {};
 struct nk_style_button button_buttons_style = {};
 struct nk_style_button button_buttons_pressed_style = {};
-Shader shaders[2];
+Shader shaders[3];
 
 void load_cartridge(char *path) {
     strcpy(rom_name, path);
@@ -370,7 +371,7 @@ void draw_settings_window() {
 
                     nk_layout_row_dynamic(ctx, 30, 2);
                     nk_label(ctx, "Video effect:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    nk_combobox_string(ctx, "None\0Pixel grid", &set.selected_effect, 2, 20, size);
+                    nk_combobox_string(ctx, "None\0Pixel grid\0Color correction", &set.selected_effect, 3, 20, size);
                     nk_layout_row_dynamic(ctx, 30, 1);
                     nk_checkbox_label(ctx, "Integer Scaling", &set.integer_scaling);
                     //nk_checkbox_label(ctx, "Frame Blending", &set.frame_blending);
@@ -1006,6 +1007,7 @@ int main(int argc, char **argv) {
 
     shaders[SHADER_DEFAULT] = LoadShader(0, 0);
     shaders[SHADER_PIXEL_GRID] = LoadShader(0, "res/shaders/pixel_grid.fs");
+    shaders[SHADER_COLOR_CORRECTION] = LoadShader(0, "res/shaders/color-correction.fs");
 
     // Initialize APU
     InitAudioDevice();
