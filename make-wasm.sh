@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-mkdir build-wasm
+mkdir -p build-wasm
 cp res/icons/ChillyGB.svg build-wasm/icon.svg
 emcc -o build-wasm/index.html \
 	src/main.c src/modules/* cJSON/cJSON.c\
@@ -12,3 +12,8 @@ emcc -o build-wasm/index.html \
 	--shell-file=wasm-frontend/shell.html \
 	-lidbfs.js \
 	--preload-file ./res
+
+cp -r wasm-frontend/* build-wasm/
+rm build-wasm/shell.html
+# Add build date to service worker, so it will update on every build
+echo "// Built on $(date) - HEAD:$(git rev-parse HEAD)" >> build-wasm/serviceWorker.js

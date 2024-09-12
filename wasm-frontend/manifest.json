@@ -1,0 +1,17 @@
+{
+    "short_name": "ChillyGB",
+    "name": "ChillyGB Emulator",
+    "icons": [
+      {
+        "src": "/icon.svg",
+        "type": "image/svg+xml",
+        "sizes": "512x512"
+      }
+    ],
+    "start_url": "/",
+    "background_color": "#38429e",
+    "display": "standalone",
+    "scope": "/",
+    "theme_color": "#38429e",
+    "description": "Game Boy (DMG) and Game Boy Color (CGB) emulator written in C that aims to simplicity and accuracy"
+  }

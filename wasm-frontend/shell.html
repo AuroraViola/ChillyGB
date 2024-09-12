@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <link rel="icon" type="image/x-icon" href="icon.svg">
+  <link rel="manifest" href="/manifest.json">
   <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no">
   <title>ChillyGB</title>
   <style>
@@ -273,7 +274,7 @@
       line-height: calc(var(--gb-zoom)*16px);
     }
 
-    .emscripten {
+    .text-absolute {
       position: absolute;
       left: 0;
       top: 0;
@@ -284,6 +285,7 @@
 
 <body>
   <div class="emscripten" id="status">Downloading...</div>
+  <a class="text-absolute" id="update-found" onclick="" style="display:none">Update found! Refresh</a>
   <div class="gameboy">
     <div class="header">
       <div class="angle-left"></div>
@@ -336,6 +338,35 @@
   </div>
   <input style="display: none" type="file" id="open_romfile">
   <script type='text/javascript'>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function() {
+        const time = new Date().getTime();
+        
+        const handleUpdates = (reg) => reg.addEventListener("updatefound", () => {
+            const installingWorker = reg.installing;
+            installingWorker.addEventListener("statechange", () => {
+              if (installingWorker.state === "installed" && navigator.serviceWorker.controller) {
+                  if (time < new Date().getTime() - 3000) {
+                    document.getElementById("update-found").onclick = () => location.reload();
+                    document.getElementById("update-found").style.display = "block";
+                  } else {
+                    location.reload();
+                  }
+              }
+            });
+          });
+
+        navigator.serviceWorker
+          .register("/serviceWorker.js")
+          .then(handleUpdates)
+          .catch(err => console.log("Error while registering service worker:", err));
+        
+        navigator.serviceWorker.ready.then(function(registration) {
+          registration.update();
+        });
+      });
+    }
+
     const gameboy = document.querySelector('.gameboy');
     const r = document.querySelector(':root');
     let compact = false;
