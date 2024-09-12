@@ -78,8 +78,6 @@ Texture2D logo;
 Texture2D display;
 char instructions[30][50];
 float scale;
-float iResolution[2];
-int iResolution_loc;
 int scale_integer;
 float speed_mult = 1;
 int ff_speed = 1;
@@ -491,9 +489,6 @@ void pause_game() {
 }
 
 void draw_display() {
-    iResolution[0] = GetScreenWidth();
-    iResolution[1] = GetScreenHeight();
-    SetShaderValue(shaders[SHADER_PIXEL_GRID], iResolution_loc ,&iResolution, SHADER_UNIFORM_VEC2);
     BeginShaderMode(shaders[set.selected_effect]);
         if (c.is_color && set.color_correction) {
             BeginShaderMode(shaders[SHADER_COLOR_CORRECTION]);
@@ -1018,7 +1013,6 @@ int main(int argc, char **argv) {
 
     shaders[SHADER_DEFAULT] = LoadShader(0, 0);
     shaders[SHADER_PIXEL_GRID] = LoadShader(0, "res/shaders/pixel_grid.fs");
-    iResolution_loc = GetShaderLocation(shaders[SHADER_PIXEL_GRID], "iResolution");
     shaders[SHADER_COLOR_CORRECTION] = LoadShader(0, "res/shaders/color-correction.fs");
 
     // Initialize APU
