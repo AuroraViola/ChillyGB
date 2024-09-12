@@ -209,6 +209,11 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
         c->memory[i] = rand();
     }
 
+    // Initialize OAM
+    for (uint16_t i = 0; i < 0xa0; i++) {
+        c->memory[0xfe00 + i] = 0;
+    }
+
     // Initialize VRAM
     for (uint16_t i = 0; i <= 0x2000; i++) {
         video.vram[0][i] = 0;
