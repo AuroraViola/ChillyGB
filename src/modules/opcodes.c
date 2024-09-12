@@ -422,7 +422,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 video.mode = 0;
                 video.scan_line = 0;
                 timer1.scanline_timer = 456;
-                timer1.lcdoff_timer += 69768;
+                timer1.lcdoff_timer += 70224;
                 load_line();
             }
             // PPU turned ON
