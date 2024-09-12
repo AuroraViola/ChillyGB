@@ -675,6 +675,12 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 c->armed = value & 1;
             break;
 
+        case OPRI:
+            if (c->bootrom.is_enabled) {
+                video.opri = value & 1;
+            }
+            break;
+
         default:
             c->memory[addr] = value;
             break;
@@ -913,6 +919,9 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             if (c->is_color)
                 return video.obp[video.obp_addr];
             return 0xff;
+
+        case OPRI:
+            return 0xfe | video.opri;
 
         case SVBK:
             if (c->is_color)

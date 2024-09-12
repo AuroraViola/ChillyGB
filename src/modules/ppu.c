@@ -121,35 +121,29 @@ void fetch_sprite_to_fifo(cpu *c) {
             uint8_t lowerTileData = video.vram[vram_bank][tile_addr];
             uint8_t upperTileData = video.vram[vram_bank][tile_addr + 1];
 
-            pixel sprite[8];
             for (int i = 0; i < 8; i++) {
+                bool oam_priority = false;
+                uint8_t new_value;
                 if (!flip_X) {
-                    sprite[i].value = (lowerTileData >> (7 - i)) & 1;
-                    sprite[i].value |= (upperTileData >> (7 - i) & 1) << 1;
+                    new_value = (lowerTileData >> (7 - i)) & 1;
+                    new_value |= (upperTileData >> (7 - i) & 1) << 1;
                 } else {
-                    sprite[i].value = (lowerTileData >> i) & 1;
-                    sprite[i].value |= (upperTileData >> i & 1) << 1;
+                    new_value = (lowerTileData >> i) & 1;
+                    new_value |= (upperTileData >> i & 1) << 1;
                 }
-            }
-            for (int i = 0; i < 8; i++) {
-                if (c->is_color) {
-                    if (sprite[i].value != 0) {
-                        if (!video.bg_enable || (!priority && !video.fifo.pixels[i].priority) || video.fifo.pixels[i].value == 0) {
-                            video.fifo.pixels[i].value = sprite[i].value;
-                            video.fifo.pixels[i].palette = palette;
-                        }
-                    }
+                if (!video.opri && (video.fifo.pixels_sprite[i].oam_priority > sprite_addr) && new_value != 0) {
+                    oam_priority = true;
                 }
-                else {
-                    if (sprite[i].value != 0 && video.fifo.pixels[i].palette == 0) {
-                        if (!priority || video.fifo.pixels[i].value == 0) {
-                            video.fifo.pixels[i].value = sprite[i].value;
-                            video.fifo.pixels[i].palette = palette;
-                        }
-                    }
+
+                if (video.fifo.pixels_sprite[i].value == 0 || i >= video.fifo.pixel_sprite_count || oam_priority) {
+                    video.fifo.pixels_sprite[i].value = new_value;
+                    video.fifo.pixels_sprite[i].palette = palette;
+                    video.fifo.pixels_sprite[i].priority = priority;
+                    video.fifo.pixels_sprite[i].oam_priority = sprite_addr;
                 }
             }
             video.fifo.tick_pause += 6;
+            video.fifo.pixel_sprite_count = 8;
         }
     }
 }
@@ -184,44 +178,61 @@ void fetch_sprite_to_fifo_minus_8(cpu *c) {
                 uint8_t lowerTileData = video.vram[vram_bank][tile_addr];
                 uint8_t upperTileData = video.vram[vram_bank][tile_addr + 1];
 
-                pixel sprite[8];
-                for (int k = 0; k < 8; k++) {
-                    if (!flip_X) {
-                        sprite[k].value = (lowerTileData >> (7 - k)) & 1;
-                        sprite[k].value |= (upperTileData >> (7 - k) & 1) << 1;
-                    } else {
-                        sprite[k].value = (lowerTileData >> k) & 1;
-                        sprite[k].value |= (upperTileData >> k & 1) << 1;
-                    }
-                }
                 for (int k = 0; k < i; k++) {
-                    if (c->is_color) {
-                        if (sprite[8 - i + k].value != 0) {
-                            if (!video.bg_enable || (!priority && !video.fifo.pixels[k].priority) || video.fifo.pixels[k].value == 0) {
-                                video.fifo.pixels[k].value = sprite[8 - i + k].value;
-                                video.fifo.pixels[k].palette = palette;
-                            }
-                        }
+                    bool oam_priority = false;
+                    uint8_t new_value;
+                    if (!flip_X) {
+                        new_value = (lowerTileData >> (i - k - 1)) & 1;
+                        new_value |= (upperTileData >> (i - k - 1) & 1) << 1;
+                    } else {
+                        new_value = (lowerTileData >> (k+(8-i))) & 1;
+                        new_value |= (upperTileData >> (k+(8-i)) & 1) << 1;
                     }
-                    else {
-                        if (sprite[8-i+k].value != 0 && video.fifo.pixels[k].palette == 0) {
-                            if (!priority || video.fifo.pixels[k].value == 0) {
-                                video.fifo.pixels[k].value = sprite[8-i+k].value;
-                                video.fifo.pixels[k].palette = palette;
-                            }
-                        }
+                    if (!video.opri && (video.fifo.pixels_sprite[i].oam_priority > sprite_addr) && new_value != 0) {
+                        oam_priority = true;
+                    }
+
+                    if (video.fifo.pixels_sprite[k].value == 0 || k >= video.fifo.pixel_sprite_count || oam_priority) {
+                        video.fifo.pixels_sprite[k].value = new_value;
+                        video.fifo.pixels_sprite[k].palette = palette;
+                        video.fifo.pixels_sprite[k].priority = priority;
+                        video.fifo.pixels_sprite[k].oam_priority = (uint8_t) (sprite_addr);
                     }
                 }
                 video.fifo.tick_pause += 6;
+                video.fifo.pixel_sprite_count = i;
             }
         }
     }
 }
 
 void push_pixel(cpu *c) {
+    // Mix Pixel
+    pixel last_pixel = video.fifo.pixels[0];
+    if (c->is_color) {
+        if (video.fifo.pixel_sprite_count > 0) {
+            if (video.fifo.pixels_sprite[0].value != 0) {
+                if (!video.bg_enable || (!video.fifo.pixels_sprite[0].priority && !last_pixel.priority) || last_pixel.value == 0) {
+                    last_pixel.value = video.fifo.pixels_sprite[0].value;
+                    last_pixel.palette = video.fifo.pixels_sprite[0].palette;
+                }
+            }
+        }
+    }
+    else {
+        if (video.fifo.pixel_sprite_count > 0) {
+            if (video.fifo.pixels_sprite[0].value != 0 && last_pixel.palette == 0) {
+                if (!video.fifo.pixels_sprite[0].priority || last_pixel.value == 0) {
+                    last_pixel.value = video.fifo.pixels_sprite[0].value;
+                    last_pixel.palette = video.fifo.pixels_sprite[0].palette;
+                }
+            }
+        }
+    }
+
     // Copy pixel to display
     if (c->is_color) {
-        uint8_t px_addr = (video.fifo.pixels[0].value + (video.fifo.pixels[0].palette << 2)) << 1;
+        uint8_t px_addr = (last_pixel.value + (last_pixel.palette << 2)) << 1;
         if (px_addr < 64) {
             video.line[video.current_pixel] = (video.bgp[px_addr | 1] << 8) | (video.bgp[px_addr]);
         }
@@ -229,10 +240,12 @@ void push_pixel(cpu *c) {
             px_addr &= 0x3f;
             video.line[video.current_pixel] = (video.obp[px_addr | 1] << 8) | (video.obp[px_addr]);
         }
-    } else if (video.bg_enable && video.fifo.pixels[0].palette == 0) {
-        video.line[video.current_pixel] = video.bgp_dmg[video.fifo.pixels[0].value];
-    } else if (video.fifo.pixels[0].palette != 0) {
-        video.line[video.current_pixel] = video.obp_dmg[video.fifo.pixels[0].palette - 1][video.fifo.pixels[0].value];
+    }
+
+    else if (video.bg_enable && last_pixel.palette == 0) {
+        video.line[video.current_pixel] = video.bgp_dmg[last_pixel.value];
+    } else if (last_pixel.palette != 0) {
+        video.line[video.current_pixel] = video.obp_dmg[last_pixel.palette - 1][last_pixel.value];
     } else {
         video.line[video.current_pixel] = video.bgp_dmg[0];
     }
@@ -252,6 +265,15 @@ void push_pixel(cpu *c) {
     }
     else {
         video.current_pixel++;
+        if (video.fifo.pixel_sprite_count > 0) {
+            for (int i = 0; i < video.fifo.pixel_sprite_count-1; i++) {
+                video.fifo.pixels_sprite[i].value = video.fifo.pixels_sprite[i+1].value;
+                video.fifo.pixels_sprite[i].palette = video.fifo.pixels_sprite[i+1].palette;
+                video.fifo.pixels_sprite[i].priority = video.fifo.pixels_sprite[i+1].priority;
+                video.fifo.pixels_sprite[i].oam_priority = video.fifo.pixels_sprite[i+1].oam_priority;
+            }
+            video.fifo.pixel_sprite_count--;
+        }
     }
 }
 
@@ -306,6 +328,7 @@ void operate_fifo(cpu *c) {
         if (video.mode != 0) {
             video.mode = 0;
             video.fifo.pixel_count = 0;
+            video.fifo.pixel_sprite_count = 0;
             if (video.in_window)
                 video.window_internal_line++;
             video.in_window = false;

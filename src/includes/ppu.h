@@ -9,11 +9,14 @@ typedef struct {
     uint8_t value;
     uint8_t palette;
     bool priority;
+    uint16_t oam_priority;
 }pixel;
 
 typedef struct {
     pixel pixels[16];
     uint8_t pixel_count;
+    pixel pixels_sprite[8];
+    uint8_t pixel_sprite_count;
     uint8_t tick_pause;
     uint8_t init_timer;
     uint8_t win_timer;
@@ -51,6 +54,7 @@ typedef struct {
     uint8_t obp[64];
     bool ocps_inc;
     uint8_t obp_addr;
+    bool opri;
 
     bool is_on;
     bool bg_enable;

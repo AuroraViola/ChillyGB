@@ -183,6 +183,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     video.obp_addr = 0;
     video.ocps_inc = false;
     video.bcps_inc = false;
+    video.opri = (c->is_color) ? false : true;
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
     video.wx = 0x00;
