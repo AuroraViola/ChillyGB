@@ -26,6 +26,7 @@ typedef struct {
     int selected_gameboy;
     bool integer_scaling;
     bool frame_blending;
+    bool color_correction;
     int selected_effect;
 
     // Input settings

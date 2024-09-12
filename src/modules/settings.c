@@ -241,6 +241,7 @@ void load_default_settings() {
     set.selected_effect = 0;
     set.frame_blending = false;
     set.accurate_rtc = true;
+    set.color_correction = false;
     set.ch_on[0] = true;
     set.ch_on[1] = true;
     set.ch_on[2] = true;
@@ -317,6 +318,13 @@ void load_settings() {
         set.selected_palette = palette->valueint;
     else
         set.selected_palette = 0;
+
+    cJSON *color_correction = cJSON_GetObjectItem(settings, "color_correction");
+    if (cJSON_IsBool(color_correction))
+        set.color_correction = color_correction->valueint;
+    else
+        set.color_correction = false;
+
     cJSON *bootrom = cJSON_GetObjectItem(settings, "bootrom");
     if (cJSON_IsBool(bootrom))
         set.bootrom_enabled = bootrom->valueint;
@@ -418,6 +426,7 @@ void save_settings() {
     cJSON_AddBoolToObject(settings, "frame_blending", set.frame_blending);
     cJSON_AddNumberToObject(settings, "selected_effect", set.selected_effect);
     cJSON_AddBoolToObject(settings, "int_scale", set.integer_scaling);
+    cJSON_AddBoolToObject(settings, "color_correction", set.color_correction);
 
     cJSON *palettes_array = cJSON_CreateArray();
 

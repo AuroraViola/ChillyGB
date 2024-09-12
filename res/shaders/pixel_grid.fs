@@ -1,5 +1,5 @@
 #version 330
-
+precision highp float;
 in vec2 fragTexCoord;
 
 uniform sampler2D texture0;
@@ -7,13 +7,15 @@ uniform vec4 colDiffuse;
 
 out vec4 finalColor;
 
-void main() {
-    float globalPos_y = (fragTexCoord.y) * 144;
-    float globalPos_x = (fragTexCoord.x) * 160;
-    float wavePos = (sin(fract(globalPos_y)) > 0.125 && sin(fract(globalPos_y)) < 0.875) ? 1 : 0.9;
-    wavePos *= (sin(fract(globalPos_x)) > 0.125 && sin(fract(globalPos_x)) < 0.875) ? 1 : 0.9;
+vec2 res = vec2(160, 144);
+float thickness = 0.35;
+float antiAliasing = 0.9;
 
+void main() {
     vec4 texelColor = texture(texture0, fragTexCoord);
 
-    finalColor = mix(vec4(0.0, 0.0, 0.0, 1.0), texelColor, wavePos);
+    vec2 lines = smoothstep(1.0-antiAliasing, 1.0, abs(fract(fragTexCoord * res)*(1/thickness)));
+    float line = dot(lines, vec2(1.0)) - 1.0;
+
+    finalColor = vec4(texelColor.rgb, line);
 }

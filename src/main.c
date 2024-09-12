@@ -78,6 +78,8 @@ Texture2D logo;
 Texture2D display;
 char instructions[30][50];
 float scale;
+float iResolution[2];
+int iResolution_loc;
 int scale_integer;
 float speed_mult = 1;
 int ff_speed = 1;
@@ -371,10 +373,11 @@ void draw_settings_window() {
 
                     nk_layout_row_dynamic(ctx, 30, 2);
                     nk_label(ctx, "Video effect:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                    nk_combobox_string(ctx, "None\0Pixel grid\0Color correction", &set.selected_effect, 3, 20, size);
+                    nk_combobox_string(ctx, "None\0Pixel grid", &set.selected_effect, 2, 20, size);
                     nk_layout_row_dynamic(ctx, 30, 1);
                     nk_checkbox_label(ctx, "Integer Scaling", &set.integer_scaling);
                     //nk_checkbox_label(ctx, "Frame Blending", &set.frame_blending);
+                    nk_checkbox_label(ctx, "GBC Color Correction", &set.color_correction);
                     break;
                 case SET_INPUT:
                     nk_layout_row_dynamic(ctx, 30, 2);
@@ -488,19 +491,31 @@ void pause_game() {
 }
 
 void draw_display() {
-    if (set.integer_scaling) {
-        DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, display.width, display.height},
-                       (Rectangle) {(GetScreenWidth() - (160 * scale_integer)) * 0.5f,
-                                    (GetScreenHeight() - (144 * scale_integer)) * 0.5f,
-                                    160 * scale_integer, 144 * scale_integer}, (Vector2) {0, 0}, 0.0f,
-                       WHITE);
-    }
-    else {
-        DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
-                       (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) * 0.5f,
-                                    (GetScreenHeight() - ((float) 144 * scale)) * 0.5f,
-                                    (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
-    }
+    iResolution[0] = GetScreenWidth();
+    iResolution[1] = GetScreenHeight();
+    SetShaderValue(shaders[SHADER_PIXEL_GRID], iResolution_loc ,&iResolution, SHADER_UNIFORM_VEC2);
+    BeginShaderMode(shaders[set.selected_effect]);
+        if (c.is_color && set.color_correction) {
+            BeginShaderMode(shaders[SHADER_COLOR_CORRECTION]);
+        }
+        if (set.integer_scaling) {
+            DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, display.width, display.height},
+                           (Rectangle) {(GetScreenWidth() - (160 * scale_integer)) / 2,
+                                        (GetScreenHeight() - (144 * scale_integer)) / 2,
+                                        160 * scale_integer, 144 * scale_integer}, (Vector2) {0, 0}, 0.0f,
+                           WHITE);
+        }
+        else {
+            DrawTexturePro(display, (Rectangle) {0.0f, 0.0f, (float) display.width, (float) display.height},
+                           (Rectangle) {(GetScreenWidth() - ((float) 160 * scale)) / 2,
+                                        (GetScreenHeight() - ((float) 144 * scale)) / 2,
+                                        (float) 160 * scale, (float) 144 * scale}, (Vector2) {0, 0}, 0.0f, WHITE);
+        }
+        if (c.is_color && set.color_correction) {
+            EndShaderMode();
+        }
+    EndShaderMode();
+
 }
 
 void update_frame() {
@@ -545,14 +560,12 @@ void update_frame() {
 
             BeginDrawing();
                 ClearBackground(BLACK);
-                BeginShaderMode(shaders[set.selected_effect]);
-                    draw_display();
-                    if (!game_started) {
-                        float fontsize = (set.integer_scaling) ? (7 * scale_integer) : (7 * scale);
-                        int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
-                        DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, set.palettes[set.selected_palette].colors[3]);
-                    }
-                EndShaderMode();
+                draw_display();
+                if (!game_started) {
+                    float fontsize = (set.integer_scaling) ? (7 * scale_integer) : (7 * scale);
+                    int center = MeasureText("Drop a Game Boy ROM to start playing", fontsize);
+                    DrawText("Drop a Game Boy ROM to start playing", GetScreenWidth()/2 - center/2, (GetScreenHeight()/2-fontsize/2), fontsize, set.palettes[set.selected_palette].colors[3]);
+                }
                 DrawNuklear(ctx);
             DrawText(debug_text, 50, 50, 25, WHITE);
 
@@ -625,9 +638,7 @@ void update_frame() {
                 UpdateTexture(display, pixels);
                 BeginDrawing();
                     ClearBackground(BLACK);
-                    BeginShaderMode(shaders[set.selected_effect]);
-                        draw_display();
-                    EndShaderMode();
+                    draw_display();
                 EndDrawing();
                 char str[80];
                 speed_mult = ((float)(GetFPS())/60) * joypad1.fast_forward;
@@ -1007,6 +1018,7 @@ int main(int argc, char **argv) {
 
     shaders[SHADER_DEFAULT] = LoadShader(0, 0);
     shaders[SHADER_PIXEL_GRID] = LoadShader(0, "res/shaders/pixel_grid.fs");
+    iResolution_loc = GetShaderLocation(shaders[SHADER_PIXEL_GRID], "iResolution");
     shaders[SHADER_COLOR_CORRECTION] = LoadShader(0, "res/shaders/color-correction.fs");
 
     // Initialize APU
