@@ -63,7 +63,11 @@ void save_game(cartridge *cart, char rom_name[256]) {
         fwrite(cart->ram, 0x200, 1, save);
         fclose(save);
     }
-
+    else if (cart->type == 0xfc) {
+        FILE *save = fopen(save_name, "wb");
+        fwrite(cart->ram, 0x2000, 16, save);
+        fclose(save);
+    }
 }
 
 bool load_game(cartridge *cart, char rom_name[256]) {
@@ -144,6 +148,13 @@ bool load_game(cartridge *cart, char rom_name[256]) {
         FILE *save = fopen(save_name, "r");
         if (save != NULL) {
             fread(cart->ram, 0x200, 1, save);
+            fclose(save);
+        }
+    }
+    else if (cart->type == 0xfc) {
+        FILE *save = fopen(save_name, "r");
+        if (save != NULL) {
+            fread(cart->ram, 0x2000, 16, save);
             fclose(save);
         }
     }
