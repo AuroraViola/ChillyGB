@@ -249,6 +249,29 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     }
                     break;
 
+                // Pocket Camera
+                case 0xfc:
+                    switch (addr) {
+                        case 0x0000 ... 0x1fff:
+                            if (value == 0x0a)
+                                c->cart.ram_enable = true;
+                            else if (value == 0)
+                                c->cart.ram_enable = false;
+                            break;
+                        case 0x2000 ... 0x3fff:
+                            if ((value & 127) == 0) {
+                                value = 1;
+                            }
+                            c->cart.bank_select = value & 127;
+                            break;
+                        case 0x4000 ... 0x5fff:
+                            c->cart.bank_select_ram = value;
+                            break;
+                        case 0x6000 ... 0x7fff:
+                            break;
+                    }
+                    break;
+
                 default:
                     break;
             }
@@ -297,6 +320,12 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                             break;
                     }
                     c->cart.rtc.time = seconds + (minutes * 60) + (hours * 3600) + (days * 86400);
+                }
+                else if (c->cart.type == 0xfc) {
+                    if (c->cart.bank_select_ram < 16)
+                        c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+                    else
+                        break;
                 }
                 else if (c->cart.type != 0x0f) {
                     c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
@@ -702,6 +731,12 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case 0x4000 ... 0x7fff:
             return c->cart.data[c->cart.bank_select][addr-0x4000];
         case 0xa000 ... 0xbfff:
+            if (c->cart.type == 0xfc) {
+                if (c->cart.bank_select_ram < 16)
+                    return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
+                else
+                    return 0;
+            }
             if (c->cart.ram_enable) {
                 // MBC 1 Bit mode
                 if (c->cart.type == 1 || c->cart.type == 2 || c->cart.type == 3) {
