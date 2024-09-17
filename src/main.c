@@ -5,6 +5,7 @@
 #include "includes/settings.h"
 #include "includes/apu.h"
 #include "includes/timer.h"
+#include "includes/serial.h"
 #include "includes/debug.h"
 #include "includes/input.h"
 #include "includes/cartridge.h"

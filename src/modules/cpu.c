@@ -3,6 +3,7 @@
 #include "../includes/ppu.h"
 #include "../includes/input.h"
 #include "../includes/timer.h"
+#include "../includes/serial.h"
 #include "../includes/opcodes.h"
 #include <time.h>
 #include <stdio.h>
@@ -105,7 +106,12 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     timer1.module = 0;
     timer1.is_tac_on = false;
     timer1.rtc_timer = 0;
+    timer1.serial_timer = 512;
     c->memory[IF] = 0xe1;
+
+    serial1.value = 0;
+    serial1.clock_speed = c->is_color ? 1 : 0;
+    serial1.is_master = c->is_color ? 1 : 0;
 
     audio.is_on = true;
     audio.ch1.is_active = true;
@@ -364,6 +370,19 @@ void add_ticks(cpu *c, uint16_t ticks) {
                 video.draw_screen = true;
                 if (update_keys())
                     c->memory[IF] |= 16;
+            }
+        }
+
+        timer1.serial_timer -= 4;
+        if (timer1.serial_timer < 0) {
+            timer1.lcdoff_timer += 512;
+            if (serial1.is_transfering && serial1.is_master) {
+                transfer_bit();
+                if (serial1.shifted_bits == 8) {
+                    serial1.shifted_bits = 0;
+                    serial1.is_transfering = false;
+                    c->memory[IF] |= 8;
+                }
             }
         }
 

@@ -55,6 +55,8 @@ add_executable(ChillyGB src/main.c
         src/modules/savestates.c
         src/modules/raylib-nuklear.c
         cJSON/cJSON.c
+        src/includes/serial.h
+        src/modules/serial.c
 )
 target_link_libraries(ChillyGB raylib m)
 option(CUSTOM_OPEN_DIALOG "Enable custom open dialog box built with Nuklear" OFF)

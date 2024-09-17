@@ -5,6 +5,7 @@
 #include "../includes/apu.h"
 #include "../includes/ppu.h"
 #include "../includes/timer.h"
+#include "../includes/serial.h"
 #include "../includes/input.h"
 #include "../includes/opcodes.h"
 
@@ -375,6 +376,17 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 joypad1.btn_on = true;
             else
                 joypad1.btn_on = false;
+            break;
+
+        case SB:
+            serial1.value = value;
+            break;
+        case SC:
+            if (c->is_color) {
+                serial1.clock_speed = (value >> 1) & 1;
+            }
+            serial1.is_master = value & 1;
+            serial1.is_transfering = (value >> 7) & 1;
             break;
 
         case LYC:
@@ -796,6 +808,14 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case 0xfe00 ... 0xfe9f:
             return c->memory[addr];
 
+        case SB:
+            return serial1.value;
+        case SC:
+            if (c->is_color)
+                return (serial1.is_transfering << 7) | (serial1.clock_speed << 1) | (serial1.is_master) | 0x7c;
+            else
+                return (serial1.is_transfering << 7) | (serial1.is_master) | 0x7e;
+
         case SCX:
             return video.scx;
         case SCY:
@@ -830,8 +850,6 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             else {
                 return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | 0xc0;
             }
-        case SC:
-            return c->memory[addr] | 0x7e;
         case DIV:
             return (timer1.t_states >> 8) & 255;
         case TIMA:

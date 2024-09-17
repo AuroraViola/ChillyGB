@@ -57,7 +57,6 @@ Here is a list of planned features
   * Pocket camera support
 * **Emulation Improvements**
   * Accurate sound behaviours
-  * Correct serial emulation
   * STAT IRQ blocking
   * Halt bug
   * Accurate Stop Instruction
