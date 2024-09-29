@@ -511,7 +511,45 @@ void draw_display() {
             EndShaderMode();
         }
     EndShaderMode();
+}
 
+void update_display_texture() {
+    if (video.is_on) {
+        if (c.is_color) {
+            for (int i = 0; i < 144; i++) {
+                for (int j = 0; j < 160; j++) {
+                    uint16_t rgb555_color = video.display[i][j];
+                    pixels[i][j].r = (rgb555_color & 0x001f) << 3;
+                    pixels[i][j].g = (rgb555_color & 0x03e0) >> 2;
+                    pixels[i][j].b = (rgb555_color & 0x7c00) >> 7;
+                    pixels[i][j].a = 255;
+                }
+            }
+        }
+        else {
+            for (int i = 0; i < 144; i++) {
+                for (int j = 0; j < 160; j++) {
+                    pixels[i][j] = set.palettes[set.selected_palette].colors[video.display[i][j]];
+                }
+            }
+        }
+    }
+    else {
+        if (c.is_color) {
+            for (int i = 0; i < 144; i++) {
+                for (int j = 0; j < 160; j++) {
+                    pixels[i][j] = (Color) {255, 255, 255, 255};
+                }
+            }
+        }
+        else {
+            for (int i = 0; i < 144; i++) {
+                for (int j = 0; j < 160; j++) {
+                    pixels[i][j] = set.palettes[set.selected_palette].colors[0];
+                }
+            }
+        }
+    }
 }
 
 void update_frame() {
@@ -554,6 +592,8 @@ void update_frame() {
                 ResumeAudioStream(audio.ch4.stream);
             }
 
+            update_display_texture();
+            UpdateTexture(display, pixels);
             BeginDrawing();
                 ClearBackground(BLACK);
                 draw_display();
@@ -595,42 +635,7 @@ void update_frame() {
                     load_state(&c, rom_name);
                 }
                 video.draw_screen = false;
-                if (video.is_on) {
-                    if (c.is_color) {
-                        for (int i = 0; i < 144; i++) {
-                            for (int j = 0; j < 160; j++) {
-                                uint16_t rgb555_color = video.display[i][j];
-                                pixels[i][j].r = (rgb555_color & 0x001f) << 3;
-                                pixels[i][j].g = (rgb555_color & 0x03e0) >> 2;
-                                pixels[i][j].b = (rgb555_color & 0x7c00) >> 7;
-                                pixels[i][j].a = 255;
-                            }
-                        }
-                    }
-                    else {
-                        for (int i = 0; i < 144; i++) {
-                            for (int j = 0; j < 160; j++) {
-                                pixels[i][j] = set.palettes[set.selected_palette].colors[video.display[i][j]];
-                            }
-                        }
-                    }
-                }
-                else {
-                    if (c.is_color) {
-                        for (int i = 0; i < 144; i++) {
-                            for (int j = 0; j < 160; j++) {
-                                pixels[i][j] = (Color) {255, 255, 255, 255};
-                            }
-                        }
-                    }
-                    else {
-                        for (int i = 0; i < 144; i++) {
-                            for (int j = 0; j < 160; j++) {
-                                pixels[i][j] = set.palettes[set.selected_palette].colors[0];
-                            }
-                        }
-                    }
-                }
+                update_display_texture();
                 UpdateTexture(display, pixels);
                 BeginDrawing();
                     ClearBackground(BLACK);
