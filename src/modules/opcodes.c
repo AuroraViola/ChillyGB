@@ -8,6 +8,7 @@
 #include "../includes/serial.h"
 #include "../includes/input.h"
 #include "../includes/opcodes.h"
+#include "../includes/camera.h"
 
 const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
 
@@ -279,7 +280,30 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case 0xa000 ... 0xbfff: // Ram
-            if (c->cart.ram_enable) {
+            if (c->cart.type == 0xfc) {
+                if (c->cart.bank_select_ram < 16 && c->cart.ram_enable) {
+                    c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+                }
+                else if (c->cart.bank_select_ram == 16) {
+                    uint8_t reg = addr & 0x7f;
+                    if (reg == 0) {
+                        value &= 7;
+                        if ((value & 1) && !(gbcamera.reg[0] & 1)) {
+                            take_picture(c);
+                        }
+                        if (!(value & 1) && (gbcamera.reg[0] & 1)) {
+                            value |= 1;
+                        }
+                        gbcamera.reg[0] = value;
+                    }
+                    else {
+                        if (reg <= 0x36) {
+                            gbcamera.reg[reg] = value;
+                        }
+                    }
+                }
+            }
+            else if (c->cart.ram_enable) {
                 if (c->cart.type == 1 || c->cart.type == 2 || c->cart.type == 3) {
                     if (c->cart.mbc1mode)
                         c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
@@ -321,12 +345,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                             break;
                     }
                     c->cart.rtc.time = seconds + (minutes * 60) + (hours * 3600) + (days * 86400);
-                }
-                else if (c->cart.type == 0xfc) {
-                    if (c->cart.bank_select_ram < 16)
-                        c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
-                    else
-                        break;
                 }
                 else if (c->cart.type != 0x0f) {
                     c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
@@ -746,8 +764,13 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             if (c->cart.type == 0xfc) {
                 if (c->cart.bank_select_ram < 16)
                     return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
-                else
+                else {
+                    uint8_t reg = (addr & 0x7f);
+                    if (reg == 0) {
+                        return gbcamera.reg[0];
+                    }
                     return 0;
+                }
             }
             if (c->cart.ram_enable) {
                 // MBC 1 Bit mode

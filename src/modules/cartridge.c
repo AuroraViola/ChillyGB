@@ -1,4 +1,5 @@
 #include "../includes/cartridge.h"
+#include "../includes/camera.h"
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
@@ -152,6 +153,7 @@ bool load_game(cartridge *cart, char rom_name[256]) {
         }
     }
     else if (cart->type == 0xfc) {
+        initialize_camera();
         FILE *save = fopen(save_name, "r");
         if (save != NULL) {
             fread(cart->ram, 0x2000, 16, save);

@@ -5,6 +5,7 @@
 #include "../includes/timer.h"
 #include "../includes/serial.h"
 #include "../includes/opcodes.h"
+#include "../includes/camera.h"
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,6 +72,10 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     // Initialize VRAM
     for (uint16_t i = 0x8000; i <= 0x9fff; i++) {
         c->memory[i] = 0;
+    }
+
+    for (int i = 0; i < 0x37; i++) {
+        gbcamera.reg[i] = 0;
     }
 }
 
@@ -262,6 +267,11 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
             video.vram[0][0x190 + (i * 2)] = r_tile[i];
         }
     }
+    // Initialize camera registers
+    for (int i = 0; i < 0x37; i++) {
+        gbcamera.reg[i] = 0;
+    }
+    gbcamera.timing = 0;
 
     // Initialize internal timer
     timer1.t_states = 23440324;
@@ -461,6 +471,13 @@ void add_ticks(cpu *c, uint16_t ticks) {
         if (!c->hdma.mode) {
             for (int j = 0; j < 2; j++)
                 hdma_transfer(c);
+        }
+
+        if (gbcamera.timing > 0) {
+            gbcamera.timing -= 4;
+            if (gbcamera.timing <= 0) {
+                gbcamera.reg[0] &= 0x6;
+            }
         }
     }
 }
