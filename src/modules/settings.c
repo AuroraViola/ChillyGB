@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../cJSON/cJSON.h"
+#include "cJSON.h"
 
 settings set = {};
 settings set_prev = {};

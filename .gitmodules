@@ -1,12 +1,12 @@
 [submodule "raylib"]
-	path = raylib
+	path = third-party/raylib
 	url = https://github.com/raysan5/raylib
 [submodule "game-boy-test-roms"]
-	path = game-boy-test-roms
+	path = third-party/game-boy-test-roms
 	url = https://github.com/c-sp/game-boy-test-roms
 [submodule "cJSON"]
-	path = cJSON
+	path = third-party/cJSON
 	url = https://github.com/DaveGamble/cJSON
 [submodule "sr_webcam"]
-	path = sr_webcam
+	path = third-party/sr_webcam
 	url = https://github.com/kosua20/sr_webcam

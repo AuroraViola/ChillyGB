@@ -54,16 +54,19 @@ add_executable(ChillyGB src/main.c
         src/includes/savestates.h
         src/modules/savestates.c
         src/modules/raylib-nuklear.c
-        cJSON/cJSON.c
         src/includes/serial.h
         src/modules/serial.c
         src/includes/camera.h
         src/modules/camera.c
-        sr_webcam/src/sr_webcam.c
-        sr_webcam/include/sr_webcam.h
-        sr_webcam/src/sr_webcam_lin.c
+        third-party/sr_webcam/src/sr_webcam.c
+        third-party/sr_webcam/include/sr_webcam.h
+        third-party/sr_webcam/src/sr_webcam_lin.c
+        third-party/cJSON/cJSON.c
 )
-include_directories(sr_webcam/include)
+include_directories(third-party/sr_webcam/include
+        third-party/cJSON
+        third-party/raylib-nuklear/include
+)
 target_link_libraries(ChillyGB raylib m)
 option(CUSTOM_OPEN_DIALOG "Enable custom open dialog box built with Nuklear" OFF)
 
@@ -100,110 +103,110 @@ add_custom_command(
 
 add_test(blargg/cpu_instrs
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/cpu_instrs/cpu_instrs.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/cpu_instrs/cpu_instrs-dmg-cgb.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/cpu_instrs/cpu_instrs.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/cpu_instrs/cpu_instrs-dmg-cgb.png"
         "--ticks" "300000000")
 
 add_test(blargg/instr_timing
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/instr_timing/instr_timing.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/instr_timing/instr_timing-dmg-cgb.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/instr_timing/instr_timing.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/instr_timing/instr_timing-dmg-cgb.png"
         "--ticks" "20000000")
 
 add_test(blargg/interrupt_time
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/interrupt_time/interrupt_time.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/interrupt_time/interrupt_time-dmg.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/interrupt_time/interrupt_time.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/interrupt_time/interrupt_time-dmg.png"
         "--ticks" "20000000")
 
 add_test(blargg/mem_timing
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/mem_timing/mem_timing.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/mem_timing/mem_timing-dmg-cgb.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/mem_timing/mem_timing.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/mem_timing/mem_timing-dmg-cgb.png"
         "--ticks" "20000000")
 
 add_test(blargg/mem_timing-2
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/mem_timing-2/mem_timing.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/mem_timing-2/mem_timing-dmg-cgb.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/mem_timing-2/mem_timing.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/mem_timing-2/mem_timing-dmg-cgb.png"
         "--ticks" "20000000")
 
 ## Tests not yet implemented
 
 #add_test(blargg/dmg_sound
 #        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-#                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/dmg_sound/dmg_sound.gb"
-#        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/dmg_sound/dmg_sound-dmg.png"
+#                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/dmg_sound/dmg_sound.gb"
+#        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/dmg_sound/dmg_sound-dmg.png"
 #        "--ticks" "300000000")
 
 #add_test(blargg/oam_bug
 #        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-#                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/oam_bug/oam_bug.gb"
-#        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/oam_bug/oam_bug-dmg.png"
+#                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/oam_bug/oam_bug.gb"
+#        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/oam_bug/oam_bug-dmg.png"
 #        "--ticks" "300000000")
 
 #add_test(blargg/halt_bug
 #        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-#                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/halt_bug.gb"
-#        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/blargg/halt_bug-dmg-cgb.png"
+#                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/halt_bug.gb"
+#        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/blargg/halt_bug-dmg-cgb.png"
 #        "--ticks" "20000000")
 
 #add_test(bully
 #        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-#                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/bully/bully.gb"
-#        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/bully/bully.png"
+#                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/bully/bully.gb"
+#        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/bully/bully.png"
 #        "--ticks" "20000000")
 
 add_test(dmg-acid2
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/dmg-acid2/dmg-acid2.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/dmg-acid2/dmg-acid2-dmg.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/dmg-acid2/dmg-acid2.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/dmg-acid2/dmg-acid2-dmg.png"
         "--ticks" "4000000")
 
 add_test(mooneye/manual-only/sprite_priority
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/mooneye-test-suite/manual-only/sprite_priority.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/mooneye-test-suite/manual-only/sprite_priority-dmg.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/mooneye-test-suite/manual-only/sprite_priority.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/mooneye-test-suite/manual-only/sprite_priority-dmg.png"
         "--ticks" "1000000")
 
 add_test(mbc3-tester
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/mbc3-tester/mbc3-tester.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/mbc3-tester/mbc3-tester-dmg.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/mbc3-tester/mbc3-tester.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/mbc3-tester/mbc3-tester-dmg.png"
         "--ticks" "4000000")
 
 add_test(scribbltest/lycscx
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/lycscx/lycscx.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/lycscx/lycscx-cgb-dmg.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/scribbltests/lycscx/lycscx.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/scribbltests/lycscx/lycscx-cgb-dmg.png"
         "--ticks" "1000000")
 
 add_test(scribbltest/lycscy
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/lycscy/lycscy.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/lycscy/lycscy-cgb-dmg.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/scribbltests/lycscy/lycscy.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/scribbltests/lycscy/lycscy-cgb-dmg.png"
         "--ticks" "1000000")
 
 add_test(scribbltest/palettely
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/palettely/palettely.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/palettely/palettely-dmg.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/scribbltests/palettely/palettely.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/scribbltests/palettely/palettely-dmg.png"
         "--ticks" "1000000")
 
 add_test(scribbltest/scxly
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/scxly/scxly.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/scribbltests/scxly/scxly-dmg.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/scribbltests/scxly/scxly.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/scribbltests/scxly/scxly-dmg.png"
         "--ticks" "1000000")
 
 add_test(turtle-tests/window_y_trigger
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/turtle-tests/window_y_trigger/window_y_trigger.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/turtle-tests/window_y_trigger/window_y_trigger.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/turtle-tests/window_y_trigger/window_y_trigger.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/turtle-tests/window_y_trigger/window_y_trigger.png"
         "--ticks" "1000000")
 
 add_test(turtle-tests/window_y_trigger_wx_offscreen
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}"
-                  "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/turtle-tests/window_y_trigger_wx_offscreen/window_y_trigger_wx_offscreen.gb"
-        "--image" "${CMAKE_SOURCE_DIR}/game-boy-test-roms/artifacts/turtle-tests/window_y_trigger_wx_offscreen/window_y_trigger_wx_offscreen.png"
+                  "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/turtle-tests/window_y_trigger_wx_offscreen/window_y_trigger_wx_offscreen.gb"
+        "--image" "${CMAKE_SOURCE_DIR}/third-party/game-boy-test-roms/artifacts/turtle-tests/window_y_trigger_wx_offscreen/window_y_trigger_wx_offscreen.png"
         "--ticks" "1000000")

@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "../../sr_webcam/include/sr_webcam.h"
+#include "sr_webcam.h"
 
 #ifndef CHILLYGB_CAMERA_H
 #define CHILLYGB_CAMERA_H
