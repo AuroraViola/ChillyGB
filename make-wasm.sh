@@ -3,9 +3,9 @@
 mkdir -p build-wasm
 cp res/icons/ChillyGB.svg build-wasm/icon.svg
 emcc -o build-wasm/index.html \
-	src/main.c src/modules/* cJSON/cJSON.c\
-	-Os -Wall raylib/src/libraylib.a \
-	-I. -Iraylib/src/ -L. -Lraylib/src/ -s USE_GLFW=3 \
+	src/main.c src/modules/* third-party/cJSON/cJSON.c third-party/sr_webcam/src/sr_webcam.c third-party/sr_webcam/src/sr_webcam_lin.c\
+	-Os -Wall third-party/raylib/src/libraylib.a \
+	-I. -Ithird-party/raylib/src/ -L. -Lthird-party/raylib/src/ -s USE_GLFW=3 \
 	-DPLATFORM_WEB \
 	-sEXPORTED_RUNTIME_METHODS=ccall \
 	-sEXPORTED_FUNCTIONS=_load_settings,_pause_game,_load_cartridge,_main,_in_game \

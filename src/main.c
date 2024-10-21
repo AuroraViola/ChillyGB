@@ -13,7 +13,7 @@
 #include "includes/savestates.h"
 #include "includes/opcodes.h"
 #include "includes/camera.h"
-#include "../raylib-nuklear/include/raylib-nuklear.h"
+#include "raylib-nuklear.h"
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>

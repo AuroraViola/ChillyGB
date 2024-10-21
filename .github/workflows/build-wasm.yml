@@ -26,7 +26,7 @@ jobs:
     - name: Build Raylib
       run: |
         source emsdk/emsdk_env.sh
-        cd raylib/src
+        cd third-party/raylib/src
         emcc -c rcore.c -Os -Wall -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2
         emcc -c rshapes.c -Os -Wall -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2
         emcc -c rtextures.c -Os -Wall -DPLATFORM_WEB -DGRAPHICS_API_OPENGL_ES2

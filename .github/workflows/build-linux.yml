@@ -23,8 +23,8 @@ jobs:
 
     - name: Get submodule commit
       run: |
-        echo "ROM_COMMIT=$(git submodule status game-boy-test-roms)" >> $GITHUB_ENV
-        echo "RAYLIB_COMMIT=$(git submodule status raylib)" >> $GITHUB_ENV
+        echo "ROM_COMMIT=$(git submodule status third-party/game-boy-test-roms)" >> $GITHUB_ENV
+        echo "RAYLIB_COMMIT=$(git submodule status third-party/raylib)" >> $GITHUB_ENV
 
     - name: root suid tar
       run: sudo chown root:root /bin/tar && sudo chmod u+s /bin/tar
@@ -48,7 +48,7 @@ jobs:
     - name: Build Raylib
       if: steps.cache-raylib-restore.outputs.cache-hit != 'true'
       run: |
-        cd raylib
+        cd third-party/raylib
         mkdir build && cd build
         cmake -DBUILD_SHARED_LIBS=ON ..
         make && sudo make install
@@ -97,7 +97,7 @@ jobs:
     - name: Build Roms
       if: steps.cache-roms-restore.outputs.cache-hit != 'true'
       run: |
-        cd game-boy-test-roms/src
+        cd third-party/game-boy-test-roms/src
         ./assemble-all.sh
 
     - name: Save Roms
@@ -105,7 +105,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         path: |
-          game-boy-test-roms/artifacts
+          third-party/game-boy-test-roms/artifacts
         key: ${{ steps.cache-roms-restore.outputs.cache-primary-key }}
 
     - name: Run tests
