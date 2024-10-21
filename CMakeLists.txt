@@ -60,8 +60,10 @@ add_executable(ChillyGB src/main.c
         src/includes/camera.h
         src/modules/camera.c
         sr_webcam/src/sr_webcam.c
+        sr_webcam/include/sr_webcam.h
         sr_webcam/src/sr_webcam_lin.c
 )
+include_directories(sr_webcam/include)
 target_link_libraries(ChillyGB raylib m)
 option(CUSTOM_OPEN_DIALOG "Enable custom open dialog box built with Nuklear" OFF)
 
