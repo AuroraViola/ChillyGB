@@ -17,7 +17,6 @@ typedef struct {
     unsigned char* buffer;
     int hasFrame;
     uint8_t pixels[240][320][3];
-    uint8_t pixels_color[112][128];
     uint8_t gb_pixels[14][16][16];
 }camera;
 

@@ -12,6 +12,7 @@
 #include "includes/open_dialog.h"
 #include "includes/savestates.h"
 #include "includes/opcodes.h"
+#include "includes/camera.h"
 #include "../raylib-nuklear/include/raylib-nuklear.h"
 #include <stdio.h>
 #include <getopt.h>
@@ -1050,6 +1051,11 @@ int main(int argc, char **argv) {
         update_frame();
     }
     #endif
+
+    if (c.cart.type == 0xfc) {
+        sr_webcam_stop(gbcamera.device);
+        sr_webcam_delete(gbcamera.device);
+    }
 
     save_game(&c.cart, rom_name);
     UnloadTexture(display);
