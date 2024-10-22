@@ -38,7 +38,57 @@ uint8_t gb_cam_matrix_process(int value, int x, int y) {
     return 0xC0;
 }
 
-#ifndef PLATFORM_WEB
+#if defined(PLATFORM_NX)
+void initialize_camera() {
+}
+
+bool capture_frame(uint8_t camera_matrix[112][128]) {
+    return false;
+}
+
+void stop_camera(){
+}
+
+#elif defined(PLATFORM_WEB)
+#include <emscripten/emscripten.h>
+
+struct {
+    uint8_t pixels[112][128][4];
+    bool hasFrame;
+}camera_wasm;
+
+void cameraCallback(unsigned char* data) {
+    memcpy(camera_wasm.pixels, data, sizeof(camera_wasm.pixels));
+    camera_wasm.hasFrame = 1;
+}
+
+void initialize_camera(){
+    camera_wasm.hasFrame = 0;
+    EM_ASM(
+        initCamera();
+    );
+}
+
+bool capture_frame(uint8_t camera_matrix[112][128]) {
+    if (!camera_wasm.hasFrame) {
+        return false;
+    }
+    for (int y = 0; y < 112; y++) {
+        for (int x = 0; x < 128; x++) {
+            uint8_t r = camera_wasm.pixels[y][x][0];
+            uint8_t g = camera_wasm.pixels[y][x][1];
+            uint8_t b = camera_wasm.pixels[y][x][2];
+            camera_matrix[y][x] = (uint8_t)(0.21 * r + 0.72 * g + 0.07 * b);
+        }
+    }
+
+    return true;
+}
+
+void stop_camera(){
+    // TODO: implement
+}
+#else
 #include "openpnp-capture.h"
 
 struct {
@@ -106,45 +156,7 @@ bool capture_frame(uint8_t camera_matrix[112][128]) {
 
     return true;
 }
-#else
-#include <emscripten/emscripten.h>
 
-struct {
-    uint8_t pixels[112][128][4];
-    bool hasFrame;
-}camera_wasm;
-
-void cameraCallback(unsigned char* data) {
-    memcpy(camera_wasm.pixels, data, sizeof(camera_wasm.pixels));
-    camera_wasm.hasFrame = 1;
-}
-
-void initialize_camera(){
-    camera_wasm.hasFrame = 0;
-    EM_ASM(
-        initCamera();
-    );
-}
-
-bool capture_frame(uint8_t camera_matrix[112][128]) {
-    if (!camera_wasm.hasFrame) {
-        return false;
-    }
-    for (int y = 0; y < 112; y++) {
-        for (int x = 0; x < 128; x++) {
-            uint8_t r = camera_wasm.pixels[y][x][0];
-            uint8_t g = camera_wasm.pixels[y][x][1];
-            uint8_t b = camera_wasm.pixels[y][x][2];
-            camera_matrix[y][x] = (uint8_t)(0.21 * r + 0.72 * g + 0.07 * b);
-        }
-    }
-
-    return true;
-}
-
-void stop_camera(){
-    // TODO: implement
-}
 #endif
 
 uint8_t pixels_color_orig[112][128];
