@@ -7,6 +7,6 @@
 [submodule "cJSON"]
 	path = third-party/cJSON
 	url = https://github.com/DaveGamble/cJSON
-[submodule "sr_webcam"]
-	path = third-party/sr_webcam
-	url = https://github.com/kosua20/sr_webcam
+[submodule "third-party/openpnp-capture"]
+	path = third-party/openpnp-capture
+	url = https://github.com/openpnp/openpnp-capture

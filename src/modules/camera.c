@@ -39,50 +39,107 @@ uint8_t gb_cam_matrix_process(int value, int x, int y) {
 }
 
 #ifndef PLATFORM_WEB
-#include "sr_webcam.h"
-sr_webcam_device* cameraDevice;
+#include "openpnp-capture.h"
 
-void cameraCallback(sr_webcam_device* device, void* data) {
-    //memcpy(gbcamera.buffer, data, sr_webcam_get_format_size(device));
-    memcpy(gbcamera.pixels, data, sr_webcam_get_format_size(device));
-    gbcamera.hasFrame = 1;
-}
+struct {
+    CapContext context;
+    CapStream stream;
+    CapFormatInfo formatinfo;
+    uint8_t *buffer;
+    uint32_t buffer_size;
+}camera_pnp;
 
 void initialize_camera() {
-    gbcamera.hasFrame = 0;
-    sr_webcam_create(&cameraDevice, 0);
-    sr_webcam_set_format(cameraDevice, 320, 240, 30);
-    sr_webcam_set_callback(cameraDevice, cameraCallback);
-    sr_webcam_open(cameraDevice);
-
-    sr_webcam_get_dimensions(cameraDevice, &gbcamera.vidW, &gbcamera.vidH);
-    sr_webcam_get_framerate(cameraDevice, &gbcamera.vidFps);
-    int vidSize = sr_webcam_get_format_size(cameraDevice);
-    gbcamera.buffer	= (unsigned char*)calloc(vidSize, sizeof(unsigned char));
-    
-    sr_webcam_start(cameraDevice);
+    camera_pnp.context = Cap_createContext();
+    camera_pnp.stream = Cap_openStream(camera_pnp.context, 0, 0);
+    Cap_getFormatInfo(camera_pnp.context, 0, 0, &camera_pnp.formatinfo);
+    camera_pnp.buffer_size = camera_pnp.formatinfo.width * camera_pnp.formatinfo.height * (camera_pnp.formatinfo.bpp / 8);
+    camera_pnp.buffer = malloc(camera_pnp.buffer_size);
 }
 
 void stop_camera() {
-    sr_webcam_stop(cameraDevice);
-    sr_webcam_delete(cameraDevice);
+    free(camera_pnp.buffer);
+    Cap_closeStream(camera_pnp.context, camera_pnp.stream);
+    Cap_releaseContext(camera_pnp.context);
+}
+
+void rgb888_to_monochrome(const uint8_t *image, int width, int height, uint8_t output[112][128]) {
+    // Scaled dimensions
+    int target_width = 128;
+    int target_height = 112;
+
+    // Calculate scaling factors
+    float scale_x = (float)width / target_width;
+    float scale_y = (float)height / target_height;
+
+    for (int y = 0; y < target_height; y++) {
+        for (int x = 0; x < target_width; x++) {
+            // Calculate the corresponding pixel in the original image
+            int orig_x = (int)(x * scale_x);
+            int orig_y = (int)(y * scale_y);
+
+            // Ensure we don't go out of bounds
+            if (orig_x >= width) orig_x = width - 1;
+            if (orig_y >= height) orig_y = height - 1;
+
+            // Get the RGB values
+            const uint8_t *pixel = image + (orig_y * width + orig_x) * 3;
+            uint8_t r = pixel[0];
+            uint8_t g = pixel[1];
+            uint8_t b = pixel[2];
+
+            // Convert to grayscale using the luminosity method
+            uint8_t gray = (uint8_t)(0.21 * r + 0.72 * g + 0.07 * b);
+
+            // Set the output pixel
+            output[y][x] = gray;
+        }
+    }
+}
+
+bool capture_frame(uint8_t camera_matrix[112][128]) {
+    if (!Cap_hasNewFrame(camera_pnp.context, camera_pnp.stream)) {
+        return false;
+    }
+    Cap_captureFrame(camera_pnp.context, camera_pnp.stream, camera_pnp.buffer, camera_pnp.buffer_size);
+    rgb888_to_monochrome(camera_pnp.buffer, camera_pnp.formatinfo.width, camera_pnp.formatinfo.height, camera_matrix);
+
+    return true;
 }
 #else
 #include <emscripten/emscripten.h>
 
+struct {
+    uint8_t pixels[112][128][4];
+    bool hasFrame;
+}camera_wasm;
+
 void cameraCallback(unsigned char* data) {
-    memcpy(gbcamera.pixels, data, 320*240*3);
-    gbcamera.hasFrame = 1;
+    memcpy(camera_wasm.pixels, data, sizeof(camera_wasm.pixels));
+    camera_wasm.hasFrame = 1;
 }
 
 void initialize_camera(){
-    gbcamera.hasFrame = 0;
-    gbcamera.vidW = 320;
-    gbcamera.vidH = 240;
-    gbcamera.vidFps = 30;
+    camera_wasm.hasFrame = 0;
     EM_ASM(
         initCamera();
     );
+}
+
+bool capture_frame(uint8_t camera_matrix[112][128]) {
+    if (!camera_wasm.hasFrame) {
+        return false;
+    }
+    for (int y = 0; y < 112; y++) {
+        for (int x = 0; x < 128; x++) {
+            uint8_t r = camera_wasm.pixels[y][x][0];
+            uint8_t g = camera_wasm.pixels[y][x][1];
+            uint8_t b = camera_wasm.pixels[y][x][2];
+            camera_matrix[y][x] = (uint8_t)(0.21 * r + 0.72 * g + 0.07 * b);
+        }
+    }
+
+    return true;
 }
 
 void stop_camera(){
@@ -90,166 +147,163 @@ void stop_camera(){
 }
 #endif
 
+uint8_t pixels_color_orig[112][128];
 int pixels_color[112][128];
 int temp_buffer[112][128];
 
 void capture_image() {
-    if (gbcamera.hasFrame > 0) {
-        // Register 0
-        uint32_t P_bits = 0;
-        uint32_t M_bits = 0;
 
-        switch((gbcamera.reg[0]>>1)&3 ) {
-            case 0:
-                P_bits = 0x00; M_bits = 0x01;
-                break;
-            case 1:
-                P_bits = 0x01; M_bits = 0x00;
-                break;
-            case 2 ... 3:
-                P_bits = 0x01; M_bits = 0x02;
-                break;
-            default:
-                break;
+    // Register 0
+    uint32_t P_bits = 0;
+    uint32_t M_bits = 0;
+
+    switch((gbcamera.reg[0]>>1)&3 ) {
+        case 0:
+            P_bits = 0x00; M_bits = 0x01;
+            break;
+        case 1:
+            P_bits = 0x01; M_bits = 0x00;
+            break;
+        case 2 ... 3:
+            P_bits = 0x01; M_bits = 0x02;
+            break;
+        default:
+            break;
+    }
+
+    // Register 1
+    uint32_t N_bit = (gbcamera.reg[1] & 128) >> 7;
+    uint32_t VH_bits = (gbcamera.reg[1] & 96) >> 5;
+
+    // Registers 2 and 3
+    uint32_t EXPOSURE_bits = gbcamera.reg[3] | (gbcamera.reg[2]<<8);
+
+    // Register 4
+    const float edge_ratio_lut[8] = {0.50, 0.75, 1.00, 1.25, 2.00, 3.00, 4.00, 5.00};
+
+    float EDGE_alpha = edge_ratio_lut[(gbcamera.reg[4] & 0x70)>>4];
+
+    uint32_t E3_bit = (gbcamera.reg[4] & 128) >> 7;
+    uint32_t I_bit = (gbcamera.reg[4] & 8) >> 3;
+
+    capture_frame(pixels_color_orig);
+
+    // Retrive image from the webcam and apply filtering
+    for (int i = 0; i < 112; i++) {
+        for (int j = 0; j < 128; j++) {
+            int value = pixels_color_orig[i][j];
+            value = ((value * EXPOSURE_bits) / 0x0300);
+            value = 128 + ((value-128)/8);
+
+            value = clamp(0, value, 255);
+
+            pixels_color[i][j] = (value) - 128;
         }
+    }
 
-        // Register 1
-        uint32_t N_bit = (gbcamera.reg[1] & 128) >> 7;
-        uint32_t VH_bits = (gbcamera.reg[1] & 96) >> 5;
+    // Filtering
+    uint32_t filtering_mode = (N_bit<<3) | (VH_bits<<1) | E3_bit;
 
-        // Registers 2 and 3
-        uint32_t EXPOSURE_bits = gbcamera.reg[3] | (gbcamera.reg[2]<<8);
-
-        // Register 4
-        const float edge_ratio_lut[8] = {0.50, 0.75, 1.00, 1.25, 2.00, 3.00, 4.00, 5.00};
-
-        float EDGE_alpha = edge_ratio_lut[(gbcamera.reg[4] & 0x70)>>4];
-
-        uint32_t E3_bit = (gbcamera.reg[4] & 128) >> 7;
-        uint32_t I_bit = (gbcamera.reg[4] & 8) >> 3;
-
-        // Retrive image from the webcam and apply filtering
-        for (int i = 0; i < 112; i++) {
-            for (int j = 0; j < 128; j++) {
-                int value = gbcamera.pixels[i+8][j+16][0];
-                value = ((value * EXPOSURE_bits) / 0x0300);
-                value = 128 + ((value-128)/8);
-
-                if(value < 0)
-                    value = 0;
-                else if(value > 255)
-                    value = 255;
-
-                pixels_color[i][j] = (value) - 128;
+    switch (filtering_mode) {
+        case 0x0:
+            for(int i = 0; i < 112; i++) {
+                for (int j = 0; j < 128; j++) {
+                    temp_buffer[i][j] = pixels_color[i][j];
+                }
             }
-        }
+            for(int i = 0; i < 112; i++) {
+                for (int j = 0; j < 128; j++) {
+                    int ms = temp_buffer[min(i+1,112-1)][j];
+                    int px = temp_buffer[i][j];
 
-        // Filtering
-        uint32_t filtering_mode = (N_bit<<3) | (VH_bits<<1) | E3_bit;
-        printf("filtering_mode: %x\n", filtering_mode);
-
-        switch (filtering_mode) {
-            case 0x0:
-                for(int i = 0; i < 112; i++) {
-                    for (int j = 0; j < 128; j++) {
-                        temp_buffer[i][j] = pixels_color[i][j];
-                    }
+                    int value = 0;
+                    if(P_bits & 1) value += px;
+                    if(P_bits & 2) value += ms;
+                    if(M_bits & 1) value -= px;
+                    if(M_bits & 2) value -= ms;
+                    pixels_color[i][j] = clamp(-128,value,127);
                 }
-                for(int i = 0; i < 112; i++) {
-                    for (int j = 0; j < 128; j++) {
-                        int ms = temp_buffer[min(i+1,112-1)][j];
-                        int px = temp_buffer[i][j];
-
-                        int value = 0;
-                        if(P_bits & 1) value += px;
-                        if(P_bits & 2) value += ms;
-                        if(M_bits & 1) value -= px;
-                        if(M_bits & 2) value -= ms;
-                        pixels_color[i][j] = clamp(-128,value,127);
-                    }
-                }
-                break;
-            case 0x2:
-                for(int i = 0; i < 112; i++) {
-                    for (int j = 0; j < 128; j++) {
-                        int mw = pixels_color[i][max(0,j-1)];
-                        int me = pixels_color[i][min(j+1,128-1)];
-                        int px = pixels_color[i][j];
-
-                        temp_buffer[i][j] = clamp(0,px+((2*px-mw-me)*EDGE_alpha),255);
-                    }
-                }
-                for(int i = 0; i < 112; i++) {
-                    for (int j = 0; j < 128; j++) {
-                        int ms = temp_buffer[min(i+1,112-1)][j];
-                        int px = temp_buffer[i][j];
-
-                        int value = 0;
-                        if(P_bits & 1) value += px;
-                        if(P_bits & 2) value += ms;
-                        if(M_bits & 1) value -= px;
-                        if(M_bits & 2) value -= ms;
-                        pixels_color[i][j] = clamp(-128,value,127);
-                    }
-                }
-                break;
-            case 0xe:
-                for(int i = 0; i < 112; i++) {
-                    for (int j = 0; j < 128; j++) {
-                        int ms = pixels_color[min(i + 1, 112 - 1)][j];
-                        int mn = pixels_color[max(0, i - 1)][j];
-                        int mw = pixels_color[i][max(0, j - 1)];
-                        int me = pixels_color[i][min(j + 1, 128 - 1)];
-                        int px = pixels_color[i][j];
-
-                        temp_buffer[i][j] = clamp(-128, px + ((4 * px - mw - me - mn - ms) * EDGE_alpha), 127);
-                    }
-                    for (int j = 0; j < 128; j++) {
-                        pixels_color[i][j] = temp_buffer[i][j];
-                    }
-                }
-                break;
-            case 0x1:
-                for(int i = 0; i < 112; i++) {
-                    for (int j = 0; j < 128; j++) {
-                        pixels_color[i][j] = 0;
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-
-        for(int i = 0; i < 112; i++) {
-            for (int j = 0; j < 128; j++) {
-                pixels_color[i][j] += 128;
             }
-        }
+            break;
+        case 0x2:
+            for(int i = 0; i < 112; i++) {
+                for (int j = 0; j < 128; j++) {
+                    int mw = pixels_color[i][max(0,j-1)];
+                    int me = pixels_color[i][min(j+1,128-1)];
+                    int px = pixels_color[i][j];
 
-        for(int i = 0; i < 112; i++) {
-            for (int j = 0; j < 128; j++) {
-                pixels_color[i][j] = gb_cam_matrix_process(pixels_color[i][j], i, j);
+                    temp_buffer[i][j] = clamp(0,px+((2*px-mw-me)*EDGE_alpha),255);
+                }
             }
-        }
+            for(int i = 0; i < 112; i++) {
+                for (int j = 0; j < 128; j++) {
+                    int ms = temp_buffer[min(i+1,112-1)][j];
+                    int px = temp_buffer[i][j];
 
-        for(int i = 0; i < 112; i++) {
-            for (int j = 0; j < 128; j++) {
-                uint8_t outcolor = 3 - ((uint8_t)(pixels_color[i][j]) >> 6);
-
-                uint8_t *tile_base = gbcamera.gb_pixels[i >> 3][j >> 3];
-                tile_base = &tile_base[(i & 7) * 2];
-
-                if (outcolor & 1)
-                    tile_base[0] |= 1 << (7 - (7 & j));
-                else
-                    tile_base[0] &= ~(1 << (7 - (7 & j)));
-                if (outcolor & 2)
-                    tile_base[1] |= 1 << (7 - (7 & j));
-                else
-                    tile_base[1] &= ~(1 << (7 - (7 & j)));
+                    int value = 0;
+                    if(P_bits & 1) value += px;
+                    if(P_bits & 2) value += ms;
+                    if(M_bits & 1) value -= px;
+                    if(M_bits & 2) value -= ms;
+                    pixels_color[i][j] = clamp(-128,value,127);
+                }
             }
+            break;
+        case 0xe:
+            for(int i = 0; i < 112; i++) {
+                for (int j = 0; j < 128; j++) {
+                    int ms = pixels_color[min(i + 1, 112 - 1)][j];
+                    int mn = pixels_color[max(0, i - 1)][j];
+                    int mw = pixels_color[i][max(0, j - 1)];
+                    int me = pixels_color[i][min(j + 1, 128 - 1)];
+                    int px = pixels_color[i][j];
+
+                    temp_buffer[i][j] = clamp(-128, px + ((4 * px - mw - me - mn - ms) * EDGE_alpha), 127);
+                }
+                for (int j = 0; j < 128; j++) {
+                    pixels_color[i][j] = temp_buffer[i][j];
+                }
+            }
+            break;
+        case 0x1:
+            for(int i = 0; i < 112; i++) {
+                for (int j = 0; j < 128; j++) {
+                    pixels_color[i][j] = 0;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+
+    for(int i = 0; i < 112; i++) {
+        for (int j = 0; j < 128; j++) {
+            pixels_color[i][j] += 128;
         }
-        gbcamera.hasFrame = 0;
+    }
+
+    for(int i = 0; i < 112; i++) {
+        for (int j = 0; j < 128; j++) {
+            pixels_color[i][j] = gb_cam_matrix_process(pixels_color[i][j], i, j);
+        }
+    }
+
+    for(int i = 0; i < 112; i++) {
+        for (int j = 0; j < 128; j++) {
+            uint8_t outcolor = 3 - ((uint8_t)(pixels_color[i][j]) >> 6);
+
+            uint8_t *tile_base = gbcamera.gb_pixels[i >> 3][j >> 3];
+            tile_base = &tile_base[(i & 7) * 2];
+
+            if (outcolor & 1)
+                tile_base[0] |= 1 << (7 - (7 & j));
+            else
+                tile_base[0] &= ~(1 << (7 - (7 & j)));
+            if (outcolor & 2)
+                tile_base[1] |= 1 << (7 - (7 & j));
+            else
+                tile_base[1] &= ~(1 << (7 - (7 & j)));
+        }
     }
 }
 

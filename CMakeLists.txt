@@ -58,16 +58,15 @@ add_executable(ChillyGB src/main.c
         src/modules/serial.c
         src/includes/camera.h
         src/modules/camera.c
-        third-party/sr_webcam/src/sr_webcam.c
-        third-party/sr_webcam/include/sr_webcam.h
-        third-party/sr_webcam/src/sr_webcam_lin.c
         third-party/cJSON/cJSON.c
 )
-include_directories(third-party/sr_webcam/include
+include_directories(
+        third-party/openpnp-capture/include
         third-party/cJSON
         third-party/raylib-nuklear/include
 )
-target_link_libraries(ChillyGB raylib m)
+add_subdirectory(third-party/openpnp-capture)
+target_link_libraries(ChillyGB raylib m openpnp-capture)
 option(CUSTOM_OPEN_DIALOG "Enable custom open dialog box built with Nuklear" OFF)
 
 if(CUSTOM_OPEN_DIALOG)

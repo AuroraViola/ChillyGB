@@ -8,12 +8,6 @@ typedef struct {
     uint8_t reg[0x37];
     int32_t timing;
 
-    int vidW;
-    int vidH;
-    int vidFps;
-    unsigned char* buffer;
-    int hasFrame;
-    uint8_t pixels[240][320][3];
     uint8_t gb_pixels[14][16][16];
 }camera;
 
