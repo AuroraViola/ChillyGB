@@ -54,6 +54,7 @@ jobs:
         make && sudo make install
 
     - name: Save Raylib
+      if: steps.cache-raylib-restore.outputs.cache-hit != 'true'
       id: cache-raylib-save
       uses: actions/cache/save@v4
       with:
@@ -76,7 +77,11 @@ jobs:
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     - name: Prepare artifacts
-      run: cp /usr/local/lib/libraylib.so.550 build && cd build && patchelf --remove-needed libraylib.so.550 ChillyGB && patchelf --add-needed ./libraylib.so.550 ChillyGB
+      run: |
+        cp /usr/local/lib/libraylib.so.550 build
+        cd build
+        patchelf --remove-needed libraylib.so.550 ChillyGB
+        patchelf --add-needed ./libraylib.so.550 ChillyGB
 
     - uses: actions/upload-artifact@v4
       with:
@@ -84,6 +89,7 @@ jobs:
         path: |
           build/ChillyGB
           build/res
+          build/third-party
           build/libraylib.so.550
 
     - name: Restore cached Roms
@@ -91,7 +97,7 @@ jobs:
       uses: actions/cache/restore@v4
       with:
         path: |
-          game-boy-test-roms/artifacts
+          third-party/game-boy-test-roms/artifacts
         key: ${{ env.ROM_COMMIT }}
 
     - name: Build Roms
@@ -101,6 +107,7 @@ jobs:
         ./assemble-all.sh
 
     - name: Save Roms
+      if: steps.cache-roms-restore.outputs.cache-hit != 'true'
       id: cache-roms-save
       uses: actions/cache/save@v4
       with:
