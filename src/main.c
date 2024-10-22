@@ -605,7 +605,7 @@ void update_frame() {
                 }
                 DrawNuklear(ctx);
             DrawText(debug_text, 50, 50, 25, WHITE);
-
+            
             EndDrawing();
             if (game_started)
                 SetWindowTitle("ChillyGB - Paused");
@@ -1053,8 +1053,7 @@ int main(int argc, char **argv) {
     #endif
 
     if (c.cart.type == 0xfc) {
-        sr_webcam_stop(gbcamera.device);
-        sr_webcam_delete(gbcamera.device);
+        stop_camera();
     }
 
     save_game(&c.cart, rom_name);

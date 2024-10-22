@@ -337,6 +337,8 @@
     </div>
   </div>
   <input style="display: none" type="file" id="open_romfile">
+  <video id="camera" style="display: none;" autoplay playsinline></video>
+  <canvas id="camera-canvas" style="display: none;"></canvas>
   <script type='text/javascript'>
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", function() {
@@ -589,6 +591,61 @@
         toggleCompactView();
       }
     });
+
+    function rgbaToRgb(imageData) {
+      const rgba = imageData.data; // The original RGBA array
+      const length = rgba.length;
+      const rgb = new Uint8Array((length / 4) * 3); // Allocate array for RGB (3 bytes per pixel)
+
+      let rgbIndex = 0;
+      for (let i = 0; i < length; i += 4) {
+          // Copy the R, G, and B values (ignore the A value)
+          rgb[rgbIndex++] = rgba[i];     // Red
+          rgb[rgbIndex++] = rgba[i + 1]; // Green
+          rgb[rgbIndex++] = rgba[i + 2]; // Blue
+      }
+
+      return rgb; // Return the RGB array
+    }
+
+    function initCamera(){
+      const video = document.getElementById('camera');
+      const cameraCanvas = document.getElementById('camera-canvas');
+      const cameraContext = cameraCanvas.getContext('2d');
+
+      navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      video.srcObject = stream;
+      video.play();
+      
+      // Set canvas size based on the video size
+      video.addEventListener('loadedmetadata', () => {
+        cameraCanvas.width = 320;
+        cameraCanvas.height = 240;
+
+        // Start capturing frames
+        processFrame();
+        });
+      }).catch((err) => {
+        console.error("Error accessing the camera: ", err);
+      });
+
+      function processFrame() {
+        // Draw current video frame to the canvas
+        cameraContext.drawImage(video, 0, 0, cameraCanvas.width, cameraCanvas.height);
+
+        // Get the image data (pixel values) from the canvas
+        const imageData = cameraContext.getImageData(0, 0, 320, 240);
+        const pixelData = rgbaToRgb(imageData); // Uint8ClampedArray
+        //console.log(pixelData.filter((p)=> p != 0).length);
+        // Call the WASM function to process the frame
+        const rgbPtr = _malloc(320*240*3);
+        HEAPU8.set(pixelData, rgbPtr);
+
+        ccall('cameraCallback', "v", ['number'],[rgbPtr]);
+        _free(rgbPtr);
+        requestAnimationFrame(processFrame);
+      }
+    }
 
     var statusElement = document.getElementById('status');
 

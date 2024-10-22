@@ -38,7 +38,11 @@ uint8_t gb_cam_matrix_process(int value, int x, int y) {
     return 0xC0;
 }
 
-void callback(sr_webcam_device* device, void* data) {
+#ifndef PLATFORM_WEB
+#include "sr_webcam.h"
+sr_webcam_device* cameraDevice;
+
+void cameraCallback(sr_webcam_device* device, void* data) {
     //memcpy(gbcamera.buffer, data, sr_webcam_get_format_size(device));
     memcpy(gbcamera.pixels, data, sr_webcam_get_format_size(device));
     gbcamera.hasFrame = 1;
@@ -46,18 +50,48 @@ void callback(sr_webcam_device* device, void* data) {
 
 void initialize_camera() {
     gbcamera.hasFrame = 0;
-    sr_webcam_create(&gbcamera.device, 0);
-    sr_webcam_set_format(gbcamera.device, 320, 240, 30);
-    sr_webcam_set_callback(gbcamera.device, callback);
-    sr_webcam_open(gbcamera.device);
+    sr_webcam_create(&cameraDevice, 0);
+    sr_webcam_set_format(cameraDevice, 320, 240, 30);
+    sr_webcam_set_callback(cameraDevice, cameraCallback);
+    sr_webcam_open(cameraDevice);
 
-    sr_webcam_get_dimensions(gbcamera.device, &gbcamera.vidW, &gbcamera.vidH);
-    sr_webcam_get_framerate(gbcamera.device, &gbcamera.vidFps);
-    int vidSize = sr_webcam_get_format_size(gbcamera.device);
+    sr_webcam_get_dimensions(cameraDevice, &gbcamera.vidW, &gbcamera.vidH);
+    sr_webcam_get_framerate(cameraDevice, &gbcamera.vidFps);
+    int vidSize = sr_webcam_get_format_size(cameraDevice);
     gbcamera.buffer	= (unsigned char*)calloc(vidSize, sizeof(unsigned char));
-
-    sr_webcam_start(gbcamera.device);
+    
+    sr_webcam_start(cameraDevice);
 }
+
+void stop_camera() {
+    sr_webcam_stop(cameraDevice);
+    sr_webcam_delete(cameraDevice);
+}
+#else
+#include <emscripten/emscripten.h>
+
+void cameraCallback(unsigned char* data) {
+    memcpy(gbcamera.pixels, data, 320*240*3);
+    gbcamera.hasFrame = 1;
+}
+
+void initialize_camera(){
+    gbcamera.hasFrame = 0;
+    gbcamera.vidW = 320;
+    gbcamera.vidH = 240;
+    gbcamera.vidFps = 30;
+    EM_ASM(
+        initCamera();
+    );
+}
+
+void stop_camera(){
+    // TODO: implement
+}
+#endif
+
+int pixels_color[112][128];
+int temp_buffer[112][128];
 
 void capture_image() {
     if (gbcamera.hasFrame > 0) {
@@ -95,7 +129,6 @@ void capture_image() {
         uint32_t I_bit = (gbcamera.reg[4] & 8) >> 3;
 
         // Retrive image from the webcam and apply filtering
-        int pixels_color[112][128];
         for (int i = 0; i < 112; i++) {
             for (int j = 0; j < 128; j++) {
                 int value = gbcamera.pixels[i+8][j+16][0];
@@ -115,7 +148,6 @@ void capture_image() {
         uint32_t filtering_mode = (N_bit<<3) | (VH_bits<<1) | E3_bit;
         printf("filtering_mode: %x\n", filtering_mode);
 
-        int temp_buffer[112][128];
         switch (filtering_mode) {
             case 0x0:
                 for(int i = 0; i < 112; i++) {

@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "sr_webcam.h"
 
 #ifndef CHILLYGB_CAMERA_H
 #define CHILLYGB_CAMERA_H
@@ -8,8 +7,6 @@
 typedef struct {
     uint8_t reg[0x37];
     int32_t timing;
-
-    sr_webcam_device* device;
 
     int vidW;
     int vidH;
@@ -23,6 +20,8 @@ typedef struct {
 extern camera gbcamera;
 
 void initialize_camera();
+void stop_camera();
 void take_picture(cpu *c);
+
 
 #endif //CHILLYGB_CAMERA_H
