@@ -4,10 +4,10 @@
 #include "raylib.h"
 #include "../includes/debug.h"
 #include "../includes/cpu.h"
-#include "../includes/opcodes.h"
 #include "../includes/ppu.h"
 #include "../includes/apu.h"
 #include "../includes/timer.h"
+#include "../includes/memory.h"
 
 const uint8_t rst_vec_1[] = {0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38};
 const char r8_1[][5] = {"b", "c", "d", "e", "h", "l", "[hl]", "a"};

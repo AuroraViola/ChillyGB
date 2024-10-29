@@ -1,0 +1,1088 @@
+#include "../includes/memory.h"
+#include "../includes/apu.h"
+#include "../includes/ppu.h"
+#include "../includes/timer.h"
+#include "../includes/serial.h"
+#include "../includes/input.h"
+#include "../includes/opcodes.h"
+#include "../includes/camera.h"
+
+const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
+
+bool has_ram(uint8_t cart_type) {
+    switch (cart_type) {
+        case 0x2 ... 0x3:
+        case 0x5 ... 0x6:
+        case 0x10:
+        case 0x12 ... 0x13:
+        case 0x1a ... 0x1b:
+        case 0x1d ... 0x1e:
+        case 0x22:
+        case 0xfc:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool has_rtc(uint8_t cart_type) {
+    return (cart_type == 0x0f || cart_type == 0x10);
+}
+
+uint8_t read_no_mbc(cpu *c, uint16_t addr) {
+    switch (addr) {
+        case 0x0000 ... 0x3fff:
+            return c->cart.data[0][addr & 0x3fff];
+        case 0x4000 ... 0x7fff:
+            return c->cart.data[1][addr & 0x3fff];
+        case 0xa000 ... 0xbfff:
+            return 0xff;
+    }
+}
+
+void write_mbc1(cpu *c, uint16_t addr, uint8_t value) {
+    switch (addr) {
+        case 0x0000 ... 0x1fff:
+            if (c->cart.type != 0x1) {
+                if ((value & 0xf) == 0xa)
+                    c->cart.ram_enable = true;
+                else
+                    c->cart.ram_enable = false;
+            }
+            break;
+        case 0x2000 ... 0x3fff:
+            if ((value & 31) == 0) {
+                value = 1;
+            }
+            c->cart.bank_select = ((c->cart.bank_select & 96) | (value & 31)) % c->cart.banks;
+            break;
+        case 0x4000 ... 0x5fff:
+            value &= 3;
+            if (c->cart.mbc1mode) {
+                if (c->cart.banks_ram > 1) {
+                    c->cart.bank_select_ram = value;
+                }
+            }
+            else {
+                if (c->cart.banks_ram > 1) {
+                    c->cart.bank_select_ram = 0;
+                }
+            }
+
+            if (c->cart.banks > 32) {
+                c->cart.bank_select = ((c->cart.bank_select & 31) | (value << 5)) % c->cart.banks;
+            }
+
+            break;
+        case 0x6000 ... 0x7fff:
+            c->cart.mbc1mode = value & 1;
+            break;
+        case 0xa000 ... 0xbfff:
+            if (has_ram(c->cart.type) && c->cart.ram_enable) {
+                if (c->cart.mbc1mode)
+                    c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+                else
+                    c->cart.ram[0][addr - 0xa000] = value;
+            }
+            break;
+    }
+}
+
+uint8_t read_mbc1(cpu *c, uint16_t addr) {
+    switch (addr) {
+        case 0x0000 ... 0x3fff:
+            if (c->cart.mbc1mode)
+                return c->cart.data[c->cart.bank_select & 96][addr & 0x3fff];
+            return c->cart.data[0][addr & 0x3fff];
+        case 0x4000 ... 0x7fff:
+            return c->cart.data[c->cart.bank_select][addr & 0x3fff];
+        case 0xa000 ... 0xbfff:
+            if (c->cart.ram_enable && has_ram(c->cart.type)) {
+                if (c->cart.mbc1mode)
+                    return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
+                return c->cart.ram[0][addr - 0xa000];
+            }
+            return 0xff;
+    }
+}
+
+void write_mbc2(cpu *c, uint16_t addr, uint8_t value) {
+    switch (addr) {
+        case 0x0000 ... 0x3fff:
+            if ((addr & 0x100) != 0) {
+                if ((value & 15) == 0) {
+                    value = 1;
+                }
+                c->cart.bank_select = (value & 15) % c->cart.banks;
+            } else {
+                if ((value & 0xf) == 0x0a)
+                    c->cart.ram_enable = true;
+                else
+                    c->cart.ram_enable = false;
+            }
+            break;
+        case 0xa000 ... 0xbfff:
+            if (c->cart.ram_enable)
+                c->cart.ram[c->cart.bank_select_ram][(addr - 0xa000) & 0x1ff] = value;
+            break;
+        default:
+            break;
+    }
+}
+
+uint8_t read_mbc2(cpu *c, uint16_t addr) {
+    switch (addr) {
+        case 0x0000 ... 0x3fff:
+            return c->cart.data[0][addr & 0x3fff];
+        case 0x4000 ... 0x7fff:
+            return c->cart.data[c->cart.bank_select][addr & 0x3fff];
+        case 0xa000 ... 0xbfff:
+            if (c->cart.ram_enable) {
+                return (c->cart.ram[0][(addr - 0xa000) & 0x01ff] | 0xf0);
+            }
+            return 0xff;
+    }
+}
+
+void write_mbc3(cpu *c, uint16_t addr, uint8_t value) {
+    switch (addr) {
+        case 0x0000 ... 0x1fff:
+            if (value == 0x0a)
+                c->cart.ram_enable = true;
+            else if (value == 0)
+                c->cart.ram_enable = false;
+            break;
+        case 0x2000 ... 0x3fff:
+            if ((value & (c->cart.banks - 1)) == 0) {
+                value = 1;
+            }
+            c->cart.bank_select = value % c->cart.banks;
+            break;
+        case 0x4000 ... 0x5fff:
+            if (c->cart.banks_ram > 1) {
+                if (value >= 0 && value <= 3) {
+                    c->cart.bank_select_ram = value;
+                }
+                else if (value >= 0x08 && value <= 0x0c) {
+                    c->cart.bank_select_ram = value;
+                }
+            }
+            else {
+                if (value >= 0x08 && value <= 0x0c) {
+                    c->cart.bank_select_ram = value;
+                }
+            }
+            break;
+        case 0x6000 ... 0x7fff:
+            if (has_rtc(c->cart.type)) {
+                if (value == 0) {
+                    c->cart.rtc.about_to_latch = false;
+                }
+                else if (value == 1) {
+                    if (!c->cart.rtc.about_to_latch) {
+                        c->cart.rtc.seconds = c->cart.rtc.time % 60;
+                        c->cart.rtc.minutes = (c->cart.rtc.time / 60) % 60;
+                        c->cart.rtc.hours = (c->cart.rtc.time / 3600) % 24;
+                        c->cart.rtc.days = (c->cart.rtc.time / 86400);
+
+                        if (c->cart.rtc.days > 511) {
+                            c->cart.rtc.day_carry = true;
+                            c->cart.rtc.days &= 511;
+                            c->cart.rtc.time += 512 * 3600 * 24;
+                        }
+                    }
+                    c->cart.rtc.about_to_latch = true;
+                }
+            }
+            break;
+        case 0xa000 ... 0xbfff:
+            if (c->cart.ram_enable) {
+                if (has_rtc(c->cart.type) && c->cart.bank_select_ram >= 8) {
+                    uint8_t seconds = c->cart.rtc.time % 60;
+                    uint8_t minutes = (c->cart.rtc.time / 60) % 60;
+                    uint8_t hours = (c->cart.rtc.time / 3600) % 24;
+                    uint16_t days = c->cart.rtc.time / 86400;
+                    switch (c->cart.bank_select_ram) {
+                        case 0x08:
+                            //if (value < 60)
+                            seconds = value;
+                            break;
+                        case 0x09:
+                            //if (value < 60)
+                            minutes = value;
+                            break;
+                        case 0x0a:
+                            //if (value < 24)
+                            hours = value;
+                            break;
+                        case 0x0b:
+                            days = (days & 0xff00) | value;
+                            break;
+                        case 0x0c:
+                            days = (days & 0xff) | ((value & 1) << 8);
+                            c->cart.rtc.is_halted = (value >> 6) & 1;
+                            c->cart.rtc.day_carry = (value >> 7) & 1;
+                            break;
+                        default:
+                            break;
+                    }
+                    c->cart.rtc.time = seconds + (minutes * 60) + (hours * 3600) + (days * 86400);
+                }
+                else if (has_ram(c->cart.type)) {
+                    c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+                }
+            }
+            break;
+    }
+}
+
+uint8_t read_mbc3(cpu *c, uint16_t addr) {
+    switch (addr) {
+        case 0x0000 ... 0x3fff:
+            return c->cart.data[0][addr & 0x3fff];
+        case 0x4000 ... 0x7fff:
+            return c->cart.data[c->cart.bank_select][addr & 0x3fff];
+        case 0xa000 ... 0xbfff:
+            if (c->cart.ram_enable) {
+                if (c->cart.bank_select_ram >= 8 && has_rtc(c->cart.type)) {
+                    switch (c->cart.bank_select_ram) {
+                        case 0x08:
+                            return c->cart.rtc.seconds;
+                        case 0x09:
+                            return c->cart.rtc.minutes;
+                        case 0x0a:
+                            return c->cart.rtc.hours;
+                        case 0x0b:
+                            return c->cart.rtc.days;
+                        case 0x0c:
+                            return (c->cart.rtc.day_carry << 7) | (c->cart.rtc.is_halted << 6) | ((c->cart.rtc.days & 256) >> 8);
+                    }
+                }
+                else if (has_ram(c->cart.type))
+                    return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
+            }
+
+            return 0xff;
+    }
+}
+
+void write_mbc5(cpu *c, uint16_t addr, uint8_t value) {
+    switch (addr) {
+        case 0x0000 ... 0x1fff:
+            if (c->cart.type != 0x19 && c->cart.type != 0x1c) {
+                if (value == 0x0a)
+                    c->cart.ram_enable = true;
+                else if (value == 0)
+                    c->cart.ram_enable = false;
+            }
+            break;
+        case 0x2000 ... 0x2fff:
+            c->cart.bank_select = value | (c->cart.bank_select & 0x100);
+            c->cart.bank_select %= c->cart.banks;
+            break;
+        case 0x3000 ... 0x3fff:
+            if ((value & 1) == 0) {
+                c->cart.bank_select &= 255;
+            }
+            else {
+                c->cart.bank_select |= 256;
+            }
+            c->cart.bank_select %= c->cart.banks;
+            break;
+        case 0x4000 ... 0x5fff:
+            if (c->cart.type != 0x19 && c->cart.type != 0x1c) {
+                if (c->cart.banks_ram > 1) {
+                    if ((value >= 0 && value < 16) && value <= c->cart.banks_ram) {
+                        c->cart.bank_select_ram = value;
+                    }
+                }
+            }
+            break;
+        case 0xa000 ... 0xbfff:
+            if (c->cart.ram_enable && has_ram(c->cart.type)) {
+                c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+            }
+        default:
+            break;
+    }
+}
+
+uint8_t read_mbc5(cpu *c, uint16_t addr) {
+    switch (addr) {
+        case 0x0000 ... 0x3fff:
+            return c->cart.data[0][addr & 0x3fff];
+        case 0x4000 ... 0x7fff:
+            return c->cart.data[c->cart.bank_select][addr & 0x3fff];
+        case 0xa000 ... 0xbfff:
+            if (c->cart.ram_enable && has_ram(c->cart.type)) {
+                return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
+            }
+            return 0xff;
+    }
+}
+
+void write_pocket_camera(cpu *c, uint16_t addr, uint8_t value) {
+    switch (addr) {
+        case 0x0000 ... 0x1fff:
+            if (value == 0x0a)
+                c->cart.ram_enable = true;
+            else if (value == 0)
+                c->cart.ram_enable = false;
+            break;
+        case 0x2000 ... 0x3fff:
+            if ((value & 127) == 0) {
+                value = 1;
+            }
+            c->cart.bank_select = value & 127;
+            break;
+        case 0x4000 ... 0x5fff:
+            c->cart.bank_select_ram = value;
+            break;
+        case 0x6000 ... 0x7fff:
+            if (c->cart.bank_select_ram < 16 && c->cart.ram_enable) {
+                c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+            }
+            else if (c->cart.bank_select_ram == 16) {
+                uint8_t reg = addr & 0x7f;
+                if (reg == 0) {
+                    value &= 7;
+                    if ((value & 1) && !(gbcamera.reg[0] & 1)) {
+                        take_picture(c);
+                    }
+                    if (!(value & 1) && (gbcamera.reg[0] & 1)) {
+                        value |= 1;
+                    }
+                    gbcamera.reg[0] = value;
+                }
+                else {
+                    if (reg <= 0x36) {
+                        gbcamera.reg[reg] = value;
+                    }
+                }
+            }
+            break;
+        case 0xa000 ... 0xbfff:
+            if (c->cart.bank_select_ram < 16 && c->cart.ram_enable) {
+                c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
+            }
+            else if (c->cart.bank_select_ram == 16) {
+                uint8_t reg = addr & 0x7f;
+                if (reg == 0) {
+                    value &= 7;
+                    if ((value & 1) && !(gbcamera.reg[0] & 1)) {
+                        take_picture(c);
+                    }
+                    if (!(value & 1) && (gbcamera.reg[0] & 1)) {
+                        value |= 1;
+                    }
+                    gbcamera.reg[0] = value;
+                }
+                else {
+                    if (reg <= 0x36) {
+                        gbcamera.reg[reg] = value;
+                    }
+                }
+            }
+            break;
+    }
+}
+
+uint8_t read_pocket_camera(cpu *c, uint16_t addr) {
+    switch (addr) {
+        case 0x0000 ... 0x3fff:
+            return c->cart.data[0][addr & 0x3fff];
+        case 0x4000 ... 0x7fff:
+            return c->cart.data[c->cart.bank_select][addr & 0x3fff];
+        case 0xa000 ... 0xbfff:
+            if (c->cart.bank_select_ram < 16)
+                return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
+            else {
+                uint8_t reg = (addr & 0x7f);
+                if (reg == 0) {
+                    return gbcamera.reg[0];
+                }
+                return 0;
+            }
+    }
+}
+
+void write_cart(cpu *c, uint16_t addr, uint8_t value) {
+    switch (c->cart.type) {
+        // MBC 1
+        case 0x1 ... 0x3:
+            write_mbc1(c, addr, value);
+            break;
+
+        // MBC 2
+        case 0x5 ... 0x6:
+            write_mbc2(c, addr, value);
+            break;
+
+        // MBC 3
+        case 0x0f ... 0x13:
+            write_mbc3(c, addr, value);
+            break;
+
+        // MBC 5
+        case 0x19 ... 0x1e:
+            write_mbc5(c, addr, value);
+            break;
+
+        // Pocket Camera
+        case 0xfc:
+            write_pocket_camera(c, addr, value);
+            break;
+    }
+}
+
+uint8_t read_cart(cpu *c, uint16_t addr) {
+    switch (c->cart.type) {
+        case 0:
+            return read_no_mbc(c, addr);
+        // MBC 1
+        case 0x1 ... 0x3:
+            return read_mbc1(c, addr);
+
+        // MBC 2
+        case 0x5 ... 0x6:
+            return read_mbc2(c, addr);
+
+        // MBC 3
+        case 0x0f ... 0x13:
+            return read_mbc3(c, addr);
+
+        // MBC 5
+        case 0x19 ... 0x1e:
+            return read_mbc5(c, addr);
+
+        // Pocket Camera
+        case 0xfc:
+            return read_pocket_camera(c, addr);
+    }
+}
+
+void set_mem(cpu *c, uint16_t addr, uint8_t value) {
+    uint8_t next_module;
+    switch (addr) {
+        case 0x0000 ... 0x7fff:
+        case 0xa000 ... 0xbfff:
+            write_cart(c, addr, value);
+            break;
+
+        case 0xc000 ... 0xcfff: // WRAM0
+            c->wram[0][addr - 0xc000] = value;
+            break;
+
+        case 0xd000 ... 0xdfff: // WRAM1
+            if (c->is_color)
+                c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000] = value;
+            else
+                c->wram[1][addr - 0xd000] = value;
+            break;
+
+        case 0xe000 ... 0xefff: // EchoRAM0
+            c->wram[0][addr - 0xe000] = value;
+            break;
+
+        case 0xf000 ... 0xfdff: // EchoRAM1
+            if (c->is_color)
+                c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000] = value;
+            else
+                c->wram[1][addr - 0xf000] = value;
+            break;
+
+        case 0x8000 ... 0x9fff: // VRAM
+            if (c->is_color)
+                video.vram[video.vram_bank][addr-0x8000] = value;
+            else
+                video.vram[0][addr-0x8000] = value;
+            break;
+
+        case 0xfe00 ... 0xfe9f:
+            c->memory[addr] = value;
+            break;
+
+        case JOYP:
+            if (((value >> 4) & 1) == 0)
+                joypad1.dpad_on = true;
+            else
+                joypad1.dpad_on = false;
+            if (((value >> 5) & 1) == 0)
+                joypad1.btn_on = true;
+            else
+                joypad1.btn_on = false;
+            break;
+
+        case SB:
+            serial1.value = value;
+            break;
+        case SC:
+            if (c->is_color) {
+                serial1.clock_speed = (value >> 1) & 1;
+            }
+            serial1.is_master = value & 1;
+            serial1.is_transfering = (value >> 7) & 1;
+            break;
+
+        case LYC:
+            if (video.is_on) {
+                if (value == get_mem(c, LY)) {
+                    video.ly_eq_lyc = true;
+                }
+                else {
+                    video.ly_eq_lyc = false;
+                }
+            }
+            c->memory[addr] = value;
+            break;
+
+        case STAT: // STAT Interrupt
+            c->memory[IF] |= 2;
+            video.lyc_select = (value >> 6) & 1;
+            video.mode_select = (value >> 3) & 7;
+            break;
+
+        case DMA: // OAM DMA transfer
+            c->memory[addr] = value;
+            dma_transfer(c);
+            video.dma_transfer = 640;
+            break;
+
+        case DIV: // divider register
+            timer1.reset_timer = true;
+            break;
+
+        case TIMA:
+            timer1.delay = false;
+            timer1.tima = value;
+            break;
+        case TMA:
+            timer1.tma = value;
+            break;
+        case TAC: // divider register
+            next_module = value & 3;
+            if ((value & 4) != 0) {
+                if (timer1.is_tac_on && ((timer1.t_states & clock_tac_shift2[timer1.module]) != 0 && (timer1.t_states & clock_tac_shift2[next_module]) == 0)) {
+                    timer1.tima++;
+                    if (timer1.tima == 0) {
+                        timer1.delay = true;
+                    }
+                }
+                timer1.is_tac_on = true;
+            }
+            else {
+                if (timer1.is_tac_on && (timer1.t_states & clock_tac_shift2[timer1.module]) != 0) {
+                    timer1.tima++;
+                    if (timer1.tima == 0) {
+                        timer1.delay = true;
+                    }
+                }
+                timer1.is_tac_on = false;
+            }
+            timer1.module = next_module;
+            break;
+
+        case LCDC:
+            video.bg_enable = value & 1;
+            video.obj_enable = (value >> 1) & 1;
+            video.obj_size = (value >> 2) & 1;
+            video.bg_tilemap = (value >> 3) & 1;
+            video.bg_tiles = (value >> 4) & 1;
+            video.window_enable = (value >> 5) & 1;
+            video.window_tilemap = (value >> 6) & 1;
+
+            bool prev_is_on = video.is_on;
+            video.is_on = (value >> 7) & 1;
+            // PPU turned OFF
+            if (!video.is_on && prev_is_on) {
+                video.mode = 0;
+                video.scan_line = 0;
+                timer1.scanline_timer = 456;
+                timer1.lcdoff_timer += 70224;
+                load_line();
+            }
+                // PPU turned ON
+            else if (video.is_on && !prev_is_on) {
+                if (c->memory[LYC] == get_mem(c, LY)) {
+                    video.ly_eq_lyc = true;
+                    if (video.lyc_select)
+                        c->memory[IF] |= 2;
+                }
+                else
+                    video.ly_eq_lyc = false;
+            }
+
+            break;
+
+        case BGP:
+            video.bgp_dmg[0] = value & 3;
+            video.bgp_dmg[1] = (value >> 2) & 3;
+            video.bgp_dmg[2] = (value >> 4) & 3;
+            video.bgp_dmg[3] = (value >> 6) & 3;
+            break;
+
+        case OBP0:
+            video.obp_dmg[0][0] = value & 3;
+            video.obp_dmg[0][1] = (value >> 2) & 3;
+            video.obp_dmg[0][2] = (value >> 4) & 3;
+            video.obp_dmg[0][3] = (value >> 6) & 3;
+            break;
+
+        case OBP1:
+            video.obp_dmg[1][0] = value & 3;
+            video.obp_dmg[1][1] = (value >> 2) & 3;
+            video.obp_dmg[1][2] = (value >> 4) & 3;
+            video.obp_dmg[1][3] = (value >> 6) & 3;
+            break;
+
+        case SCX:
+            video.scx = value;
+            break;
+        case SCY:
+            video.scy = value;
+            break;
+        case WX:
+            video.wx = value;
+            break;
+        case WY:
+            video.wy = value;
+            break;
+
+        case NR11:
+            audio.ch1.lenght = value & 0x3f;
+            if (audio.is_on)
+                c->memory[addr] = value;
+            else
+                c->memory[addr] = value & 0x3f;
+            break;
+        case NR10: case NR12: case NR13:
+            if (audio.is_on)
+                c->memory[addr] = value;
+            break;
+        case NR14:
+            if (audio.is_on) {
+                if ((value & 0x80) != 0) {
+                    audio.ch1.is_triggered = true;
+                    audio.ch1.is_active = true;
+                }
+                c->memory[addr] = value;
+            }
+            break;
+
+        case NR21:
+            audio.ch2.lenght = value & 0x3f;
+            if (audio.is_on)
+                c->memory[addr] = value;
+            else
+                c->memory[addr] = value & 0x3f;
+            break;
+        case NR22: case NR23:
+            if (audio.is_on)
+                c->memory[addr] = value;
+            break;
+        case NR24:
+            if (audio.is_on) {
+                if ((value & 0x80) != 0) {
+                    audio.ch2.is_triggered = true;
+                    audio.ch2.is_active = true;
+                }
+                c->memory[addr] = value;
+            }
+            break;
+
+        case NR31:
+            audio.ch3.lenght = value;
+            c->memory[addr] = value;
+            break;
+
+        case NR30: case NR32: case NR33:
+            if (audio.is_on)
+                c->memory[addr] = value;
+            break;
+        case NR34:
+            if (audio.is_on) {
+                if ((value & 0x80) != 0) {
+                    audio.ch3.is_triggered = true;
+                    audio.ch3.is_active = true;
+                }
+                c->memory[addr] = value;
+            }
+            break;
+
+        case NR41:
+            audio.ch4.lenght = value & 0x3f;
+            c->memory[addr] = value;
+            break;
+
+        case NR42: case NR43:
+            if (audio.is_on)
+                c->memory[addr] = value;
+            break;
+        case NR44:
+            if (audio.is_on) {
+                if ((value & 0x80) != 0) {
+                    audio.ch4.is_triggered = true;
+                    audio.ch4.is_active = true;
+                }
+                c->memory[addr] = value;
+            }
+            break;
+
+        case NR50:
+            if (audio.is_on) {
+                c->memory[addr] = value;
+            }
+            break;
+
+        case NR51:
+            if (audio.is_on) {
+                uint8_t ch[4];
+                for (uint8_t i = 0; i < 4; i++) {
+                    ch[i] = (value >> i) & 17;
+                    switch (ch[i]) {
+                        case 17:
+                            audio.pan[i] = 0.5f;
+                            break;
+                        case 16:
+                            audio.pan[i] = 1.0f;
+                            break;
+                        case 1:
+                            audio.pan[i] = 0.0f;
+                            break;
+                        case 0:
+                            audio.pan[i] = 0.6f;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                c->memory[addr] = value;
+            }
+            break;
+        case NR52:
+            if ((value & 0x80) == 0)
+                reset_apu_regs(c);
+            else
+                audio.is_on = true;
+            c->memory[addr] = value;
+            break;
+
+        case 0xff50:
+            c->bootrom.is_enabled = false;
+            break;
+
+        case 0xff30 ... 0xff3f: // Wave Ram
+            if (!audio.ch3.is_active)
+                c->memory[addr] = value;
+            break;
+
+        case VBK:
+            if (c->is_color)
+                video.vram_bank = value & 1;
+            break;
+
+        case BCPS:
+            if (c->is_color) {
+                video.bcps_inc = value >> 7;
+                video.bgp_addr = value & 0x3f;
+            }
+            break;
+        case BCPD:
+            if (c->is_color) {
+                video.bgp[video.bgp_addr] = value;
+                if (video.bcps_inc) {
+                    video.bgp_addr = (video.bgp_addr + 1) & 0x3f;
+                }
+            }
+            break;
+
+        case OCPS:
+            if (c->is_color) {
+                video.ocps_inc = value >> 7;
+                video.obp_addr = value & 0x3f;
+            }
+            break;
+        case OCPD:
+            if (c->is_color) {
+                video.obp[video.obp_addr] = value;
+                if (video.ocps_inc) {
+                    video.obp_addr = (video.obp_addr + 1) & 0x3f;
+                }
+            }
+            break;
+        case SVBK:
+            if (c->is_color)
+                c->wram_bank = value & 7;
+            break;
+
+        case HDMA1:
+            if (c->is_color)
+                c->hdma.source = (c->hdma.source & 0xff) | (value << 8);
+            break;
+        case HDMA2:
+            if (c->is_color)
+                c->hdma.source = (c->hdma.source & 0xff00) | value;
+            break;
+
+        case HDMA3:
+            if (c->is_color)
+                c->hdma.destination = (c->hdma.destination & 0xff) | (value << 8);
+            break;
+        case HDMA4:
+            if (c->is_color)
+                c->hdma.destination = (c->hdma.destination & 0xff00) | value;
+            break;
+
+        case HDMA5:
+            if (c->is_color) {
+                c->hdma.finished = false;
+                c->hdma.mode = value >> 7;
+                c->hdma.lenght = ((value & 0x7f) + 1) << 4;
+                c->hdma.status = 0;
+                if (c->hdma.mode == false) {
+                    c->is_halted = true;
+                    c->gdma_halt = true;
+                }
+            }
+            break;
+
+        case KEY1:
+            if (c->is_color)
+                c->armed = value & 1;
+            break;
+
+        case OPRI:
+            if (c->bootrom.is_enabled) {
+                video.opri = value & 1;
+            }
+            break;
+
+        default:
+            c->memory[addr] = value;
+            break;
+    }
+}
+
+uint8_t get_mem(cpu *c, uint16_t addr) {
+    switch (addr) {
+        case 0x0000 ... 0x7fff:
+        case 0xa000 ... 0xbfff:
+            return read_cart(c, addr);
+        case 0xfea0 ... 0xfeff:
+            return 255;
+
+        case 0xc000 ... 0xcfff: // WRAM0
+            return c->wram[0][addr - 0xc000];
+
+        case 0xd000 ... 0xdfff: // WRAM1
+            if (c->is_color)
+                return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000];
+            return c->wram[1][addr - 0xd000];
+
+        case 0xe000 ... 0xefff: // EchoRAM0
+            return c->wram[0][addr - 0xe000];
+
+        case 0xf000 ... 0xfdff: // EchoRAM1
+            if (c->is_color)
+                return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xf000];
+            return c->wram[1][addr - 0xf000];
+
+
+        case 0x8000 ... 0x9fff: // VRAM
+            if (c->is_color)
+                return video.vram[video.vram_bank][addr-0x8000];
+            return video.vram[0][addr-0x8000];
+
+        case 0xfe00 ... 0xfe9f:
+            return c->memory[addr];
+
+        case SB:
+            return serial1.value;
+        case SC:
+            if (c->is_color)
+                return (serial1.is_transfering << 7) | (serial1.clock_speed << 1) | (serial1.is_master) | 0x7c;
+            else
+                return (serial1.is_transfering << 7) | (serial1.is_master) | 0x7e;
+
+        case SCX:
+            return video.scx;
+        case SCY:
+            return video.scy;
+        case WX:
+            return video.wx;
+        case WY:
+            return video.wy;
+
+        case JOYP:
+            if (joypad1.btn_on && joypad1.dpad_on) {
+                uint8_t enc = 0;
+                for (int i = 0; i < 4; i++) {
+                    enc |= (joypad1.btn[i]) << i;
+                }
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | enc | 0xc0;
+            }
+            else if (joypad1.btn_on) {
+                uint8_t enc = 0;
+                for (int i = 0; i < 4; i++) {
+                    enc |= (joypad1.btn[i]) << i;
+                }
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | enc | 0xc0;
+            }
+            else if (joypad1.dpad_on) {
+                uint8_t enc = 0;
+                for (int i = 0; i < 4; i++) {
+                    enc |= (joypad1.dpad[i]) << i;
+                }
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | enc | 0xc0;
+            }
+            else {
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | 0xc0;
+            }
+        case DIV:
+            return (timer1.t_states >> 8) & 255;
+        case TIMA:
+            return timer1.tima;
+        case TMA:
+            return timer1.tma;
+        case TAC:
+            return (timer1.is_tac_on << 2) | timer1.module | 0xf8;
+        case IF:
+            return c->memory[addr] | 0xe0;
+        case STAT:
+            if (video.is_on)
+                return video.mode | (video.ly_eq_lyc << 2) | (video.mode_select << 3) | (video.lyc_select << 6) | 0x80;
+            else
+                return (video.ly_eq_lyc << 2) | (video.mode_select << 3) | (video.lyc_select << 6) | 0x80;
+
+        case LY:
+            if (video.scan_line == 153) {
+                return 0;
+            }
+            if (timer1.scanline_timer == 0) {
+                return video.scan_line + 1;
+            }
+            return video.scan_line;
+        case LCDC:
+            return video.bg_enable | (video.obj_enable << 1) | (video.obj_size << 2) | (video.bg_tilemap << 3) | (video.bg_tiles << 4) | (video.window_enable << 5) | (video.window_tilemap << 6) | (video.is_on << 7);
+
+        case BGP:
+            return video.bgp_dmg[0] | (video.bgp_dmg[1] << 2) | (video.bgp_dmg[2] << 4) | (video.bgp_dmg[3] << 6);
+
+        case OBP0:
+            return video.obp_dmg[0][0] | (video.obp_dmg[0][1] << 2) | (video.obp_dmg[0][2] << 4) | (video.obp_dmg[0][3] << 6);
+
+        case OBP1:
+            return video.obp_dmg[1][0] | (video.obp_dmg[1][1] << 2) | (video.obp_dmg[1][2] << 4) | (video.obp_dmg[1][3] << 6);
+
+        case NR10:
+            return c->memory[addr] | 0x80;
+        case NR11:
+            return c->memory[addr] | 0x3f;
+        case NR12:
+            return c->memory[addr];
+        case NR13:
+            return 255;
+        case NR14:
+            return c->memory[addr] | 0xbf;
+
+        case NR21:
+            return c->memory[addr] | 0x3f;
+        case NR22:
+            return c->memory[addr];
+        case NR23:
+            return 255;
+        case NR24:
+            return c->memory[addr] | 0xbf;
+
+        case NR30:
+            return c->memory[addr] | 0x7f;
+        case NR31:
+            return 255;
+        case NR32:
+            return c->memory[addr] | 0x9f;
+        case NR33:
+            return 255;
+        case NR34:
+            return c->memory[addr] | 0xbf;
+
+        case NR41:
+            return 255;
+        case NR42:
+            return c->memory[addr];
+        case NR43:
+            return c->memory[addr];
+        case NR44:
+            return c->memory[addr] | 0xbf;
+
+        case NR50:
+            return c->memory[addr];
+        case NR51:
+            return c->memory[addr];
+        case NR52:
+            return (c->memory[addr] & 0xf0) | (audio.ch1.is_active | (audio.ch2.is_active << 1) | (audio.ch3.is_active << 2) | (audio.ch4.is_active << 3) | 0x70);
+
+        case 0xff30 ... 0xff3f:
+            if (audio.ch3.is_active)
+                return 0xff;
+            return c->memory[addr];
+
+        case KEY1:
+            if (c->is_color)
+                return (c->double_speed << 7) | 0x7e | c->armed;
+            return 0xff;
+
+        case VBK:
+            if (c->is_color)
+                return video.vram_bank | 0xfe;
+            return 0xff;
+
+        case HDMA1: case HDMA2: case HDMA3: case HDMA4:
+            return 0xff;
+
+        case HDMA5:
+            if (c->hdma.finished)
+                return 0xff;
+            return 0x00;
+
+        case BCPS:
+            if (c->is_color)
+                return (video.bcps_inc << 7) | video.bgp_addr;
+            return 0xff;
+        case BCPD:
+            if (c->is_color)
+                return video.bgp[video.bgp_addr];
+            return 0xff;
+        case OCPS:
+            if (c->is_color)
+                return (video.ocps_inc << 7) | video.obp_addr;
+            return 0xff;
+        case OCPD:
+            if (c->is_color)
+                return video.obp[video.obp_addr];
+            return 0xff;
+
+        case OPRI:
+            return 0xfe | video.opri;
+
+        case SVBK:
+            if (c->is_color)
+                return c->wram_bank | 0xf8;
+            return 0xff;
+
+        case 0xff03:
+        case 0xff08 ... 0xff0e:
+        case 0xff15:
+        case 0xff1f:
+        case 0xff27 ... 0xff2f:
+        case 0xff4c:
+        case 0xff4e:
+        case 0xff50:
+        case 0xff56:
+        case 0xff57 ... 0xff67:
+        case 0xff71 ... 0xff7f:
+            return 0xff;
+
+        default:
+            return c->memory[addr];
+    }
+}

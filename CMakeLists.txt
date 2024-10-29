@@ -59,6 +59,8 @@ add_executable(ChillyGB src/main.c
         src/includes/camera.h
         src/modules/camera.c
         third-party/cJSON/cJSON.c
+        src/includes/memory.h
+        src/modules/memory.c
 )
 include_directories(
         third-party/openpnp-capture/include

@@ -1,8 +1,6 @@
 #ifndef CHILLYGB_OPCODES_H
 #define CHILLYGB_OPCODES_H
 
-uint8_t get_mem(cpu *c, uint16_t addr);
-void set_mem(cpu *c, uint16_t addr, uint8_t value);
 void reset_apu_regs(cpu *c);
 
 uint8_t jp(cpu *c, parameters *p);

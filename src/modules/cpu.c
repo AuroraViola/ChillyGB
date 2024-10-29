@@ -5,6 +5,7 @@
 #include "../includes/timer.h"
 #include "../includes/serial.h"
 #include "../includes/opcodes.h"
+#include "../includes/memory.h"
 #include "../includes/camera.h"
 #include <time.h>
 #include <stdio.h>
