@@ -26,9 +26,14 @@ typedef struct {
 typedef struct {
     uint8_t data[512][0x4000];
 
-    uint8_t type;
     uint16_t banks;
     uint16_t bank_select;
+
+    uint8_t mbc;
+    bool has_ram;
+    bool has_rtc;
+    bool has_battery;
+    bool has_rumble;
 
     uint8_t ram[16][0x2000];
     uint8_t banks_ram;

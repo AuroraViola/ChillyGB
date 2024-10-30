@@ -1,4 +1,5 @@
 #include "../includes/cpu.h"
+#include "../includes/cartridge.h"
 #include "../includes/savestates.h"
 #include "../includes/timer.h"
 #include "../includes/ppu.h"
@@ -52,7 +53,7 @@ void save_state(cpu *c, char rom_name[256]) {
     fwrite(&c->cart.ram_enable, sizeof(bool), 1, save);
     fwrite(&c->cart.bank_select_ram, sizeof(uint8_t), 1, save);
 
-    if (c->cart.type == 5 || c->cart.type == 6) {
+    if (c->cart.mbc == MBC2) {
         fwrite(&c->cart.ram, sizeof(uint8_t) * 0x200, 1, save);
     }
     else {
@@ -93,7 +94,7 @@ void load_state(cpu *c, char rom_name[256]) {
             fread(&c->cart.mbc1mode, sizeof(bool), 1, save);
             fread(&c->cart.ram_enable, sizeof(bool), 1, save);
             fread(&c->cart.bank_select_ram, sizeof(uint8_t), 1, save);
-            if (c->cart.type == 5 || c->cart.type == 6) {
+            if (c->cart.mbc == MBC2) {
                 fread(&c->cart.ram, sizeof(uint8_t) * 0x200, 1, save);
             }
             else {

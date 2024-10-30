@@ -1053,7 +1053,7 @@ int main(int argc, char **argv) {
     }
     #endif
 
-    if (c.cart.type == 0xfc) {
+    if (c.cart.mbc == POCKET_CAMERA) {
         stop_camera();
     }
 

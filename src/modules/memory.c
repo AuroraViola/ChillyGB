@@ -1,5 +1,6 @@
 #include "../includes/memory.h"
 #include "../includes/apu.h"
+#include "../includes/cartridge.h"
 #include "../includes/ppu.h"
 #include "../includes/timer.h"
 #include "../includes/serial.h"
@@ -8,26 +9,6 @@
 #include "../includes/camera.h"
 
 const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
-
-bool has_ram(uint8_t cart_type) {
-    switch (cart_type) {
-        case 0x2 ... 0x3:
-        case 0x5 ... 0x6:
-        case 0x10:
-        case 0x12 ... 0x13:
-        case 0x1a ... 0x1b:
-        case 0x1d ... 0x1e:
-        case 0x22:
-        case 0xfc:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool has_rtc(uint8_t cart_type) {
-    return (cart_type == 0x0f || cart_type == 0x10);
-}
 
 uint8_t read_no_mbc(cpu *c, uint16_t addr) {
     switch (addr) {
@@ -43,7 +24,7 @@ uint8_t read_no_mbc(cpu *c, uint16_t addr) {
 void write_mbc1(cpu *c, uint16_t addr, uint8_t value) {
     switch (addr) {
         case 0x0000 ... 0x1fff:
-            if (c->cart.type != 0x1) {
+            if (c->cart.has_ram) {
                 if ((value & 0xf) == 0xa)
                     c->cart.ram_enable = true;
                 else
@@ -78,7 +59,7 @@ void write_mbc1(cpu *c, uint16_t addr, uint8_t value) {
             c->cart.mbc1mode = value & 1;
             break;
         case 0xa000 ... 0xbfff:
-            if (has_ram(c->cart.type) && c->cart.ram_enable) {
+            if (c->cart.ram_enable && c->cart.has_ram) {
                 if (c->cart.mbc1mode)
                     c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
                 else
@@ -97,7 +78,7 @@ uint8_t read_mbc1(cpu *c, uint16_t addr) {
         case 0x4000 ... 0x7fff:
             return c->cart.data[c->cart.bank_select][addr & 0x3fff];
         case 0xa000 ... 0xbfff:
-            if (c->cart.ram_enable && has_ram(c->cart.type)) {
+            if (c->cart.ram_enable && c->cart.has_ram) {
                 if (c->cart.mbc1mode)
                     return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
                 return c->cart.ram[0][addr - 0xa000];
@@ -174,7 +155,7 @@ void write_mbc3(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
         case 0x6000 ... 0x7fff:
-            if (has_rtc(c->cart.type)) {
+            if (c->cart.has_rtc) {
                 if (value == 0) {
                     c->cart.rtc.about_to_latch = false;
                 }
@@ -197,7 +178,7 @@ void write_mbc3(cpu *c, uint16_t addr, uint8_t value) {
             break;
         case 0xa000 ... 0xbfff:
             if (c->cart.ram_enable) {
-                if (has_rtc(c->cart.type) && c->cart.bank_select_ram >= 8) {
+                if (c->cart.bank_select_ram >= 8 && c->cart.has_rtc) {
                     uint8_t seconds = c->cart.rtc.time % 60;
                     uint8_t minutes = (c->cart.rtc.time / 60) % 60;
                     uint8_t hours = (c->cart.rtc.time / 3600) % 24;
@@ -228,7 +209,7 @@ void write_mbc3(cpu *c, uint16_t addr, uint8_t value) {
                     }
                     c->cart.rtc.time = seconds + (minutes * 60) + (hours * 3600) + (days * 86400);
                 }
-                else if (has_ram(c->cart.type)) {
+                else if (c->cart.has_ram) {
                     c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
                 }
             }
@@ -244,7 +225,7 @@ uint8_t read_mbc3(cpu *c, uint16_t addr) {
             return c->cart.data[c->cart.bank_select][addr & 0x3fff];
         case 0xa000 ... 0xbfff:
             if (c->cart.ram_enable) {
-                if (c->cart.bank_select_ram >= 8 && has_rtc(c->cart.type)) {
+                if (c->cart.bank_select_ram >= 8 && c->cart.has_rtc) {
                     switch (c->cart.bank_select_ram) {
                         case 0x08:
                             return c->cart.rtc.seconds;
@@ -258,7 +239,7 @@ uint8_t read_mbc3(cpu *c, uint16_t addr) {
                             return (c->cart.rtc.day_carry << 7) | (c->cart.rtc.is_halted << 6) | ((c->cart.rtc.days & 256) >> 8);
                     }
                 }
-                else if (has_ram(c->cart.type))
+                else if (c->cart.has_ram)
                     return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
             }
 
@@ -269,7 +250,7 @@ uint8_t read_mbc3(cpu *c, uint16_t addr) {
 void write_mbc5(cpu *c, uint16_t addr, uint8_t value) {
     switch (addr) {
         case 0x0000 ... 0x1fff:
-            if (c->cart.type != 0x19 && c->cart.type != 0x1c) {
+            if (c->cart.has_ram) {
                 if (value == 0x0a)
                     c->cart.ram_enable = true;
                 else if (value == 0)
@@ -290,7 +271,7 @@ void write_mbc5(cpu *c, uint16_t addr, uint8_t value) {
             c->cart.bank_select %= c->cart.banks;
             break;
         case 0x4000 ... 0x5fff:
-            if (c->cart.type != 0x19 && c->cart.type != 0x1c) {
+            if (c->cart.has_ram) {
                 if (c->cart.banks_ram > 1) {
                     if ((value >= 0 && value < 16) && value <= c->cart.banks_ram) {
                         c->cart.bank_select_ram = value;
@@ -299,7 +280,7 @@ void write_mbc5(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
         case 0xa000 ... 0xbfff:
-            if (c->cart.ram_enable && has_ram(c->cart.type)) {
+            if (c->cart.ram_enable && c->cart.has_ram) {
                 c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
             }
         default:
@@ -314,7 +295,7 @@ uint8_t read_mbc5(cpu *c, uint16_t addr) {
         case 0x4000 ... 0x7fff:
             return c->cart.data[c->cart.bank_select][addr & 0x3fff];
         case 0xa000 ... 0xbfff:
-            if (c->cart.ram_enable && has_ram(c->cart.type)) {
+            if (c->cart.ram_enable && c->cart.has_ram) {
                 return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
             }
             return 0xff;
@@ -407,57 +388,54 @@ uint8_t read_pocket_camera(cpu *c, uint16_t addr) {
 }
 
 void write_cart(cpu *c, uint16_t addr, uint8_t value) {
-    switch (c->cart.type) {
-        // MBC 1
-        case 0x1 ... 0x3:
+    switch (c->cart.mbc) {
+        case MBC1:
             write_mbc1(c, addr, value);
             break;
 
-        // MBC 2
-        case 0x5 ... 0x6:
+        case MBC2:
             write_mbc2(c, addr, value);
             break;
 
-        // MBC 3
-        case 0x0f ... 0x13:
+        case MBC3:
             write_mbc3(c, addr, value);
             break;
 
-        // MBC 5
-        case 0x19 ... 0x1e:
+        case MBC5:
             write_mbc5(c, addr, value);
             break;
 
-        // Pocket Camera
-        case 0xfc:
+        case POCKET_CAMERA:
             write_pocket_camera(c, addr, value);
+            break;
+
+        default:
             break;
     }
 }
 
 uint8_t read_cart(cpu *c, uint16_t addr) {
-    switch (c->cart.type) {
-        case 0:
+    switch (c->cart.mbc) {
+        case NO_MBC:
             return read_no_mbc(c, addr);
-        // MBC 1
-        case 0x1 ... 0x3:
+
+        case MBC1:
             return read_mbc1(c, addr);
 
-        // MBC 2
-        case 0x5 ... 0x6:
+        case MBC2:
             return read_mbc2(c, addr);
 
-        // MBC 3
-        case 0x0f ... 0x13:
+        case MBC3:
             return read_mbc3(c, addr);
 
-        // MBC 5
-        case 0x19 ... 0x1e:
+        case MBC5:
             return read_mbc5(c, addr);
 
-        // Pocket Camera
-        case 0xfc:
+        case POCKET_CAMERA:
             return read_pocket_camera(c, addr);
+
+        default:
+            return read_no_mbc(c, addr);
     }
 }
 
