@@ -74,6 +74,7 @@ bool has_battery(uint8_t cart_type) {
         case 0x1b:
         case 0x1e:
         case 0x22:
+        case 0xfc:
         case 0xfd:
         case 0xff:
             return true;
@@ -113,6 +114,10 @@ void save_game(cartridge *cart, char rom_name[256]) {
             fwrite(cart->ram, 0x10000, 1, save);
         else if (cart->banks_ram == 16)
             fwrite(cart->ram, 0x20000, 1, save);
+        else if (cart->mbc == MBC2)
+            fwrite(cart->ram, 0x200, 1, save);
+        else if (cart->mbc == MBC7)
+            fwrite(cart->ram, 0x100, 1, save);
 
         if (cart->has_rtc) {
             uint32_t s = cart->rtc.time % 60;
@@ -135,16 +140,6 @@ void save_game(cartridge *cart, char rom_name[256]) {
             fwrite(&dh_latch, 4, 1, save);
             fwrite(&time_saved, 8, 1, save);
         }
-        fclose(save);
-    }
-    else if (cart->mbc == MBC2) {
-        FILE *save = fopen(save_name, "wb");
-        fwrite(cart->ram, 0x200, 1, save);
-        fclose(save);
-    }
-    else if (cart->mbc == POCKET_CAMERA) {
-        FILE *save = fopen(save_name, "wb");
-        fwrite(cart->ram, 0x2000, 16, save);
         fclose(save);
     }
 }
@@ -193,6 +188,9 @@ bool load_game(cartridge *cart, char rom_name[256]) {
     if (cart->has_battery) {
         FILE *save = fopen(save_name, "r");
         if (save != NULL) {
+            if (cart->mbc == POCKET_CAMERA) {
+                initialize_camera();
+            }
             if (cart->banks_ram == 1)
                 fread(cart->ram, 0x2000, 1, save);
             else if (cart->banks_ram == 4)
@@ -201,6 +199,10 @@ bool load_game(cartridge *cart, char rom_name[256]) {
                 fread(cart->ram, 0x10000, 1, save);
             else if (cart->banks_ram == 16)
                 fread(cart->ram, 0x20000, 1, save);
+            else if (cart->mbc == MBC2)
+                fread(cart->ram, 0x200, 1, save);
+            else if (cart->mbc == MBC7)
+                fread(cart->ram, 0x100, 1, save);
 
             if (cart->has_rtc) {
                 uint32_t s;
@@ -227,21 +229,6 @@ bool load_game(cartridge *cart, char rom_name[256]) {
                 uint64_t time_diff = (uint64_t)(time(NULL)) - time_saved;
                 cart->rtc.time = s + m*60 + h*3600 + dl*86400 + time_diff;
             }
-            fclose(save);
-        }
-    }
-    else if (cart->mbc == MBC2) {
-        FILE *save = fopen(save_name, "r");
-        if (save != NULL) {
-            fread(cart->ram, 0x200, 1, save);
-            fclose(save);
-        }
-    }
-    else if (cart->mbc == POCKET_CAMERA) {
-        initialize_camera();
-        FILE *save = fopen(save_name, "r");
-        if (save != NULL) {
-            fread(cart->ram, 0x2000, 16, save);
             fclose(save);
         }
     }

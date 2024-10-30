@@ -24,6 +24,26 @@ typedef struct {
 }rtc_clock;
 
 typedef struct {
+    bool has_latched;
+    uint16_t x;
+    uint16_t y;
+    uint16_t x_latched;
+    uint16_t y_latched;
+}mbc7_accel;
+
+typedef struct {
+    bool DO;
+    bool DI;
+    bool CLK;
+    bool CS;
+
+    bool write_enable;
+    uint16_t read_bits;
+    uint16_t command;
+    uint8_t argument_bits_left;
+}mbc7_eeprom;
+
+typedef struct {
     uint8_t data[512][0x4000];
 
     uint16_t banks;
@@ -39,7 +59,11 @@ typedef struct {
     uint8_t banks_ram;
     uint8_t bank_select_ram;
     bool ram_enable;
+    bool ram_enable2;
     bool mbc1mode;
+
+    mbc7_accel accel;
+    mbc7_eeprom eeprom;
 
     rtc_clock rtc;
 }cartridge;

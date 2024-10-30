@@ -54,7 +54,6 @@ Here is a list of planned features
 * **Cartridge support**
   * MBC1M
   * MBC5 Rumble
-  * Pocket camera support
 * **Emulation Improvements**
   * Accurate sound behaviours
   * STAT IRQ blocking

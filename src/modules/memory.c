@@ -1,3 +1,4 @@
+#include <string.h>
 #include "../includes/memory.h"
 #include "../includes/apu.h"
 #include "../includes/cartridge.h"
@@ -272,10 +273,8 @@ void write_mbc5(cpu *c, uint16_t addr, uint8_t value) {
             break;
         case 0x4000 ... 0x5fff:
             if (c->cart.has_ram) {
-                if (c->cart.banks_ram > 1) {
-                    if ((value >= 0 && value < 16) && value <= c->cart.banks_ram) {
-                        c->cart.bank_select_ram = value;
-                    }
+                if ((value >= 0 && value < 16) && value <= c->cart.banks_ram) {
+                    c->cart.bank_select_ram = value;
                 }
             }
             break;
@@ -283,6 +282,7 @@ void write_mbc5(cpu *c, uint16_t addr, uint8_t value) {
             if (c->cart.ram_enable && c->cart.has_ram) {
                 c->cart.ram[c->cart.bank_select_ram][addr - 0xa000] = value;
             }
+            break;
         default:
             break;
     }
@@ -298,6 +298,163 @@ uint8_t read_mbc5(cpu *c, uint16_t addr) {
             if (c->cart.ram_enable && c->cart.has_ram) {
                 return c->cart.ram[c->cart.bank_select_ram][addr - 0xa000];
             }
+            return 0xff;
+    }
+}
+
+void write_mbc7(cpu *c, uint16_t addr, uint8_t value) {
+    switch (addr) {
+        case 0x0000 ... 0x1fff:
+            if (value == 0x0a)
+                c->cart.ram_enable = true;
+            else if (value == 0)
+                c->cart.ram_enable = false;
+            break;
+        case 0x2000 ... 0x3fff:
+            c->cart.bank_select = value & 0x7f;
+            break;
+        case 0x4000 ... 0x5fff:
+            if (value == 0x40)
+                c->cart.ram_enable2 = true;
+            else
+                c->cart.ram_enable2 = false;
+            break;
+        case 0xa000 ... 0xafff:
+            if (c->cart.ram_enable && c->cart.ram_enable2) {
+                addr &= 0xf0f0;
+                switch (addr) {
+                    case 0xa000:
+                        if (value == 0x55) {
+                            c->cart.accel.has_latched = false;
+                            c->cart.accel.x_latched = 0x8000;
+                            c->cart.accel.y_latched = 0x8000;
+                        }
+                        break;
+                    case 0xa010:
+                        if (!c->cart.accel.has_latched && value == 0xaa) {
+                            c->cart.accel.has_latched = true;
+                            c->cart.accel.x_latched = 0x81d0 + (int)(GetGamepadAxisMovement(0, 0) * -64);
+                            c->cart.accel.y_latched = 0x81d0 + (int)(GetGamepadAxisMovement(0, 1) * -64);
+                        }
+                        break;
+                    case 0xa080:
+                        c->cart.eeprom.CS = value >> 7;
+                        c->cart.eeprom.DI = (value >> 1) & 1;
+                        if (c->cart.eeprom.CS) {
+                            if (!c->cart.eeprom.CLK && (value & 0x40)) {
+                                c->cart.eeprom.DO = c->cart.eeprom.read_bits >> 15;
+                                c->cart.eeprom.read_bits <<= 1;
+                                c->cart.eeprom.read_bits |= 1;
+                                if (c->cart.eeprom.argument_bits_left == 0) {
+                                    c->cart.eeprom.command <<= 1;
+                                    c->cart.eeprom.command |= c->cart.eeprom.DI;
+                                    if (c->cart.eeprom.command & 0x400) {
+                                        switch ((c->cart.eeprom.command >> 6) & 0xf) {
+                                            case 0x8:
+                                            case 0x9:
+                                            case 0xa:
+                                            case 0xb:
+                                                c->cart.eeprom.read_bits = ((uint16_t *)c->cart.ram)[c->cart.eeprom.command & 0x7f];
+                                                c->cart.eeprom.command = 0;
+                                                break;
+                                            case 0x3:
+                                                c->cart.eeprom.write_enable = true;
+                                                c->cart.eeprom.command = 0;
+                                                break;
+                                            case 0x0:
+                                                c->cart.eeprom.write_enable = false;
+                                                c->cart.eeprom.command = 0;
+                                                break;
+                                            case 0x4:
+                                            case 0x5:
+                                            case 0x6:
+                                            case 0x7:
+                                                if (c->cart.eeprom.write_enable) {
+                                                    ((uint16_t *)c->cart.ram)[c->cart.eeprom.command & 0x7f] = 0;
+                                                }
+                                                c->cart.eeprom.argument_bits_left = 16;
+                                                break;
+                                            case 0xc:
+                                            case 0xd:
+                                            case 0xe:
+                                            case 0xf:
+                                                c->cart.eeprom.command = 0;
+                                                break;
+                                            case 0x2:
+                                                if (c->cart.eeprom.write_enable) {
+                                                    memset(c->cart.ram, 0xff, 256);
+                                                    ((uint16_t *)c->cart.ram)[c->cart.eeprom.command & 0x7f] = 0xffff;
+                                                    c->cart.eeprom.read_bits = 0xff;
+                                                }
+                                                c->cart.eeprom.command = 0;
+                                                break;
+                                            case 0x1:
+                                                if (c->cart.eeprom.write_enable) {
+                                                    memset(c->cart.ram, 0, 256);
+                                                }
+                                                c->cart.eeprom.argument_bits_left = 16;
+                                                break;
+                                        }
+                                    }
+                                }
+                                else {
+                                    c->cart.eeprom.argument_bits_left--;
+                                    c->cart.eeprom.DO = true;
+                                    if (c->cart.eeprom.DI) {
+                                        uint16_t bit = (1 << c->cart.eeprom.argument_bits_left);
+                                        if (c->cart.eeprom.command & 0x100) {
+                                            ((uint16_t *)c->cart.ram)[c->cart.eeprom.command & 0x7f] |= bit;
+                                        }
+                                        else {
+                                            for (uint8_t i = 0; i < 0x7f; i++) {
+                                                ((uint16_t *)c->cart.ram)[i] |= bit;
+                                            }
+                                        }
+                                    }
+                                    if (c->cart.eeprom.argument_bits_left == 0) {
+                                        c->cart.eeprom.command = 0;
+                                        c->cart.eeprom.read_bits = (c->cart.eeprom.command & 0x100) ? 0xff : 0x3fff;
+                                    }
+                                }
+                            }
+                        }
+                        c->cart.eeprom.CLK = (value >> 6) & 1;
+                        break;
+                    default:
+                        break;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+uint8_t read_mbc7(cpu *c, uint16_t addr) {
+    switch (addr) {
+        case 0x0000 ... 0x3fff:
+            return c->cart.data[0][addr & 0x3fff];
+        case 0x4000 ... 0x7fff:
+            return c->cart.data[c->cart.bank_select][addr & 0x3fff];
+        case 0xa000 ... 0xafff:
+            if (c->cart.ram_enable && c->cart.ram_enable2) {
+                addr &= 0xf0f0;
+                switch (addr) {
+                    case 0xa020:
+                        return c->cart.accel.x_latched & 0xff;
+                    case 0xa030:
+                        return c->cart.accel.x_latched >> 8;
+                    case 0xa040:
+                        return c->cart.accel.y_latched & 0xff;
+                    case 0xa050:
+                        return c->cart.accel.y_latched >> 8;
+                    case 0xa080:
+                        return c->cart.eeprom.DO | (c->cart.eeprom.DI << 1) | (c->cart.eeprom.CLK << 6) | (c->cart.eeprom.CS << 7);
+                    default:
+                        return 0xff;
+                }
+            }
+        case 0xb000 ... 0xbfff:
             return 0xff;
     }
 }
@@ -405,6 +562,10 @@ void write_cart(cpu *c, uint16_t addr, uint8_t value) {
             write_mbc5(c, addr, value);
             break;
 
+        case MBC7:
+            write_mbc7(c, addr, value);
+            break;
+
         case POCKET_CAMERA:
             write_pocket_camera(c, addr, value);
             break;
@@ -430,6 +591,9 @@ uint8_t read_cart(cpu *c, uint16_t addr) {
 
         case MBC5:
             return read_mbc5(c, addr);
+
+        case MBC7:
+            return read_mbc7(c, addr);
 
         case POCKET_CAMERA:
             return read_pocket_camera(c, addr);
