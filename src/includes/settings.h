@@ -12,8 +12,11 @@ typedef struct {
 
 typedef struct {
     // Emulator settings
-    bool bootrom_enabled;
+    int selected_gameboy;
     bool accurate_rtc;
+    char bootrom_path_dmg[256];
+    char bootrom_path_cgb[256];
+    bool bootrom_enabled;
 
     // Audio settings
     int volume;
@@ -23,7 +26,6 @@ typedef struct {
     palette palettes[100];
     int palettes_size;
     int selected_palette;
-    int selected_gameboy;
     bool integer_scaling;
     bool frame_blending;
     bool color_correction;

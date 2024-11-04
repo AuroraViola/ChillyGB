@@ -14,6 +14,6 @@
 void DrawFileManager(struct nk_context *ctx);
 #endif
 
-char *do_open_rom_dialog(void);
+char *do_open_rom_dialog(bool bootrom_chooser);
 
 #endif //CHILLYGB_OPEN_DIALOG_H

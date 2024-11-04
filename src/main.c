@@ -122,7 +122,7 @@ void DrawNavBar() {
         if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(150, 200))) {
             nk_layout_row_dynamic(ctx, 25, 1);
             if (nk_menu_item_label(ctx, "Load ROM", NK_TEXT_LEFT)) {
-                char *path = do_open_rom_dialog();
+                char *path = do_open_rom_dialog(false);
                 if (path != NULL) {
                     load_cartridge(path);
                 }
@@ -254,8 +254,29 @@ void draw_settings_window() {
                     nk_layout_row_dynamic(ctx, 30, 1);
                     nk_label(ctx, "Emulated Model:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     nk_combobox_string(ctx, "Game Boy (DMG)\0Game Boy Color (CGB)", &set.selected_gameboy, 2, 20, size);
+                    nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_label(ctx, "DMG bootrom path:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, set.bootrom_path_dmg, 255, nk_filter_default);
+                    if (nk_button_label(ctx, "...")) {
+                        char *path = do_open_rom_dialog(true);
+                        if (path != NULL) {
+                            strcpy(set.bootrom_path_dmg, path);
+                        }
+                    }
+                    nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_label(ctx, "CGB bootrom path:", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, set.bootrom_path_cgb, 255, nk_filter_default);
+                    if (nk_button_label(ctx, "...")) {
+                        char *path = do_open_rom_dialog(true);
+                        if (path != NULL) {
+                            strcpy(set.bootrom_path_cgb, path);
+                        }
+                    }
+                    nk_layout_row_dynamic(ctx, 30, 1);
+                    nk_checkbox_label(ctx, "Enable Bootrom", &set.bootrom_enabled);
                     nk_checkbox_label(ctx, "Sync RTC to gameboy clock (accurate)", &set.accurate_rtc);
-                    nk_checkbox_label(ctx, "Boot Rom", &set.bootrom_enabled);
                     break;
                 case SET_AUDIO:
                     nk_layout_row_dynamic(ctx, 30, 1);

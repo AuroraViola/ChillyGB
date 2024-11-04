@@ -288,6 +288,19 @@ void load_settings() {
         set.selected_gameboy = selected_gameboy->valueint;
     else
         set.selected_gameboy = 1;
+
+    cJSON *bootrom_dmg = cJSON_GetObjectItem(settings, "bootrom_path_dmg");
+    if (cJSON_IsString(bootrom_dmg))
+        strcpy(set.bootrom_path_dmg, bootrom_dmg->valuestring);
+    else
+        strcpy(set.bootrom_path_dmg, "");
+
+    cJSON *bootrom_cgb = cJSON_GetObjectItem(settings, "bootrom_path_cgb");
+    if (cJSON_IsString(bootrom_cgb))
+        strcpy(set.bootrom_path_cgb, bootrom_cgb->valuestring);
+    else
+        strcpy(set.bootrom_path_cgb, "");
+
     cJSON *ch1 = cJSON_GetObjectItem(settings, "ch1");
     if (cJSON_IsBool(ch1))
         set.ch_on[0] = ch1->valueint;
@@ -461,6 +474,8 @@ void save_settings() {
     cJSON_AddNumberToObject(settings, "load_state_key", set.load_state_key);
     cJSON_AddNumberToObject(settings, "debugger_key", set.debugger_key);
     cJSON_AddNumberToObject(settings, "rewind_key", set.rewind_key);
+    cJSON_AddStringToObject(settings, "bootrom_path_cgb", set.bootrom_path_cgb);
+    cJSON_AddStringToObject(settings, "bootrom_path_dmg", set.bootrom_path_dmg);
 
     #if defined(PLATFORM_WEB)
     FILE *file = fopen("/saves/settings.json", "w");

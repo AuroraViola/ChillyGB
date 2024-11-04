@@ -163,7 +163,7 @@ void fetch_sprite_to_fifo_minus_8(cpu *c) {
         if (buffer_size > 0) {
             for (int j = 0; j < buffer_size; j++) {
                 uint16_t sprite_addr = buffer[j];
-                uint8_t palette = c->is_color ? ((c->memory[sprite_addr | 3] & 7) + 8) : (((c->memory[sprite_addr | 3] >> 4) & 1) + 1);
+                uint8_t palette = c->cgb_mode ? ((c->memory[sprite_addr | 3] & 7) + 8) : (((c->memory[sprite_addr | 3] >> 4) & 1) + 1);
                 bool vram_bank = c->is_color ? ((c->memory[sprite_addr | 3] & 0x08) != 0) : 0;
                 bool flip_X = ((c->memory[sprite_addr | 3] & 0x20) != 0);
                 bool flip_Y = ((c->memory[sprite_addr | 3] & 0x40) != 0);
@@ -255,8 +255,10 @@ void push_pixel(cpu *c) {
                 px_addr = ((video.obp_dmg[1][last_pixel.value]) + 4) << 1;
                 video.line[video.current_pixel] = (video.obp[px_addr | 1] << 8) | (video.obp[px_addr]);
             }
-            else
-                video.line[video.current_pixel] = 0xffff;
+            else {
+                px_addr = video.bgp_dmg[0] << 1;
+                video.line[video.current_pixel] = (video.bgp[px_addr | 1] << 8) | (video.bgp[px_addr]);
+            }
         }
     }
 

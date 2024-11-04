@@ -897,14 +897,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             else {
                 c->cgb_mode = false;
             }
-            printf("%i\n", video.bgp[0]);
-            printf("%i\n", video.bgp[1]);
-            printf("%i\n", video.bgp[2]);
-            printf("%i\n", video.bgp[3]);
-            printf("%i\n", video.bgp[4]);
-            printf("%i\n", video.bgp[5]);
-            printf("%i\n", video.bgp[6]);
-            printf("%i\n", video.bgp[7]);
             break;
 
         case 0xff30 ... 0xff3f: // Wave Ram
@@ -1009,7 +1001,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case OPRI:
-            if (c->bootrom.is_enabled && c->cgb_mode) {
+            if (c->bootrom.is_enabled && c->is_color) {
                 video.opri = value & 1;
             }
             break;
@@ -1226,7 +1218,9 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 0xff;
 
         case OPRI:
-            return 0xfe | video.opri;
+            if (c->is_color)
+                return 0xfe | video.opri;
+            return 0xff;
 
         case SVBK:
             if (c->cgb_mode)

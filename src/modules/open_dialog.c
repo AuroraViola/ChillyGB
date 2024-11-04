@@ -49,7 +49,7 @@ if (symbol == NULL) goto lazy_error
 
 void _nop(void){}
 
-char *do_open_rom_dialog(void) {
+char *do_open_rom_dialog(bool bootrom_chooser) {
     static void *handle = NULL;
 
     TRY_DLOPEN("libgtk-3.so");
@@ -81,28 +81,47 @@ char *do_open_rom_dialog(void) {
     gtk_init_check(0, 0);
 
 
-    void *dialog = gtk_file_chooser_dialog_new("Open ROM",
-                                               0,
-                                               GTK_FILE_CHOOSER_ACTION_OPEN,
-                                               "_Cancel", GTK_RESPONSE_CANCEL,
-                                               "_Open", GTK_RESPONSE_ACCEPT,
-                                               NULL );
+
+    void *dialog;
+
+    if (bootrom_chooser) {
+        dialog = gtk_file_chooser_dialog_new("Select Bootrom",
+                                             0,
+                                             GTK_FILE_CHOOSER_ACTION_OPEN,
+                                             "_Cancel", GTK_RESPONSE_CANCEL,
+                                             "_Open", GTK_RESPONSE_ACCEPT,
+                                             NULL );
+    }
+    else {
+        dialog = gtk_file_chooser_dialog_new("Open ROM",
+                                             0,
+                                             GTK_FILE_CHOOSER_ACTION_OPEN,
+                                             "_Cancel", GTK_RESPONSE_CANCEL,
+                                             "_Open", GTK_RESPONSE_ACCEPT,
+                                             NULL );
+    }
 
 
     void *filter = gtk_file_filter_new();
-    gtk_file_filter_add_pattern(filter, "*.gb");
-    gtk_file_filter_add_pattern(filter, "*.GB");
-    gtk_file_filter_add_pattern(filter, "*.gB");
-    gtk_file_filter_add_pattern(filter, "*.Gb");
-    gtk_file_filter_add_pattern(filter, "*.gbc");
-    gtk_file_filter_add_pattern(filter, "*.gbC");
-    gtk_file_filter_add_pattern(filter, "*.gBc");
-    gtk_file_filter_add_pattern(filter, "*.gBC");
-    gtk_file_filter_add_pattern(filter, "*.Gbc");
-    gtk_file_filter_add_pattern(filter, "*.GbC");
-    gtk_file_filter_add_pattern(filter, "*.GBc");
-    gtk_file_filter_add_pattern(filter, "*.GBC");
-    gtk_file_filter_set_name(filter, "Game Boy ROMs");
+    if (bootrom_chooser) {
+        gtk_file_filter_add_pattern(filter, "*.bin");
+        gtk_file_filter_set_name(filter, "Bootrom files");
+    }
+    else {
+        gtk_file_filter_add_pattern(filter, "*.gb");
+        gtk_file_filter_add_pattern(filter, "*.GB");
+        gtk_file_filter_add_pattern(filter, "*.gB");
+        gtk_file_filter_add_pattern(filter, "*.Gb");
+        gtk_file_filter_add_pattern(filter, "*.gbc");
+        gtk_file_filter_add_pattern(filter, "*.gbC");
+        gtk_file_filter_add_pattern(filter, "*.gBc");
+        gtk_file_filter_add_pattern(filter, "*.gBC");
+        gtk_file_filter_add_pattern(filter, "*.Gbc");
+        gtk_file_filter_add_pattern(filter, "*.GbC");
+        gtk_file_filter_add_pattern(filter, "*.GBc");
+        gtk_file_filter_add_pattern(filter, "*.GBC");
+        gtk_file_filter_set_name(filter, "Game Boy ROMs");
+    }
     gtk_file_chooser_add_filter(dialog, filter);
 
     int res = gtk_dialog_run(dialog);
@@ -148,7 +167,7 @@ static char *wc_to_utf8_alloc(const wchar_t *wide) {
     return NULL;
 }
 
-char *do_open_rom_dialog(void) {
+char *do_open_rom_dialog(bool bootrom_chooser) {
     OPENFILENAMEW dialog;
     wchar_t filename[MAX_PATH];
 
@@ -157,7 +176,12 @@ char *do_open_rom_dialog(void) {
     dialog.lStructSize = sizeof(dialog);
     dialog.lpstrFile = filename;
     dialog.nMaxFile = MAX_PATH;
-    dialog.lpstrFilter = L"Game Boy ROMs\0*.gb;*.gbc;*.sgb;*.isx\0All files\0*.*\0\0";
+    if (bootrom_chooser) {
+        dialog.lpstrFilter = L"Game Boy ROMs\0*.gb;*.gbc;*.sgb;*.isx\0All files\0*.*\0\0";
+    }
+    else {
+        dialog.lpstrFilter = L"Bootrom files\0.bin\0All files\0*.*\0\0";
+    }
     dialog.nFilterIndex = 1;
     dialog.lpstrFileTitle = NULL;
     dialog.nMaxFileTitle = 0;
@@ -175,7 +199,7 @@ char *do_open_rom_dialog(void) {
 #include <emscripten.h>
 #include <stddef.h>
 
-char *do_open_rom_dialog(void) {
+char *do_open_rom_dialog(bool bootrom_chooser) {
     EM_ASM(
         openDialog();
     );
@@ -264,7 +288,7 @@ void refresh_manager(){
     closedir(d); 
 }
 
-char *do_open_rom_dialog(void) {
+char *do_open_rom_dialog(bool bootrom_chooser) {
     dialog_open = !dialog_open;
     if (dialog_open) refresh_manager();
     return NULL;

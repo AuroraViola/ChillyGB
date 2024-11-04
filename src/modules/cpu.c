@@ -21,7 +21,7 @@ uint8_t stretch_number(uint8_t num) {
 
 bool load_bootrom(rom *bootrom) {
     if (set.selected_gameboy == 0) {
-        char *bootrom_path = "res/bootrom/dmg_boot.bin";
+        char *bootrom_path = set.bootrom_path_dmg;
         FILE *file = fopen(bootrom_path, "rb");
         if (file == NULL) {
             return false;
@@ -31,7 +31,7 @@ bool load_bootrom(rom *bootrom) {
         return true;
     }
     else {
-        char *bootrom_path = "res/bootrom/cgb_boot.bin";
+        char *bootrom_path = set.bootrom_path_cgb;
         FILE *file = fopen(bootrom_path, "rb");
         if (file == NULL) {
             return false;
@@ -46,6 +46,7 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     srand(time(NULL));
     c->is_color = set.selected_gameboy == 1;
     c->cgb_mode = c->is_color;
+    video.opri = (c->cgb_mode) ? false : true;
     c->pc = 0;
     c->ime = false;
     c->ime_to_be_setted = 0;
