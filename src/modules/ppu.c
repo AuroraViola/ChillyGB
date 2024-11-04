@@ -106,7 +106,7 @@ void fetch_sprite_to_fifo(cpu *c) {
     if (buffer_size > 0) {
         for (int j = 0; j < buffer_size; j++) {
             uint16_t sprite_addr = buffer[j];
-            uint8_t palette = c->is_color ? ((c->memory[sprite_addr | 3] & 7) + 8) : (((c->memory[sprite_addr | 3] >> 4) & 1) + 1);
+            uint8_t palette = c->cgb_mode ? ((c->memory[sprite_addr | 3] & 7) + 8) : (((c->memory[sprite_addr | 3] >> 4) & 1) + 1);
             bool vram_bank = c->is_color ? ((c->memory[sprite_addr | 3] & 0x08) != 0) : 0;
             bool flip_X = ((c->memory[sprite_addr | 3] & 0x20) != 0);
             bool flip_Y = ((c->memory[sprite_addr | 3] & 0x40) != 0);
@@ -209,7 +209,7 @@ void fetch_sprite_to_fifo_minus_8(cpu *c) {
 void push_pixel(cpu *c) {
     // Mix Pixel
     pixel last_pixel = video.fifo.pixels[0];
-    if (c->is_color) {
+    if (c->cgb_mode) {
         if (video.fifo.pixel_sprite_count > 0) {
             if (video.fifo.pixels_sprite[0].value != 0) {
                 if (!video.bg_enable || (!video.fifo.pixels_sprite[0].priority && !last_pixel.priority) || last_pixel.value == 0) {
@@ -232,13 +232,31 @@ void push_pixel(cpu *c) {
 
     // Copy pixel to display
     if (c->is_color) {
-        uint8_t px_addr = (last_pixel.value + (last_pixel.palette << 2)) << 1;
-        if (px_addr < 64) {
-            video.line[video.current_pixel] = (video.bgp[px_addr | 1] << 8) | (video.bgp[px_addr]);
+        if (c->cgb_mode) {
+            uint8_t px_addr = (last_pixel.value + (last_pixel.palette << 2)) << 1;
+            if (px_addr < 64) {
+                video.line[video.current_pixel] = (video.bgp[px_addr | 1] << 8) | (video.bgp[px_addr]);
+            } else {
+                px_addr &= 0x3f;
+                video.line[video.current_pixel] = (video.obp[px_addr | 1] << 8) | (video.obp[px_addr]);
+            }
         }
         else {
-            px_addr &= 0x3f;
-            video.line[video.current_pixel] = (video.obp[px_addr | 1] << 8) | (video.obp[px_addr]);
+            uint8_t px_addr;
+            if (last_pixel.palette == 0 && video.bg_enable) {
+                px_addr = video.bgp_dmg[last_pixel.value] << 1;
+                video.line[video.current_pixel] = (video.bgp[px_addr | 1] << 8) | (video.bgp[px_addr]);
+            }
+            else if (last_pixel.palette == 1) {
+                px_addr = video.obp_dmg[0][last_pixel.value] << 1;
+                video.line[video.current_pixel] = (video.obp[px_addr | 1] << 8) | (video.obp[px_addr]);
+            }
+            else if (last_pixel.palette == 2) {
+                px_addr = ((video.obp_dmg[1][last_pixel.value]) + 4) << 1;
+                video.line[video.current_pixel] = (video.obp[px_addr | 1] << 8) | (video.obp[px_addr]);
+            }
+            else
+                video.line[video.current_pixel] = 0xffff;
         }
     }
 

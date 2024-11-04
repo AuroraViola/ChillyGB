@@ -20,17 +20,32 @@ uint8_t stretch_number(uint8_t num) {
 }
 
 bool load_bootrom(rom *bootrom) {
-    char *bootrom_path = "res/bootrom/dmg_boot.bin";
-    FILE *file = fopen(bootrom_path, "rb");
-    if (file == NULL) {
-        return false;
+    if (set.selected_gameboy == 0) {
+        char *bootrom_path = "res/bootrom/dmg_boot.bin";
+        FILE *file = fopen(bootrom_path, "rb");
+        if (file == NULL) {
+            return false;
+        }
+        fread(bootrom->data, 0x100, 1, file);
+        fclose(file);
+        return true;
     }
-    fread(bootrom->data, 0x100, 1, file);
-    return true;
+    else {
+        char *bootrom_path = "res/bootrom/cgb_boot.bin";
+        FILE *file = fopen(bootrom_path, "rb");
+        if (file == NULL) {
+            return false;
+        }
+        fread(bootrom->data, 0x900, 1, file);
+        fclose(file);
+        return true;
+    }
 }
 
 void initialize_cpu_memory(cpu *c, settings *s) {
     srand(time(NULL));
+    c->is_color = set.selected_gameboy == 1;
+    c->cgb_mode = c->is_color;
     c->pc = 0;
     c->ime = false;
     c->ime_to_be_setted = 0;
@@ -63,17 +78,22 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     c->cart.ram_enable = false;
     c->cart.mbc1mode = false;
 
-    // Randomize WRAM, HRAM
-    for (uint16_t i = 0xc000; i <= 0xdfff; i++) {
-        c->memory[i] = rand();
+    video.vram_bank = 0;
+    for (int i = 0; i < 64; i++) {
+        video.bgp[i] = 255;
+        video.obp[i] = 255;
     }
-    for (uint16_t i = 0xff80; i <= 0xfffe; i++) {
-        c->memory[i] = rand();
-    }
-    // Initialize VRAM
-    for (uint16_t i = 0x8000; i <= 0x9fff; i++) {
-        c->memory[i] = 0;
-    }
+    video.bgp_addr = 0;
+    video.obp_addr = 0;
+    video.ocps_inc = false;
+    video.bcps_inc = false;
+    c->wram_bank = 1;
+    c->double_speed = false;
+    c->armed = false;
+
+    serial1.value = 0;
+    serial1.clock_speed = c->is_color ? 1 : 0;
+    serial1.is_master = c->is_color ? 1 : 0;
 
     for (int i = 0; i < 0x37; i++) {
         gbcamera.reg[i] = 0;
@@ -82,7 +102,13 @@ void initialize_cpu_memory(cpu *c, settings *s) {
 
 void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     srand(time(NULL));
-    c->is_color = (set.selected_gameboy == 1 && (c->cart.data[0][0x0143] == 0xc0 || c->cart.data[0][0x0143] == 0x80));
+    c->is_color = set.selected_gameboy == 1;
+    if (c->is_color) {
+        c->cgb_mode = ((c->cart.data[0][0x143] & 0x80) == 0x80);
+    }
+    else {
+        c->cgb_mode = false;
+    }
     if (c->is_color) {
         c->r.reg16[AF] = 0x1180;
         c->r.reg16[BC] = 0x0000;
@@ -187,15 +213,25 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     video.scan_line = 0x00;
     timer1.scanline_timer = 456;
     video.vram_bank = 0;
-    for (int i = 0; i < 64; i++) {
-        video.bgp[i] = 255;
-        video.obp[i] = 255;
+    if (c->cgb_mode) {
+        for (int i = 0; i < 64; i++) {
+            video.bgp[i] = 255;
+            video.obp[i] = 255;
+        }
+    }
+    else {
+        uint8_t values[] = {255, 127, 148, 82, 74, 41, 0, 0};
+        for (int i = 0; i < 8; i++) {
+            video.bgp[i] = values[i];
+            video.obp[i] = values[i];
+            video.obp[i+8] = values[i];
+        }
     }
     video.bgp_addr = 0;
     video.obp_addr = 0;
     video.ocps_inc = false;
     video.bcps_inc = false;
-    video.opri = (c->is_color) ? false : true;
+    video.opri = (c->cgb_mode) ? false : true;
     c->memory[LYC] = 0x00;
     c->memory[DMA] = 0xff;
     video.wx = 0x00;

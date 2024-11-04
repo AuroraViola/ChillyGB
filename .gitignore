@@ -2,6 +2,7 @@ cmake-build-debug
 cmake-build-debug-coverage
 cmake-build-release
 res/bootrom/dmg_boot.bin
+res/bootrom/cgb_boot.bin
 build-wasm
 Roms
 .idea

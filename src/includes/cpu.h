@@ -69,7 +69,7 @@ typedef struct {
 }cartridge;
 
 typedef struct {
-    uint8_t data[0x100];
+    uint8_t data[0x900];
     bool is_enabled;
 }rom;
 
@@ -96,6 +96,7 @@ typedef struct {
     bool armed;
 
     bool is_color;
+    bool cgb_mode;
 
     cartridge cart;
     uint8_t memory[0x10000];

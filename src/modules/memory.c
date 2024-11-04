@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 #include "../includes/memory.h"
 #include "../includes/apu.h"
 #include "../includes/cartridge.h"
@@ -616,7 +617,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case 0xd000 ... 0xdfff: // WRAM1
-            if (c->is_color)
+            if (c->cgb_mode)
                 c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000] = value;
             else
                 c->wram[1][addr - 0xd000] = value;
@@ -627,14 +628,14 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case 0xf000 ... 0xfdff: // EchoRAM1
-            if (c->is_color)
+            if (c->cgb_mode)
                 c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000] = value;
             else
                 c->wram[1][addr - 0xf000] = value;
             break;
 
         case 0x8000 ... 0x9fff: // VRAM
-            if (c->is_color)
+            if (c->cgb_mode)
                 video.vram[video.vram_bank][addr-0x8000] = value;
             else
                 video.vram[0][addr-0x8000] = value;
@@ -659,7 +660,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             serial1.value = value;
             break;
         case SC:
-            if (c->is_color) {
+            if (c->cgb_mode) {
                 serial1.clock_speed = (value >> 1) & 1;
             }
             serial1.is_master = value & 1;
@@ -743,7 +744,7 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                 timer1.lcdoff_timer += 70224;
                 load_line();
             }
-                // PPU turned ON
+            // PPU turned ON
             else if (video.is_on && !prev_is_on) {
                 if (c->memory[LYC] == get_mem(c, LY)) {
                     video.ly_eq_lyc = true;
@@ -754,27 +755,6 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
                     video.ly_eq_lyc = false;
             }
 
-            break;
-
-        case BGP:
-            video.bgp_dmg[0] = value & 3;
-            video.bgp_dmg[1] = (value >> 2) & 3;
-            video.bgp_dmg[2] = (value >> 4) & 3;
-            video.bgp_dmg[3] = (value >> 6) & 3;
-            break;
-
-        case OBP0:
-            video.obp_dmg[0][0] = value & 3;
-            video.obp_dmg[0][1] = (value >> 2) & 3;
-            video.obp_dmg[0][2] = (value >> 4) & 3;
-            video.obp_dmg[0][3] = (value >> 6) & 3;
-            break;
-
-        case OBP1:
-            video.obp_dmg[1][0] = value & 3;
-            video.obp_dmg[1][1] = (value >> 2) & 3;
-            video.obp_dmg[1][2] = (value >> 4) & 3;
-            video.obp_dmg[1][3] = (value >> 6) & 3;
             break;
 
         case SCX:
@@ -911,6 +891,20 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
         case 0xff50:
             c->bootrom.is_enabled = false;
+            if (c->is_color) {
+                c->cgb_mode = ((c->cart.data[0][0x143] & 0x80) == 0x80);
+            }
+            else {
+                c->cgb_mode = false;
+            }
+            printf("%i\n", video.bgp[0]);
+            printf("%i\n", video.bgp[1]);
+            printf("%i\n", video.bgp[2]);
+            printf("%i\n", video.bgp[3]);
+            printf("%i\n", video.bgp[4]);
+            printf("%i\n", video.bgp[5]);
+            printf("%i\n", video.bgp[6]);
+            printf("%i\n", video.bgp[7]);
             break;
 
         case 0xff30 ... 0xff3f: // Wave Ram
@@ -919,8 +913,29 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case VBK:
-            if (c->is_color)
+            if (c->cgb_mode)
                 video.vram_bank = value & 1;
+            break;
+
+        case BGP:
+            video.bgp_dmg[0] = value & 3;
+            video.bgp_dmg[1] = (value >> 2) & 3;
+            video.bgp_dmg[2] = (value >> 4) & 3;
+            video.bgp_dmg[3] = (value >> 6) & 3;
+            break;
+
+        case OBP0:
+            video.obp_dmg[0][0] = value & 3;
+            video.obp_dmg[0][1] = (value >> 2) & 3;
+            video.obp_dmg[0][2] = (value >> 4) & 3;
+            video.obp_dmg[0][3] = (value >> 6) & 3;
+            break;
+
+        case OBP1:
+            video.obp_dmg[1][0] = value & 3;
+            video.obp_dmg[1][1] = (value >> 2) & 3;
+            video.obp_dmg[1][2] = (value >> 4) & 3;
+            video.obp_dmg[1][3] = (value >> 6) & 3;
             break;
 
         case BCPS:
@@ -953,30 +968,30 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
         case SVBK:
-            if (c->is_color)
+            if (c->cgb_mode)
                 c->wram_bank = value & 7;
             break;
 
         case HDMA1:
-            if (c->is_color)
+            if (c->cgb_mode)
                 c->hdma.source = (c->hdma.source & 0xff) | (value << 8);
             break;
         case HDMA2:
-            if (c->is_color)
+            if (c->cgb_mode)
                 c->hdma.source = (c->hdma.source & 0xff00) | value;
             break;
 
         case HDMA3:
-            if (c->is_color)
+            if (c->cgb_mode)
                 c->hdma.destination = (c->hdma.destination & 0xff) | (value << 8);
             break;
         case HDMA4:
-            if (c->is_color)
+            if (c->cgb_mode)
                 c->hdma.destination = (c->hdma.destination & 0xff00) | value;
             break;
 
         case HDMA5:
-            if (c->is_color) {
+            if (c->cgb_mode) {
                 c->hdma.finished = false;
                 c->hdma.mode = value >> 7;
                 c->hdma.lenght = ((value & 0x7f) + 1) << 4;
@@ -989,12 +1004,12 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case KEY1:
-            if (c->is_color)
+            if (c->cgb_mode)
                 c->armed = value & 1;
             break;
 
         case OPRI:
-            if (c->bootrom.is_enabled) {
+            if (c->bootrom.is_enabled && c->cgb_mode) {
                 video.opri = value & 1;
             }
             break;
@@ -1007,7 +1022,16 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
 
 uint8_t get_mem(cpu *c, uint16_t addr) {
     switch (addr) {
-        case 0x0000 ... 0x7fff:
+        case 0x0000 ... 0x00ff:
+            if (c->bootrom.is_enabled) {
+                return c->bootrom.data[addr];
+            }
+        case 0x0200 ... 0x08ff:
+            if (c->bootrom.is_enabled && c->is_color) {
+                return c->bootrom.data[addr];
+            }
+        case 0x0100 ... 0x01ff:
+        case 0x0900 ... 0x7fff:
         case 0xa000 ... 0xbfff:
             return read_cart(c, addr);
         case 0xfea0 ... 0xfeff:
@@ -1017,7 +1041,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->wram[0][addr - 0xc000];
 
         case 0xd000 ... 0xdfff: // WRAM1
-            if (c->is_color)
+            if (c->cgb_mode)
                 return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xd000];
             return c->wram[1][addr - 0xd000];
 
@@ -1025,13 +1049,13 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->wram[0][addr - 0xe000];
 
         case 0xf000 ... 0xfdff: // EchoRAM1
-            if (c->is_color)
+            if (c->cgb_mode)
                 return c->wram[(c->wram_bank == 0) ? 1 : c->wram_bank][addr - 0xf000];
             return c->wram[1][addr - 0xf000];
 
 
         case 0x8000 ... 0x9fff: // VRAM
-            if (c->is_color)
+            if (c->cgb_mode)
                 return video.vram[video.vram_bank][addr-0x8000];
             return video.vram[0][addr-0x8000];
 
@@ -1041,7 +1065,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case SB:
             return serial1.value;
         case SC:
-            if (c->is_color)
+            if (c->cgb_mode)
                 return (serial1.is_transfering << 7) | (serial1.clock_speed << 1) | (serial1.is_master) | 0x7c;
             else
                 return (serial1.is_transfering << 7) | (serial1.is_master) | 0x7e;
@@ -1107,15 +1131,6 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case LCDC:
             return video.bg_enable | (video.obj_enable << 1) | (video.obj_size << 2) | (video.bg_tilemap << 3) | (video.bg_tiles << 4) | (video.window_enable << 5) | (video.window_tilemap << 6) | (video.is_on << 7);
 
-        case BGP:
-            return video.bgp_dmg[0] | (video.bgp_dmg[1] << 2) | (video.bgp_dmg[2] << 4) | (video.bgp_dmg[3] << 6);
-
-        case OBP0:
-            return video.obp_dmg[0][0] | (video.obp_dmg[0][1] << 2) | (video.obp_dmg[0][2] << 4) | (video.obp_dmg[0][3] << 6);
-
-        case OBP1:
-            return video.obp_dmg[1][0] | (video.obp_dmg[1][1] << 2) | (video.obp_dmg[1][2] << 4) | (video.obp_dmg[1][3] << 6);
-
         case NR10:
             return c->memory[addr] | 0x80;
         case NR11:
@@ -1169,12 +1184,12 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return c->memory[addr];
 
         case KEY1:
-            if (c->is_color)
+            if (c->cgb_mode)
                 return (c->double_speed << 7) | 0x7e | c->armed;
             return 0xff;
 
         case VBK:
-            if (c->is_color)
+            if (c->cgb_mode)
                 return video.vram_bank | 0xfe;
             return 0xff;
 
@@ -1186,20 +1201,27 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 return 0xff;
             return 0x00;
 
+        case BGP:
+            return video.bgp_dmg[0] | (video.bgp_dmg[1] << 2) | (video.bgp_dmg[2] << 4) | (video.bgp_dmg[3] << 6);
+        case OBP0:
+            return video.obp_dmg[0][0] | (video.obp_dmg[0][1] << 2) | (video.obp_dmg[0][2] << 4) | (video.obp_dmg[0][3] << 6);
+        case OBP1:
+            return video.obp_dmg[1][0] | (video.obp_dmg[1][1] << 2) | (video.obp_dmg[1][2] << 4) | (video.obp_dmg[1][3] << 6);
+
         case BCPS:
-            if (c->is_color)
+            if (c->cgb_mode)
                 return (video.bcps_inc << 7) | video.bgp_addr;
             return 0xff;
         case BCPD:
-            if (c->is_color)
+            if (c->cgb_mode)
                 return video.bgp[video.bgp_addr];
             return 0xff;
         case OCPS:
-            if (c->is_color)
+            if (c->cgb_mode)
                 return (video.ocps_inc << 7) | video.obp_addr;
             return 0xff;
         case OCPD:
-            if (c->is_color)
+            if (c->cgb_mode)
                 return video.obp[video.obp_addr];
             return 0xff;
 
@@ -1207,7 +1229,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 0xfe | video.opri;
 
         case SVBK:
-            if (c->is_color)
+            if (c->cgb_mode)
                 return c->wram_bank | 0xf8;
             return 0xff;
 
