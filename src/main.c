@@ -11,7 +11,6 @@
 #include "includes/cartridge.h"
 #include "includes/open_dialog.h"
 #include "includes/savestates.h"
-#include "includes/opcodes.h"
 #include "includes/camera.h"
 #include "includes/memory.h"
 #include "raylib-nuklear.h"
@@ -53,6 +52,7 @@ typedef enum SettingsView {
 typedef enum InputSettingsView {
     INPUT_GAMEPAD = 0,
     INPUT_ADVANCED,
+    INPUT_MOTION,
 }InputSettingsView;
 
 typedef enum ShadersList {
@@ -402,26 +402,35 @@ void draw_settings_window() {
                     nk_checkbox_label(ctx, "GBC Color Correction", &set.color_correction);
                     break;
                 case SET_INPUT:
-                    nk_layout_row_dynamic(ctx, 30, 2);
+                    nk_layout_row_dynamic(ctx, 30, 3);
                     if (nk_button_label_styled(ctx, (input_settings_view != INPUT_GAMEPAD) ? &tab_button_style : &tab_button_active_style, "Gamepad"))
                         input_settings_view = INPUT_GAMEPAD;
                     if (nk_button_label_styled(ctx, (input_settings_view != INPUT_ADVANCED) ? &tab_button_style : &tab_button_active_style, "Advanced"))
                         input_settings_view = INPUT_ADVANCED;
+                    if (nk_button_label_styled(ctx, (input_settings_view != INPUT_MOTION) ? &tab_button_style : &tab_button_active_style, "Motions"))
+                        input_settings_view = INPUT_MOTION;
                     nk_layout_row_dynamic(ctx, 150, 1);
                     if (nk_group_begin(ctx, "key_management", 0)) {
-                        nk_layout_row_dynamic(ctx, 30, 4);
                         switch (input_settings_view) {
                             case INPUT_GAMEPAD:
+                                nk_layout_row_dynamic(ctx, 30, 4);
                                 for (int i = 0; i < 8; i++) {
                                     draw_input_editor(keys_names[key_order[i]], &set.keyboard_keys[key_order[i]], i);
                                 }
                                 break;
                             case INPUT_ADVANCED:
+                                nk_layout_row_dynamic(ctx, 30, 4);
                                 draw_input_editor("Save state:", &set.save_state_key, 11);
                                 draw_input_editor("Fast forward:", &set.fast_forward_key, 10);
                                 //draw_input_editor("Rewind:", &set.rewind_key, 12);
                                 draw_input_editor("Load state:", &set.load_state_key, 13);
                                 draw_input_editor("Debugger:", &set.debugger_key, 14);
+                                break;
+                            case INPUT_MOTION:
+                                nk_layout_row_dynamic(ctx, 30, 1);
+                                nk_label(ctx, "Motion control style", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                                nk_combobox_string(ctx, "Gamepad axis\0Mouse pointer", &set.motion_style, 2, 20, size);
+
                                 break;
                         }
                         nk_group_end(ctx);

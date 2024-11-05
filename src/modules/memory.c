@@ -3,6 +3,7 @@
 #include "../includes/memory.h"
 #include "../includes/apu.h"
 #include "../includes/cartridge.h"
+#include "../includes/settings.h"
 #include "../includes/ppu.h"
 #include "../includes/timer.h"
 #include "../includes/serial.h"
@@ -11,6 +12,35 @@
 #include "../includes/camera.h"
 
 const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
+
+int get_x_accel() {
+    switch (set.motion_style) {
+        case 0:
+            return (int)(GetGamepadAxisMovement(0, 0) * -64);
+        case 1:
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                return (int)((GetMouseX() - (GetScreenWidth()/2)) * -1);
+            else
+                return 0;
+        default:
+            return 0;
+    }
+}
+
+int get_y_accel() {
+    switch (set.motion_style) {
+        case 0:
+            return (int)(GetGamepadAxisMovement(0, 1) * -64);
+        case 1:
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                return (int)((GetMouseY() - (GetScreenHeight()/2)) * -1);
+            else
+                return 0;
+        default:
+            return 0;
+
+    }
+}
 
 uint8_t read_no_mbc(cpu *c, uint16_t addr) {
     switch (addr) {
@@ -334,8 +364,8 @@ void write_mbc7(cpu *c, uint16_t addr, uint8_t value) {
                     case 0xa010:
                         if (!c->cart.accel.has_latched && value == 0xaa) {
                             c->cart.accel.has_latched = true;
-                            c->cart.accel.x_latched = 0x81d0 + (int)(GetGamepadAxisMovement(0, 0) * -64);
-                            c->cart.accel.y_latched = 0x81d0 + (int)(GetGamepadAxisMovement(0, 1) * -64);
+                            c->cart.accel.x_latched = 0x81d0 + get_x_accel();
+                            c->cart.accel.y_latched = 0x81d0 + get_y_accel();
                         }
                         break;
                     case 0xa080:

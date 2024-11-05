@@ -418,6 +418,24 @@ void load_settings() {
     else
         set.debugger_key = KEY_F3;
 
+    cJSON *motion_style = cJSON_GetObjectItem(settings, "motion_style");
+    if (cJSON_IsNumber(motion_style))
+        set.motion_style = motion_style->valueint;
+    else
+        set.motion_style = 0;
+
+    cJSON *dsu_ip = cJSON_GetObjectItem(settings, "dsu_ip");
+    if (cJSON_IsString(dsu_ip))
+        strcpy(set.dsu_ip, dsu_ip->valuestring);
+    else
+        strcpy(set.dsu_ip, "127.0.0.1");
+
+    cJSON *dsu_port = cJSON_GetObjectItem(settings, "dsu_port");
+    if (cJSON_IsNumber(dsu_port))
+        set.dsu_port = dsu_port->valueint;
+    else
+        set.dsu_port = 26760;
+
     if (set.palettes_size <= set.selected_palette)
         set.selected_palette = 0;
 
@@ -476,6 +494,9 @@ void save_settings() {
     cJSON_AddNumberToObject(settings, "rewind_key", set.rewind_key);
     cJSON_AddStringToObject(settings, "bootrom_path_cgb", set.bootrom_path_cgb);
     cJSON_AddStringToObject(settings, "bootrom_path_dmg", set.bootrom_path_dmg);
+    cJSON_AddNumberToObject(settings, "motion_style", set.motion_style);
+    cJSON_AddStringToObject(settings, "dsu_ip", set.dsu_ip);
+    cJSON_AddNumberToObject(settings, "dsu_port", set.dsu_port);
 
     #if defined(PLATFORM_WEB)
     FILE *file = fopen("/saves/settings.json", "w");

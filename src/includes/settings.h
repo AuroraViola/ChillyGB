@@ -39,6 +39,11 @@ typedef struct {
     KeyboardKey load_state_key;
     KeyboardKey debugger_key;
     KeyboardKey rewind_key;
+    int motion_style;
+
+    // DSU client
+    char dsu_ip[16];
+    int dsu_port;
 }settings;
 
 extern settings set;
