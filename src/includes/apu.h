@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "raylib.h"
 #include "cpu.h"
+#include "memory.h"
 
 #ifndef CHILLYGB_APU_H
 #define CHILLYGB_APU_H

@@ -217,15 +217,12 @@ void write_mbc3(cpu *c, uint16_t addr, uint8_t value) {
                     uint16_t days = c->cart.rtc.time / 86400;
                     switch (c->cart.bank_select_ram) {
                         case 0x08:
-                            //if (value < 60)
                             seconds = value;
                             break;
                         case 0x09:
-                            //if (value < 60)
                             minutes = value;
                             break;
                         case 0x0a:
-                            //if (value < 24)
                             hours = value;
                             break;
                         case 0x0b:
@@ -922,10 +919,12 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
         case 0xff50:
             c->bootrom.is_enabled = false;
             if (c->is_color) {
-                c->cgb_mode = ((c->cart.data[0][0x143] & 0x80) == 0x80);
-            }
-            else {
-                c->cgb_mode = false;
+                if (c->memory[KEY0] == 0x04) {
+                    c->cgb_mode = false;
+                }
+                else {
+                    c->cgb_mode = true;
+                }
             }
             break;
 
@@ -1025,8 +1024,14 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             }
             break;
 
+        case KEY0:
+            if (c->is_color) {
+                c->memory[KEY0] = value;
+            }
+            break;
+
         case KEY1:
-            if (c->cgb_mode)
+            if (c->is_color)
                 c->armed = value & 1;
             break;
 
@@ -1205,8 +1210,13 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 return 0xff;
             return c->memory[addr];
 
+        case KEY0:
+            if (c->is_color)
+                return c->memory[KEY0];
+            return 0xff;
+
         case KEY1:
-            if (c->cgb_mode)
+            if (c->is_color)
                 return (c->double_speed << 7) | 0x7e | c->armed;
             return 0xff;
 
@@ -1262,7 +1272,6 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
         case 0xff15:
         case 0xff1f:
         case 0xff27 ... 0xff2f:
-        case 0xff4c:
         case 0xff4e:
         case 0xff50:
         case 0xff56:

@@ -730,9 +730,18 @@ void update_frame() {
                 nk_checkbox_label(ctx, "Win En", &video.window_enable);
                 nk_checkbox_label(ctx, "Tiles", &video.bg_tiles);
                 nk_checkbox_label(ctx, "Bg Map", &video.bg_tilemap);
-                nk_checkbox_label(ctx, "Obj size", &video.obj_size);
+                nk_checkbox_label(ctx, "Obj Size", &video.obj_size);
                 nk_checkbox_label(ctx, "Obj En", &video.obj_enable);
                 nk_checkbox_label(ctx, "Bg En", &video.bg_enable);
+            }
+            nk_end(ctx);
+
+            if (nk_begin(ctx, "GB info", nk_rect(186, 502, 160, 224),
+                         NK_WINDOW_MOVABLE|NK_WINDOW_MINIMIZABLE)) {
+                nk_layout_row_dynamic(ctx, 20, 1);
+                nk_checkbox_label(ctx, "Color", &c.is_color);
+                nk_checkbox_label(ctx, "Double Speed", &c.double_speed);
+                nk_checkbox_label(ctx, "CGB mode", &c.cgb_mode);
             }
             nk_end(ctx);
 

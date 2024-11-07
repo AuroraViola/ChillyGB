@@ -68,6 +68,7 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     video.scan_line = 0;
     timer1.scanline_timer = 456;
     c->memory[DMA] = 0xff;
+    c->memory[KEY0] = 0;
     video.scx = 0;
     video.scy = 0;
     video.wx = 0;
@@ -106,6 +107,7 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     c->is_color = set.selected_gameboy == 1;
     if (c->is_color) {
         c->cgb_mode = ((c->cart.data[0][0x143] & 0x80) == 0x80);
+        c->memory[KEY0] = c->cgb_mode ? c->cart.data[0][0x143] : 0x04;
     }
     else {
         c->cgb_mode = false;
