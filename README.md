@@ -4,7 +4,7 @@
 
 ChillyGB is a Game Boy (DMG) and Game Boy Color (CGB) emulator written in C that aims to simplicity and accuracy
 
-You can try it now [here](https://chillygb.arci.me) (Note that the audio in WASM port is a little bugged)
+You can try it now [here](https://chillygb.arci.me) (Note that the audio in the WASM port is a little bugged)
 
 ## Screenshots
 
@@ -17,56 +17,59 @@ You can try it now [here](https://chillygb.arci.me) (Note that the audio in WASM
 <a><img src="https://github.com/user-attachments/assets/597f0adb-b9a2-4703-9ca7-d61644ab40d3" width="24.25%"/></a>
 <a><img src="https://github.com/user-attachments/assets/5c182dfd-0f7d-4cfb-b299-af0314bbc167" width="24.25%"/></a>
 
-## Building
+## Features
 
-### Linux
-
-#### Dependency Installation
-**Fedora**
-```bash
-sudo dnf install git cmake make raylib raylib-devel gcc
-```
-**Arch Linux**
-```bash
-sudo pacman -S git cmake make gcc raylib
-```
-
-#### ChillyGB Build
-
-Clone the ChillyGB repository
-```bash
-git clone https://github.com/AuroraViola/ChillyGB --recursive && cd ChillyGB
-```
-Build ChillyGB
-```bash
-cmake -B ./build -DCMAKE_BUILD_TYPE=Release
-cmake --build ./build --config Release
-```
-
-### Windows
-
-TODO
+* **Cartridge support**
+  * NO MBC
+  * MBC1
+  * MBC2
+  * MBC3 (with RTC)
+  * MBC5
+  * MBC7
+  * POCKET CAMERA
+* **General features**
+  * GBC support
+  * BootROMs support
+  * Palette editor
+  * Pixel FIFO
+  * BESS-compliant save states
+  * Basic gamepad support
+  * Webcam support for pocket camera
+  * Integer scaling
+  * Pixel grid
+  * Color correction on GBC
+  * Input editor
+  * Switch support as NRO
+* **Debugger**
+  * Instructions viewer
+  * Memory Viewer
+  * Stack Viewer
+  * Registers Viewer
+  * LCDC Editor
+  * Other PPU registers status
+  * STAT Editor
+  * IE and IF Editor
 
 ## Planned features
 
-Here is a list of planned features
-
 * **Cartridge support**
   * MBC1M
-  * MBC5 Rumble
 * **Emulation Improvements**
   * Accurate sound behaviours
   * STAT IRQ blocking
   * Halt bug
   * Accurate Stop Instruction
   * DMA Conflicts
-  * Online multiplayer support via emulated link cable
+  * Improve HDMA timing
 * **Graphical and particular features**
-  * Improve Game Boy Color support
+  * Online multiplayer support via emulated link cable
   * Frame blending
   * Rewind
   * Rom folder
-  * Rumble
+  * Rumble for MBC5 games
+  * DSU client for MBC7 games
+  * GB Printer
+  * Cheats (GameGenie and GameShark)
 * **Debugger Improvements**
   * Breakpoints
   * Watchpoints
@@ -76,9 +79,13 @@ Here is a list of planned features
 
 ## Not Planned features
 
-These features will not be implemented (at least in this repository)
+These features will not be implemented
 
-* SGB borders
+* Any SGB function
+* MBC6 support
+* HUc1 support
+* HUc3 support
+* Infrared communication
 
 ## License
 
