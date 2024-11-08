@@ -61,6 +61,8 @@ add_executable(ChillyGB src/main.c
         third-party/cJSON/cJSON.c
         src/includes/memory.h
         src/modules/memory.c
+        src/includes/cheats.h
+        src/modules/cheats.c
 )
 include_directories(
         third-party/openpnp-capture/include

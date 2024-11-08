@@ -13,6 +13,7 @@
 #include "includes/savestates.h"
 #include "includes/camera.h"
 #include "includes/memory.h"
+#include "includes/cheats.h"
 #include "raylib-nuklear.h"
 #include <stdio.h>
 #include <getopt.h>
@@ -110,6 +111,7 @@ void load_cartridge(char *path) {
         fprintf(stderr, "Failed to open game: %s\n", rom_name);
         return;
     }
+    load_cheats(rom_name);
     if (load_bootrom(&c.bootrom) && set.bootrom_enabled)
         initialize_cpu_memory(&c, &set);
     else
@@ -545,13 +547,24 @@ void draw_cheats_window() {
 
         nk_layout_row_dynamic(ctx, 370, 1);
         if (nk_group_begin(ctx, "cheats_view", 0)) {
-            nk_layout_row_dynamic(ctx, 30, 1);
             switch (cheats_view) {
                 case CHEAT_GAMEGENIE:
-                    nk_label(ctx, "GameGenie", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    for (int i = 0; i < cheats.gameGenie_count; i++) {
+                        nk_label(ctx, TextFormat("%X: %X => %X", cheats.gameGenie[i].address, cheats.gameGenie[i].old_data, cheats.gameGenie[i].new_data), NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                        if (nk_button_label(ctx, "Remove cheat")) {
+                            remove_gamegenie_cheat(i);
+                        }
+                    }
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, cheats.gamegenie_code, 10, nk_filter_default);
+                    if (nk_button_label(ctx, "Add cheat")) {
+                        if (game_started)
+                            add_gamegenie_cheat();
+                    }
                     break;
                 case CHEAT_GAMESHARK:
-                    nk_label(ctx, "GameShark", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_label(ctx, "WIP", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                     break;
             }
             nk_group_end(ctx);
@@ -562,8 +575,10 @@ void draw_cheats_window() {
         if (nk_button_label(ctx, "Cancel")) {
             show_cheats = false;
         }
-        if (nk_button_label(ctx, "Apply")) {
+        if (nk_button_label(ctx, "Save")) {
             show_cheats = false;
+            if (game_started)
+                save_cheats(rom_name);
         }
     }
     nk_end(ctx);

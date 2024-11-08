@@ -10,6 +10,7 @@
 #include "../includes/input.h"
 #include "../includes/opcodes.h"
 #include "../includes/camera.h"
+#include "../includes/cheats.h"
 
 const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
 
@@ -1059,6 +1060,14 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             }
         case 0x0100 ... 0x01ff:
         case 0x0900 ... 0x7fff:
+            if (cheats.gameGenie_count > 0) {
+                uint8_t cart_data = read_cart(c, addr);
+                for (int i = 0; i < cheats.gameGenie_count; i++) {
+                    if ((cheats.gameGenie[i].address == addr) && (cheats.gameGenie[i].old_data == cart_data)) {
+                        return cheats.gameGenie[i].new_data;
+                    }
+                }
+            }
         case 0xa000 ... 0xbfff:
             return read_cart(c, addr);
         case 0xfea0 ... 0xfeff:
