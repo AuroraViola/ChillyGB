@@ -167,7 +167,7 @@ extern float speed_mult;
 
 void initialize_cpu_memory_no_bootrom(cpu *c, settings *s);
 void initialize_cpu_memory(cpu *c, settings *s);
-void execute(cpu *c);
+bool execute(cpu *c);
 void hdma_transfer(cpu *c);
 void add_ticks(cpu *c, uint16_t ticks);
 void dma_transfer(cpu *c);

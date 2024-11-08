@@ -49,6 +49,11 @@ typedef enum SettingsView {
     SET_INPUT,
 }SettingsView;
 
+typedef enum CheatsView {
+    CHEAT_GAMEGENIE = 0,
+    CHEAT_GAMESHARK,
+}CheatsView;
+
 typedef enum InputSettingsView {
     INPUT_GAMEPAD = 0,
     INPUT_ADVANCED,
@@ -66,9 +71,12 @@ bool exited = false;
 bool game_started = false;
 bool show_settings = false;
 bool show_about = false;
+bool show_cheats = false;
+bool show_alert = false;
 char rom_name[256];
 uint8_t emulator_mode = MENU;
 uint8_t settings_view = SET_EMU;
+uint8_t cheats_view = CHEAT_GAMEGENIE;
 uint8_t input_settings_view = INPUT_GAMEPAD;
 uint8_t palette_color_selected = 0;
 bool is_selected_input = false;
@@ -164,6 +172,17 @@ void DrawNavBar() {
                     ResumeAudioStream(audio.ch4.stream);
                 }
             }
+            if (nk_menu_item_label(ctx, "Stop", NK_TEXT_LEFT)) {
+                if (game_started) {
+                    game_started = false;
+                    c.is_color = false;
+                    for (int i = 0; i < 144; i++) {
+                        for (int j = 0; j < 160; j++) {
+                            video.display[i][j] = 0;
+                        }
+                    }
+                }
+            }
             nk_menu_end(ctx);
         }
         nk_layout_row_push(ctx, 70);
@@ -173,6 +192,9 @@ void DrawNavBar() {
                 if (game_started) {
                     emulator_mode = DEBUG;
                 }
+            }
+            if (nk_menu_item_label(ctx, "Cheats", NK_TEXT_LEFT)) {
+                show_cheats = true;
             }
             if (nk_menu_item_label(ctx, "Settings", NK_TEXT_LEFT)) {
                 if (show_settings == false) {
@@ -512,6 +534,41 @@ void draw_about_window() {
     nk_end(ctx);
 }
 
+void draw_cheats_window() {
+    if(nk_begin_titled(ctx, "ctx-cheats","Cheats", nk_rect(20, 60, 550, 505),
+                       NK_WINDOW_MOVABLE|NK_WINDOW_TITLE)) {
+        nk_layout_row_dynamic(ctx, 30, 2);
+        if (nk_button_label_styled(ctx, (cheats_view != CHEAT_GAMEGENIE) ? &tab_button_style : &tab_button_active_style, "GameGenie"))
+            cheats_view = CHEAT_GAMEGENIE;
+        if (nk_button_label_styled(ctx, (cheats_view != CHEAT_GAMESHARK) ? &tab_button_style : &tab_button_active_style, "GameShark"))
+            cheats_view = CHEAT_GAMESHARK;
+
+        nk_layout_row_dynamic(ctx, 370, 1);
+        if (nk_group_begin(ctx, "cheats_view", 0)) {
+            nk_layout_row_dynamic(ctx, 30, 1);
+            switch (cheats_view) {
+                case CHEAT_GAMEGENIE:
+                    nk_label(ctx, "GameGenie", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    break;
+                case CHEAT_GAMESHARK:
+                    nk_label(ctx, "GameShark", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    break;
+            }
+            nk_group_end(ctx);
+        }
+        nk_layout_row_dynamic(ctx, 40, 4);
+        nk_spacer(ctx);
+        nk_spacer(ctx);
+        if (nk_button_label(ctx, "Cancel")) {
+            show_cheats = false;
+        }
+        if (nk_button_label(ctx, "Apply")) {
+            show_cheats = false;
+        }
+    }
+    nk_end(ctx);
+}
+
 void pause_game() {
     if (emulator_mode != GAME) return;
     emulator_mode = MENU;
@@ -584,6 +641,22 @@ void update_display_texture() {
     }
 }
 
+void draw_alert_window() {
+    if(nk_begin_titled(ctx, "ctx-alert","Warning", nk_rect((GetScreenWidth()/2-150), (GetScreenHeight()/2-70), 300, 140),
+                       NK_WINDOW_MOVABLE|NK_WINDOW_TITLE)) {
+        nk_layout_row_dynamic(ctx, 40, 1);
+        nk_label(ctx, "Illegal opcode", NK_TEXT_ALIGN_CENTERED|NK_TEXT_ALIGN_MIDDLE);
+        nk_layout_row_dynamic(ctx, 40, 4);
+        nk_spacer(ctx);
+        nk_spacer(ctx);
+        nk_spacer(ctx);
+        if (nk_button_label(ctx, "ok")) {
+            show_alert = false;
+        }
+    }
+    nk_end(ctx);
+}
+
 void update_frame() {
     if (IsFileDropped()) {
         FilePathList droppedFiles = LoadDroppedFiles();
@@ -609,6 +682,18 @@ void update_frame() {
             if (nk_window_is_hidden(ctx, "ctx-settings")) {
                 show_settings = false;
             }
+
+            if (show_cheats) {
+                draw_cheats_window();
+            }
+            if (nk_window_is_hidden(ctx, "ctx-cheats"))
+                show_cheats = false;
+
+            if (show_alert) {
+                draw_alert_window();
+            }
+            if (nk_window_is_hidden(ctx, "ctx-alert"))
+                show_alert = false;
 
             if (show_about) {
                 draw_about_window();
@@ -644,7 +729,11 @@ void update_frame() {
         case GAME:
             timer1.timer_global = 0;
             while (timer1.timer_global < ((c.double_speed ? 139810 : 69905) * joypad1.fast_forward)) {
-                execute(&c);
+                if (!execute(&c)) {
+                    pause_game();
+                    show_alert = true;
+                    break;
+                }
                 Update_Audio(&c);
             }
             if (video.draw_screen) {
@@ -828,10 +917,6 @@ void update_frame() {
                     execute(&c);
                     Update_Audio(&c);
                 }
-            }
-
-            if (IsKeyPressed(KEY_R)) {
-                initialize_cpu_memory_no_bootrom(&c, &set);
             }
 
             if (IsKeyPressed(KEY_ESCAPE)) {

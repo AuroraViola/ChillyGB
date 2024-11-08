@@ -710,16 +710,18 @@ uint8_t execute_instruction(cpu *c) {
         case 0x10:
             return stop(c, &p);
     }
-    printf("%x Invalid OPCODE", opcode);
     return 0;
 }
 
-void execute(cpu *c) {
+bool execute(cpu *c) {
     if (c->ime == true)
         run_interrupt(c);
 
     if (!c->is_halted) {
         uint8_t ticks = execute_instruction(c);
+        if (ticks == 0) {
+            return false;
+        }
         add_ticks(c, ticks);
     }
     else {
@@ -745,4 +747,5 @@ void execute(cpu *c) {
         c->ime_to_be_setted = 0;
         c->ime = true;
     }
+    return true;
 }
