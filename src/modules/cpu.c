@@ -48,6 +48,11 @@ void initialize_cpu_memory(cpu *c, settings *s) {
     c->is_color = set.selected_gameboy == 1;
     c->cgb_mode = c->is_color;
     video.opri = (c->cgb_mode) ? false : true;
+    c->r.reg16[AF] = 0;
+    c->r.reg16[BC] = 0;
+    c->r.reg16[DE] = 0;
+    c->r.reg16[HL] = 0;
+    c->sp = 0;
     c->pc = 0;
     c->ime = false;
     c->ime_to_be_setted = 0;
@@ -114,13 +119,32 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
         c->cgb_mode = false;
     }
     if (c->is_color) {
-        c->r.reg16[AF] = 0x1180;
-        c->r.reg16[BC] = 0x0000;
-        c->r.reg16[DE] = 0xff56;
-        c->r.reg16[HL] = 0x000d;
+        if (c->cgb_mode) {
+            c->r.reg16[AF] = 0x1180;
+            c->r.reg16[BC] = 0x0000;
+            c->r.reg16[DE] = 0xff56;
+            c->r.reg16[HL] = 0x000d;
+        }
+        else {
+            c->r.reg16[AF] = 0x1180;
+            uint8_t old_license_code = c->cart.data[0][0x14b];
+            uint16_t new_license_code = (c->cart.data[0][0x144] << 8) | c->cart.data[0][0x144];
+            if ((old_license_code == 1) || ((old_license_code == 0x33) && (new_license_code == 0x3031))) {
+                c->r.reg8[B] = 0;
+                for (int i = 0x104; i <= 0x133; i++) {
+                    c->r.reg8[B] += c->cart.data[0][i];
+                }
+            }
+            else {
+                c->r.reg8[B] = 0;
+            }
+            c->r.reg16[C] = 0x00;
+            c->r.reg16[DE] = 0x0008;
+            c->r.reg16[HL] = (c->r.reg8[B] == 0x43 || c->r.reg8[B] == 0x58) ? 0x991a : 0x007c;
+        }
     }
     else {
-        c->r.reg16[AF] = 0x01c0;
+        c->r.reg16[AF] = 0x01b0;
         c->r.reg16[BC] = 0x0013;
         c->r.reg16[DE] = 0x00d8;
         c->r.reg16[HL] = 0x014d;
@@ -315,7 +339,15 @@ void initialize_cpu_memory_no_bootrom(cpu *c, settings *s) {
     gbcamera.timing = 0;
 
     // Initialize internal timer
-    timer1.t_states = 23440324;
+    if (c->is_color) {
+        if (c->cgb_mode)
+            timer1.t_states = 0x639860;
+        else
+            timer1.t_states = 0x63933C;
+    }
+    else {
+        timer1.t_states = 23440324;
+    }
 }
 
 void hdma_transfer(cpu *c) {
