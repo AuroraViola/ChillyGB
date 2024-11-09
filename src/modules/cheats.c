@@ -5,6 +5,24 @@
 
 Cheats cheats;
 
+void remove_gameshark_cheat(uint8_t cheat_i) {
+    for (int i = cheat_i; i < cheats.gameShark_count-1; i++) {
+        cheats.gameShark[i] = cheats.gameShark[i+1];
+    }
+    cheats.gameShark_count--;
+}
+
+void add_gameshark_cheat() {
+    if (cheats.gameShark_count < 50) {
+        uint32_t cheat_code = strtol(cheats.gameshark_code, NULL, 16);
+        cheats.gameShark[cheats.gameShark_count].sram_bank = cheat_code >> 24;
+        cheats.gameShark[cheats.gameShark_count].new_data = (cheat_code >> 16) & 0xff;
+        cheats.gameShark[cheats.gameShark_count].address = ((cheat_code & 0xff00) >> 8) | ((cheat_code & 0xff) << 8);
+        strcpy(cheats.gameshark_code, "");
+        cheats.gameShark_count++;
+    }
+}
+
 void remove_gamegenie_cheat(uint8_t cheat_i) {
     for (int i = cheat_i; i < cheats.gameGenie_count-1; i++) {
         cheats.gameGenie[i] = cheats.gameGenie[i+1];

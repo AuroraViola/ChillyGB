@@ -30,4 +30,7 @@ void save_cheats(char rom_name[256]);
 void add_gamegenie_cheat();
 void remove_gamegenie_cheat(uint8_t cheat_i);
 
+void add_gameshark_cheat();
+void remove_gameshark_cheat(uint8_t cheat_i);
+
 #endif //CHILLYGB_CHEATS_H

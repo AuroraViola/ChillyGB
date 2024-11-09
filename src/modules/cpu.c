@@ -7,6 +7,7 @@
 #include "../includes/opcodes.h"
 #include "../includes/memory.h"
 #include "../includes/camera.h"
+#include "../includes/cheats.h"
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -533,6 +534,9 @@ void run_interrupt(cpu *c) {
         if (((c->memory[IE] & 1) == 1) && ((c->memory[IF] & 1) == 1)) {
             c->memory[IF] &= 0b11111110;
             c->pc = 0x40;
+            for (int i = 0; i < cheats.gameShark_count; i++) {
+                set_mem(c, cheats.gameShark[i].address, cheats.gameShark[i].new_data);
+            }
         }
         else if (((c->memory[IE] & 2) == 2) && ((c->memory[IF] & 2) == 2)) {
             c->memory[IF] &= 0b11111101;

@@ -564,7 +564,19 @@ void draw_cheats_window() {
                     }
                     break;
                 case CHEAT_GAMESHARK:
-                    nk_label(ctx, "WIP", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    for (int i = 0; i < cheats.gameShark_count; i++) {
+                        nk_label(ctx, TextFormat("%X-%X = %X", cheats.gameShark[i].sram_bank, cheats.gameShark[i].address, cheats.gameShark[i].new_data), NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
+                        if (nk_button_label(ctx, "Remove cheat")) {
+                            remove_gameshark_cheat(i);
+                        }
+                    }
+                    nk_layout_row_dynamic(ctx, 30, 2);
+                    nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, cheats.gameshark_code, 9, nk_filter_default);
+                    if (nk_button_label(ctx, "Add cheat")) {
+                        if (game_started)
+                            add_gameshark_cheat();
+                    }
                     break;
             }
             nk_group_end(ctx);
