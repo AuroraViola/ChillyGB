@@ -1069,7 +1069,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             if (cheats.gameGenie_count > 0) {
                 uint8_t cart_data = read_cart(c, addr);
                 for (int i = 0; i < cheats.gameGenie_count; i++) {
-                    if ((cheats.gameGenie[i].address == addr) && (cheats.gameGenie[i].old_data == cart_data)) {
+                    if ((cheats.gameGenie[i].enabled) && (cheats.gameGenie[i].address == addr) && (cheats.gameGenie[i].old_data == cart_data)) {
                         return cheats.gameGenie[i].new_data;
                     }
                 }

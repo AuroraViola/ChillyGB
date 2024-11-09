@@ -1,14 +1,18 @@
 #include <stdint.h>
+#include <stdbool.h>
+
 #ifndef CHILLYGB_CHEATS_H
 #define CHILLYGB_CHEATS_H
 
 typedef struct {
+    bool enabled;
     uint8_t new_data;
     uint16_t address;
     uint8_t old_data;
 }GameGenie;
 
 typedef struct {
+    bool enabled;
     uint8_t sram_bank;
     uint8_t new_data;
     uint16_t address;

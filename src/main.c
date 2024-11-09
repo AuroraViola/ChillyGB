@@ -551,8 +551,8 @@ void draw_cheats_window() {
                 case CHEAT_GAMEGENIE:
                     nk_layout_row_dynamic(ctx, 30, 2);
                     for (int i = 0; i < cheats.gameGenie_count; i++) {
-                        nk_label(ctx, TextFormat("%X: %X => %X", cheats.gameGenie[i].address, cheats.gameGenie[i].old_data, cheats.gameGenie[i].new_data), NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                        if (nk_button_label(ctx, "Remove cheat")) {
+                        nk_checkbox_label(ctx, TextFormat("%X: %X => %X", cheats.gameGenie[i].address, cheats.gameGenie[i].old_data, cheats.gameGenie[i].new_data), &cheats.gameGenie[i].enabled);
+                        if (nk_button_label(ctx, "Delete cheat")) {
                             remove_gamegenie_cheat(i);
                         }
                     }
@@ -566,8 +566,8 @@ void draw_cheats_window() {
                 case CHEAT_GAMESHARK:
                     nk_layout_row_dynamic(ctx, 30, 2);
                     for (int i = 0; i < cheats.gameShark_count; i++) {
-                        nk_label(ctx, TextFormat("%X-%X = %X", cheats.gameShark[i].sram_bank, cheats.gameShark[i].address, cheats.gameShark[i].new_data), NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
-                        if (nk_button_label(ctx, "Remove cheat")) {
+                        nk_checkbox_label(ctx, TextFormat("%X-%X = %X", cheats.gameShark[i].sram_bank, cheats.gameShark[i].address, cheats.gameShark[i].new_data), &cheats.gameShark[i].enabled);
+                        if (nk_button_label(ctx, "Delete cheat")) {
                             remove_gameshark_cheat(i);
                         }
                     }

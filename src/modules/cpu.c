@@ -567,7 +567,20 @@ void run_interrupt(cpu *c) {
             c->memory[IF] &= 0b11111110;
             c->pc = 0x40;
             for (int i = 0; i < cheats.gameShark_count; i++) {
-                set_mem(c, cheats.gameShark[i].address, cheats.gameShark[i].new_data);
+                if (cheats.gameShark[i].enabled) {
+                    if (cheats.gameShark[i].sram_bank == 0x1) {
+                        set_mem(c, cheats.gameShark[i].address, cheats.gameShark[i].new_data);
+                    }
+                    else if ((cheats.gameShark[i].sram_bank & 0xf0) == 0x80) {
+                        c->cart.bank_select_ram = cheats.gameShark[i].sram_bank & 0xf;
+                        set_mem(c, cheats.gameShark[i].address, cheats.gameShark[i].new_data);
+                    }
+                    else if ((cheats.gameShark[i].sram_bank & 0xf0) == 0x80) {
+                        if (c->is_color)
+                            c->wram_bank = cheats.gameShark[i].sram_bank & 0xf;
+                        set_mem(c, cheats.gameShark[i].address, cheats.gameShark[i].new_data);
+                    }
+                }
             }
         }
         else if (((c->memory[IE] & 2) == 2) && ((c->memory[IF] & 2) == 2)) {

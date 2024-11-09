@@ -18,6 +18,7 @@ void add_gameshark_cheat() {
         cheats.gameShark[cheats.gameShark_count].sram_bank = cheat_code >> 24;
         cheats.gameShark[cheats.gameShark_count].new_data = (cheat_code >> 16) & 0xff;
         cheats.gameShark[cheats.gameShark_count].address = ((cheat_code & 0xff00) >> 8) | ((cheat_code & 0xff) << 8);
+        cheats.gameShark[cheats.gameShark_count].enabled = true;
         strcpy(cheats.gameshark_code, "");
         cheats.gameShark_count++;
     }
@@ -40,6 +41,7 @@ void add_gamegenie_cheat() {
         cheats.gameGenie[cheats.gameGenie_count].old_data >>= 2;
         cheats.gameGenie[cheats.gameGenie_count].old_data |= temp;
         cheats.gameGenie[cheats.gameGenie_count].old_data ^= 0xba;
+        cheats.gameGenie[cheats.gameGenie_count].enabled = true;
         strcpy(cheats.gamegenie_code, "");
         cheats.gameGenie_count++;
     }
@@ -69,12 +71,14 @@ void load_cheats(char rom_name[256]) {
     if (cheats_file != NULL) {
         fread(&cheats.gameGenie_count, 1, 1, cheats_file);
         for (int i = 0; i < cheats.gameGenie_count; i++) {
+            fread(&cheats.gameGenie[i].enabled, 1, 1, cheats_file);
             fread(&cheats.gameGenie[i].new_data, 1, 1, cheats_file);
             fread(&cheats.gameGenie[i].address, 2, 1, cheats_file);
             fread(&cheats.gameGenie[i].old_data, 1, 1, cheats_file);
         }
         fread(&cheats.gameShark_count, 1, 1, cheats_file);
         for (int i = 0; i < cheats.gameShark_count; i++) {
+            fread(&cheats.gameShark[i].enabled, 1, 1, cheats_file);
             fread(&cheats.gameShark[i].sram_bank, 1, 1, cheats_file);
             fread(&cheats.gameShark[i].new_data, 1, 1, cheats_file);
             fread(&cheats.gameShark[i].address, 2, 1, cheats_file);
@@ -94,12 +98,14 @@ void save_cheats(char rom_name[256]) {
     if (cheats_file != NULL) {
         fwrite(&cheats.gameGenie_count, 1, 1, cheats_file);
         for (int i = 0; i < cheats.gameGenie_count; i++) {
+            fwrite(&cheats.gameGenie[i].enabled, 1, 1, cheats_file);
             fwrite(&cheats.gameGenie[i].new_data, 1, 1, cheats_file);
             fwrite(&cheats.gameGenie[i].address, 2, 1, cheats_file);
             fwrite(&cheats.gameGenie[i].old_data, 1, 1, cheats_file);
         }
         fwrite(&cheats.gameShark_count, 1, 1, cheats_file);
         for (int i = 0; i < cheats.gameShark_count; i++) {
+            fwrite(&cheats.gameShark[i].enabled, 1, 1, cheats_file);
             fwrite(&cheats.gameShark[i].sram_bank, 1, 1, cheats_file);
             fwrite(&cheats.gameShark[i].new_data, 1, 1, cheats_file);
             fwrite(&cheats.gameShark[i].address, 2, 1, cheats_file);
