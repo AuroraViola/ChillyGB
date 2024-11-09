@@ -24,7 +24,7 @@ void fetch_bg_to_fifo(cpu *c) {
     uint8_t bgX = video.scx + (video.current_pixel + video.fifo.pixel_count);
     uint8_t bgY = video.scy + video.scan_line;
     uint16_t tile_id = video.vram[0][(video.bg_tilemap ? 0x1c00 : 0x1800) | (((uint16_t) bgY & 0x00f8) << 2) | (bgX >> 3)];
-    uint8_t tile_attribute = c->is_color ? video.vram[1][(video.bg_tilemap ? 0x1c00 : 0x1800) | (((uint16_t) bgY & 0x00f8) << 2) | (bgX >> 3)] : 0;
+    uint8_t tile_attribute = c->cgb_mode ? video.vram[1][(video.bg_tilemap ? 0x1c00 : 0x1800) | (((uint16_t) bgY & 0x00f8) << 2) | (bgX >> 3)] : 0;
     bool flip_X = ((tile_attribute & 0x20) != 0);
     bool flip_Y = ((tile_attribute & 0x40) != 0);
     bool priority = ((tile_attribute & 0x80) != 0);
@@ -56,7 +56,7 @@ void fetch_win_to_fifo(cpu *c) {
     uint8_t bgX = ((video.current_pixel + video.fifo.pixel_count) - video.wx) + 7;
     uint8_t bgY = video.window_internal_line;
     uint16_t tile_id = video.vram[0][(video.window_tilemap ? 0x1c00 : 0x1800) | (((uint16_t) bgY & 0x00f8) << 2) | (bgX >> 3)];
-    uint8_t tile_attribute = c->is_color ? video.vram[1][(video.window_tilemap ? 0x1c00 : 0x1800) | (((uint16_t) bgY & 0x00f8) << 2) | (bgX >> 3)] : 0;
+    uint8_t tile_attribute = c->cgb_mode ? video.vram[1][(video.window_tilemap ? 0x1c00 : 0x1800) | (((uint16_t) bgY & 0x00f8) << 2) | (bgX >> 3)] : 0;
     bool flip_X = ((tile_attribute & 0x20) != 0);
     bool flip_Y = ((tile_attribute & 0x40) != 0);
     bool priority = ((tile_attribute & 0x80) != 0);
@@ -107,7 +107,7 @@ void fetch_sprite_to_fifo(cpu *c) {
         for (int j = 0; j < buffer_size; j++) {
             uint16_t sprite_addr = buffer[j];
             uint8_t palette = c->cgb_mode ? ((c->memory[sprite_addr | 3] & 7) + 8) : (((c->memory[sprite_addr | 3] >> 4) & 1) + 1);
-            bool vram_bank = c->is_color ? ((c->memory[sprite_addr | 3] & 0x08) != 0) : 0;
+            bool vram_bank = c->cgb_mode ? ((c->memory[sprite_addr | 3] & 0x08) != 0) : 0;
             bool flip_X = ((c->memory[sprite_addr | 3] & 0x20) != 0);
             bool flip_Y = ((c->memory[sprite_addr | 3] & 0x40) != 0);
             bool priority = ((c->memory[sprite_addr | 3] & 0x80) != 0);
