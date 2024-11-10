@@ -1144,7 +1144,7 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
                 return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | enc | 0xc0;
             }
             else {
-                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | 0xc0;
+                return (joypad1.dpad_on << 4) | (joypad1.dpad_on << 5) | 0xcf;
             }
         case DIV:
             return (timer1.t_states >> 8) & 255;
