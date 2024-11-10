@@ -541,9 +541,11 @@ void add_ticks(cpu *c, uint16_t ticks) {
                 }
             }
         }
-        if (!c->hdma.mode) {
-            for (int j = 0; j < 2; j++)
-                hdma_transfer(c);
+        if (c->cgb_mode) {
+            if (!c->hdma.mode) {
+                for (int j = 0; j < 2; j++)
+                    hdma_transfer(c);
+            }
         }
 
         if (gbcamera.timing > 0) {

@@ -1244,9 +1244,12 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 0xff;
 
         case HDMA5:
-            if (c->hdma.finished)
-                return 0xff;
-            return 0x00;
+            if (c->cgb_mode) {
+                if (c->hdma.finished)
+                    return 0xff;
+                return 0x00;
+            }
+            return 0xff;
 
         case BGP:
             if (!c->cgb_mode)
