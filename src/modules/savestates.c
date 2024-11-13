@@ -488,7 +488,7 @@ void save_state(cpu *c, char rom_name[256]) {
         fwrite("NAME", 4, 1, save);
         value_32 = 15;
         fwrite(&value_32, 4, 1, save);
-        fwrite("ChillyGB v0.2.0", 15, 1, save);
+        fwrite("ChillyGB v0.3.0", 15, 1, save);
         fwrite("INFO", 4, 1, save);
         value_32 = 0x12;
         fwrite(&value_32, 4, 1, save);

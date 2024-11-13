@@ -92,7 +92,7 @@ if (${PLATFORM} MATCHES "NX")
   target_link_libraries(ChillyGB EGL GLESv2 glapi drm_nouveau nx stdc++)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.ncap
-    COMMAND nacptool --create "ChillyGB" "AuroraViola" "v0.2.0" ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.nacp
+    COMMAND nacptool --create "ChillyGB" "AuroraViola" "v0.3.0" ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.nacp
     DEPENDS ChillyGB
   )
   add_custom_target(ChillyGB_ncap ALL SOURCES ${CMAKE_CURRENT_BINARY_DIR}/ChillyGB.ncap)
