@@ -154,6 +154,7 @@ char *do_open_rom_dialog(bool bootrom_chooser) {
 #include <windows.h>
 #include <shlobj.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 static char *wc_to_utf8_alloc(const wchar_t *wide) {
     unsigned int cb = WideCharToMultiByte(CP_UTF8, 0, wide, -1, NULL, 0, NULL, NULL);

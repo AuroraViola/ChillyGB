@@ -103,7 +103,7 @@ void initialize_camera() {
     camera_pnp.context = Cap_createContext();
     camera_pnp.stream = Cap_openStream(camera_pnp.context, 0, 0);
     Cap_getFormatInfo(camera_pnp.context, 0, 0, &camera_pnp.formatinfo);
-    camera_pnp.buffer_size = camera_pnp.formatinfo.width * camera_pnp.formatinfo.height * (camera_pnp.formatinfo.bpp / 8);
+    camera_pnp.buffer_size = camera_pnp.formatinfo.width * camera_pnp.formatinfo.height * 3;
     camera_pnp.buffer = malloc(camera_pnp.buffer_size);
 }
 

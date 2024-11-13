@@ -79,9 +79,12 @@ jobs:
     - name: Prepare artifacts
       run: |
         cp /usr/local/lib/libraylib.so.550 build
+        cp build/third-party/openpnp-capture/libopenpnp-capture.so.0 build
         cd build
         patchelf --remove-needed libraylib.so.550 ChillyGB
+        patchelf --remove-needed libopenpnp-capture.so.0 ChillyGB
         patchelf --add-needed ./libraylib.so.550 ChillyGB
+        patchelf --add-needed ./libopenpnp-capture.so.0 ChillyGB
 
     - uses: actions/upload-artifact@v4
       with:
@@ -89,8 +92,8 @@ jobs:
         path: |
           build/ChillyGB
           build/res
-          build/third-party
           build/libraylib.so.550
+          build/libopenpnp-capture.so.0
 
     - name: Restore cached Roms
       id: cache-roms-restore

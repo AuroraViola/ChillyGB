@@ -12,9 +12,15 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
                 raylib_win64
                 URL      https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_win64_mingw-w64.zip
         )
-        FetchContent_MakeAvailable(raylib_win64)
+        FetchContent_Declare(
+                openpnp_capture_win64
+                URL      https://github.com/openpnp/openpnp-capture/releases/download/v0.0.28/libopenpnp-capture-windows-latest-x86_64.dll
+                DOWNLOAD_NO_EXTRACT TRUE
+                DOWNLOAD_NAME openpnp-capture.dll
+        )
+        FetchContent_MakeAvailable(raylib_win64 openpnp_capture_win64)
         include_directories(${raylib_win64_SOURCE_DIR}/include)
-        link_directories(${raylib_win64_SOURCE_DIR}/lib)
+        link_directories(${raylib_win64_SOURCE_DIR}/lib ${openpnp_capture_win64_SOURCE_DIR})
 endif()
  
 if (${PLATFORM} MATCHES "NX")
@@ -69,8 +75,13 @@ include_directories(
         third-party/cJSON
         third-party/raylib-nuklear/include
 )
-add_subdirectory(third-party/openpnp-capture)
-target_link_libraries(ChillyGB raylib m openpnp-capture)
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    add_subdirectory(third-party/openpnp-capture)
+    target_link_libraries(ChillyGB raylib m openpnp-capture)
+endif()
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    target_link_libraries(ChillyGB raylib m openpnp-capture)
+endif()
 option(CUSTOM_OPEN_DIALOG "Enable custom open dialog box built with Nuklear" OFF)
 
 if(CUSTOM_OPEN_DIALOG)
