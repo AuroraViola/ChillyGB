@@ -40,6 +40,7 @@ You can try it now [here](https://chillygb.arci.me) (Note that the audio in the 
   * Color correction on GBC
   * Input editor
   * Switch support as NRO
+  * Cheats (GameGenie and GameShark)
 * **Debugger**
   * Instructions viewer
   * Memory Viewer
@@ -69,7 +70,6 @@ You can try it now [here](https://chillygb.arci.me) (Note that the audio in the 
   * Rumble for MBC5 games
   * DSU client for MBC7 games
   * GB Printer
-  * Cheats (GameGenie and GameShark)
 * **Debugger Improvements**
   * Breakpoints
   * Watchpoints
