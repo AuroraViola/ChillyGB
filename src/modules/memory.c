@@ -940,30 +940,24 @@ void set_mem(cpu *c, uint16_t addr, uint8_t value) {
             break;
 
         case BGP:
-            if (!c->cgb_mode) {
-                video.bgp_dmg[0] = value & 3;
-                video.bgp_dmg[1] = (value >> 2) & 3;
-                video.bgp_dmg[2] = (value >> 4) & 3;
-                video.bgp_dmg[3] = (value >> 6) & 3;
-            }
+            video.bgp_dmg[0] = value & 3;
+            video.bgp_dmg[1] = (value >> 2) & 3;
+            video.bgp_dmg[2] = (value >> 4) & 3;
+            video.bgp_dmg[3] = (value >> 6) & 3;
             break;
 
         case OBP0:
-            if (!c->cgb_mode) {
-                video.obp_dmg[0][0] = value & 3;
-                video.obp_dmg[0][1] = (value >> 2) & 3;
-                video.obp_dmg[0][2] = (value >> 4) & 3;
-                video.obp_dmg[0][3] = (value >> 6) & 3;
-            }
+            video.obp_dmg[0][0] = value & 3;
+            video.obp_dmg[0][1] = (value >> 2) & 3;
+            video.obp_dmg[0][2] = (value >> 4) & 3;
+            video.obp_dmg[0][3] = (value >> 6) & 3;
             break;
 
         case OBP1:
-            if (!c->cgb_mode) {
-                video.obp_dmg[1][0] = value & 3;
-                video.obp_dmg[1][1] = (value >> 2) & 3;
-                video.obp_dmg[1][2] = (value >> 4) & 3;
-                video.obp_dmg[1][3] = (value >> 6) & 3;
-            }
+            video.obp_dmg[1][0] = value & 3;
+            video.obp_dmg[1][1] = (value >> 2) & 3;
+            video.obp_dmg[1][2] = (value >> 4) & 3;
+            video.obp_dmg[1][3] = (value >> 6) & 3;
             break;
 
         case BCPS:
@@ -1252,14 +1246,11 @@ uint8_t get_mem(cpu *c, uint16_t addr) {
             return 0xff;
 
         case BGP:
-            if (!c->cgb_mode)
-                return video.bgp_dmg[0] | (video.bgp_dmg[1] << 2) | (video.bgp_dmg[2] << 4) | (video.bgp_dmg[3] << 6);
+            return video.bgp_dmg[0] | (video.bgp_dmg[1] << 2) | (video.bgp_dmg[2] << 4) | (video.bgp_dmg[3] << 6);
         case OBP0:
-            if (!c->cgb_mode)
-                return video.obp_dmg[0][0] | (video.obp_dmg[0][1] << 2) | (video.obp_dmg[0][2] << 4) | (video.obp_dmg[0][3] << 6);
+            return video.obp_dmg[0][0] | (video.obp_dmg[0][1] << 2) | (video.obp_dmg[0][2] << 4) | (video.obp_dmg[0][3] << 6);
         case OBP1:
-            if (!c->cgb_mode)
-                return video.obp_dmg[1][0] | (video.obp_dmg[1][1] << 2) | (video.obp_dmg[1][2] << 4) | (video.obp_dmg[1][3] << 6);
+            return video.obp_dmg[1][0] | (video.obp_dmg[1][1] << 2) | (video.obp_dmg[1][2] << 4) | (video.obp_dmg[1][3] << 6);
 
         case BCPS:
             if (c->cgb_mode)
