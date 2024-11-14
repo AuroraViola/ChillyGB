@@ -280,7 +280,7 @@ void refresh_manager(){
             if (file_manager.dirs == NULL) file_manager.dirs = last_dir;
         } else {
             char *dot = strrchr(data->d_name, '.');
-            if (dot && !strcmp(dot, ".gb")) {
+            if ((dot && !strcmp(dot, ".gb")) || (dot && !strcmp(dot, ".gbc")) || (dot && !strcmp(dot, ".bin"))) {
                 last_file = append_list(last_file, data->d_name);
                 if (file_manager.files == NULL) file_manager.files = last_file;
             }
