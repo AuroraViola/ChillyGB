@@ -728,7 +728,7 @@ void update_frame() {
             if (nk_window_is_hidden(ctx, "ctx-about"))
                 show_about = false;
             
-            if (IsKeyPressed(KEY_ESCAPE) && game_started) {
+            if ((IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_TRIGGER_1)) && game_started ) {
                 emulator_mode = GAME;
                 ResumeAudioStream(audio.ch1.stream);
                 ResumeAudioStream(audio.ch2.stream);
@@ -764,7 +764,7 @@ void update_frame() {
                 Update_Audio(&c);
             }
             if (video.draw_screen) {
-                if (IsKeyPressed(KEY_ESCAPE) ) {
+                if (IsKeyPressed(KEY_ESCAPE) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_TRIGGER_1)) {
                     save_game(&c.cart, rom_name);
                     pause_game();
                 }
