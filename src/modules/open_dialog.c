@@ -178,10 +178,10 @@ char *do_open_rom_dialog(bool bootrom_chooser) {
     dialog.lpstrFile = filename;
     dialog.nMaxFile = MAX_PATH;
     if (bootrom_chooser) {
-        dialog.lpstrFilter = L"Game Boy ROMs\0*.gb;*.gbc;*.sgb;*.isx\0All files\0*.*\0\0";
+        dialog.lpstrFilter = L"Bootrom files\0.bin\0All files\0*.*\0\0";
     }
     else {
-        dialog.lpstrFilter = L"Bootrom files\0.bin\0All files\0*.*\0\0";
+        dialog.lpstrFilter = L"Game Boy ROMs\0*.gb;*.gbc;*.sgb;*.isx\0All files\0*.*\0\0";
     }
     dialog.nFilterIndex = 1;
     dialog.lpstrFileTitle = NULL;
