@@ -69,6 +69,8 @@ add_executable(ChillyGB src/main.c
         src/modules/memory.c
         src/includes/cheats.h
         src/modules/cheats.c
+        src/modules/ui.c
+        src/includes/ui.h
 )
 include_directories(
         third-party/openpnp-capture/include
