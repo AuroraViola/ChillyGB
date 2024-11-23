@@ -39,14 +39,38 @@ uint8_t gb_cam_matrix_process(int value, int x, int y) {
 }
 
 #if defined(PLATFORM_NX)
+#include <switch.h>
+
+struct {
+    uint32_t handle;
+    uint32_t buffer[240][320];
+    IrsImageTransferProcessorConfig config;
+}switch_ir;
+
 void initialize_camera() {
+    irsInitialize();
+    irsActivateIrsensor(1);
+    irsGetIrCameraHandle(&switch_ir.handle, CONTROLLER_PLAYER_1);
+    irsGetDefaultImageTransferProcessorConfig(&switch_ir.config);
+    irsRunImageTransferProcessor(switch_ir.handle, &switch_ir.config, 0x100000);
 }
 
 bool capture_frame(uint8_t camera_matrix[112][128]) {
-    return false;
+    IrsImageTransferProcessorState state;
+    Result rc = irsGetImageTransferProcessorState(switch_ir.handle, &switch_ir.buffer, sizeof(switch_ir.buffer), &state);
+    if (R_FAILED(rc)) {
+        return false;
+    }
+    for (uint32_t y = 0; y < 112; y++) {
+        for (uint32_t x = 0; x < 128; x++) {
+            camera_matrix[y][x] = switch_ir.buffer[y << 1][x << 1];
+        }
+    }
 }
 
 void stop_camera(){
+    irsStopImageProcessor(switch_ir.handle);
+    irsExit();
 }
 
 #elif defined(PLATFORM_WEB)
