@@ -16,7 +16,7 @@ const char r16stk_1[][3] = {"bc", "de", "hl", "af"};
 const char r16mem_1[][4] = {"bc", "de", "hl+", "hl-"};
 const char cond_1[][4] = {"nz", "z", "nc", "c"};
 
-char debug_text[4096];
+char *debug_text = "";
 
 int decode_instruction(cpu *c, uint16_t v_pc, char instruction[50]) {
     parameters p = {};

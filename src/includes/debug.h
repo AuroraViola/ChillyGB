@@ -5,7 +5,7 @@
 #ifndef CHILLYGB_DEBUG_H
 #define CHILLYGB_DEBUG_H
 
-extern char debug_text[4096];
+extern char *debug_text;
 
 void decode_instructions(cpu *c, char instruction[20][50]);
 Image take_debug_screenshot(Color pixels[144][160]);

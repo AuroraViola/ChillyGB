@@ -39,25 +39,54 @@ uint8_t gb_cam_matrix_process(int value, int x, int y) {
 }
 
 #if defined(PLATFORM_NX)
-#include <switcAh.h>
+#include <switch.h>
+#include "../includes/debug.h"
 
 struct {
-    uint32_t handle;
-    uint32_t buffer[240][320];
+    IrsIrCameraHandle handle;
+    uint8_t buffer[240][320];
     IrsImageTransferProcessorConfig config;
 }switch_ir;
 
 void initialize_camera() {
-    irsInitialize();
-    irsActivateIrsensor(1);
-    irsGetIrCameraHandle(&switch_ir.handle, CONTROLLER_PLAYER_1);
+    Result rs;
+    rs = irsInitialize();
+
+    padConfigureInput(1, HidNpadStyleSet_NpadStandard);
+
+    PadState pad;
+    padInitializeDefault(&pad);
+
+    if(R_FAILED(rs)) {
+        debug_text = "Failed irsInitialize";
+        return;
+    }
+    rs = irsGetIrCameraHandle(&switch_ir.handle, padIsHandheld(&pad) ? HidNpadIdType_Handheld : HidNpadIdType_No1);
+    if(R_FAILED(rs)) {
+        debug_text = "Failed GetIrCameraHandle";
+        return;
+    }
+
+    bool updateflag=0;
+    rs = irsCheckFirmwareUpdateNecessity(switch_ir.handle, &updateflag);
+    if (R_SUCCEEDED(rs) && updateflag) {
+        HidLaControllerFirmwareUpdateArg updatearg;
+        hidLaCreateControllerFirmwareUpdateArg(&updatearg);
+        updatearg.enable_force_update = 1;
+        hidLaShowControllerFirmwareUpdate(&updatearg);
+    }
+
     irsGetDefaultImageTransferProcessorConfig(&switch_ir.config);
-    irsRunImageTransferProcessor(switch_ir.handle, &switch_ir.config, 0x100000);
+    rs = irsRunImageTransferProcessor(switch_ir.handle, &switch_ir.config, 0x100000);
+    if(R_FAILED(rs)) {
+        debug_text = "Failed RunImageTransferProcessor";
+        return;
+    }
 }
 
 bool capture_frame(uint8_t camera_matrix[112][128]) {
     IrsImageTransferProcessorState state;
-    Result rc = irsGetImageTransferProcessorState(switch_ir.handle, &switch_ir.buffer, sizeof(switch_ir.buffer), &state);
+    Result rc = irsGetImageTransferProcessorState(switch_ir.handle, &switch_ir.buffer, 0x12c00, &state);
     if (R_FAILED(rc)) {
         return false;
     }
@@ -66,6 +95,7 @@ bool capture_frame(uint8_t camera_matrix[112][128]) {
             camera_matrix[y][x] = switch_ir.buffer[y << 1][x << 1];
         }
     }
+    return true;
 }
 
 void stop_camera(){

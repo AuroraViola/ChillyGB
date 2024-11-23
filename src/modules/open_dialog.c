@@ -307,7 +307,8 @@ void open_dir(char* dir) {
     refresh_manager();
 }
 
-void load_cartridge(char *path);
+extern cpu c;
+void load_cartridge(cpu *c, char *path);
 
 #define BUTTON_HIEGHT 54
 void DrawFileManager(struct nk_context * ctx){
@@ -375,7 +376,7 @@ void DrawFileManager(struct nk_context * ctx){
                     (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_RIGHT) || IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)))){
                 char rom_path[256];
                 sprintf(rom_path, "%s/%s", file_manager.cwd, last_file->name);
-                load_cartridge(rom_path);
+                load_cartridge(&c, rom_path);
             }
             last_file = last_file->next;
             i++;

@@ -665,6 +665,7 @@ void draw_display(cpu *c) {
         EndShaderMode();
     }
     EndShaderMode();
+    DrawText(debug_text, 0, 40, 20, RED);
 }
 
 void update_display_texture(cpu *c) {

@@ -1,12 +1,14 @@
 cmake-build-debug
 cmake-build-debug-coverage
 cmake-build-release
+cmake-build-release-file-manager
 res/bootrom/dmg_boot.bin
 res/bootrom/cgb_boot.bin
 build-wasm
 Roms
 .idea
 build-linux
+build-nx
 cmake-build-switch
 build-linux
 cmake-build-switch
