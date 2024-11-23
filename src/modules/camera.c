@@ -39,7 +39,7 @@ uint8_t gb_cam_matrix_process(int value, int x, int y) {
 }
 
 #if defined(PLATFORM_NX)
-#include <switch.h>
+#include <switcAh.h>
 
 struct {
     uint32_t handle;
