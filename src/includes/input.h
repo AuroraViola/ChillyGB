@@ -30,5 +30,6 @@ extern joypad joypad1;
 bool update_keys();
 int get_x_accel();
 int get_y_accel();
+void init_axis();
 
 #endif //CHILLYGB_INPUT_H

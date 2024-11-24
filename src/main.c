@@ -112,6 +112,7 @@ int main(int argc, char **argv) {
     }
 
     initialize_ui();
+    init_axis();
 
     joypad1.fast_forward = 1;
 
