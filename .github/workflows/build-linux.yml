@@ -50,7 +50,7 @@ jobs:
       run: |
         cd third-party/raylib
         mkdir build && cd build
-        cmake -DBUILD_SHARED_LIBS=ON -DUSE_EXTERNAL_GLFW=OFF -DOpenGL_GL_PREFERENCE=GLVND -DGLFW_BUILD_WAYLAND=ON -DPLATFORM=Desktop ..
+        cmake -DBUILD_SHARED_LIBS=ON -DGLFW_BUILD_WAYLAND=OFF ..
         make && sudo make install
 
     - name: Save Raylib
