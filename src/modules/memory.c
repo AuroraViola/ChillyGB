@@ -14,35 +14,6 @@
 
 const uint16_t clock_tac_shift2[] = {0x200, 0x8, 0x20, 0x80};
 
-int get_x_accel() {
-    switch (set.motion_style) {
-        case 0:
-            return (int)(GetGamepadAxisMovement(0, 0) * -64);
-        case 1:
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                return (int)((GetMouseX() - (GetScreenWidth()/2)) * -1);
-            else
-                return 0;
-        default:
-            return 0;
-    }
-}
-
-int get_y_accel() {
-    switch (set.motion_style) {
-        case 0:
-            return (int)(GetGamepadAxisMovement(0, 1) * -64);
-        case 1:
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                return (int)((GetMouseY() - (GetScreenHeight()/2)) * -1);
-            else
-                return 0;
-        default:
-            return 0;
-
-    }
-}
-
 uint8_t read_no_mbc(cpu *c, uint16_t addr) {
     switch (addr) {
         case 0x0000 ... 0x3fff:

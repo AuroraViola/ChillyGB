@@ -3,6 +3,10 @@
 #include "../includes/input.h"
 #include "raylib.h"
 
+#if defined(PLATFORM_NX)
+#include <switch.h>
+#endif
+
 joypad joypad1;
 
 bool update_keys() {
@@ -29,4 +33,32 @@ bool update_keys() {
             return true;
     }
     return false;
+}
+
+int get_x_accel() {
+    switch (set.motion_style) {
+        case 0:
+            return (int)(GetGamepadAxisMovement(0, 0) * -64);
+        case 1:
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                return (int)((GetMouseX() - (GetScreenWidth()/2)) * -1);
+            else
+                return 0;
+        default:
+            return 0;
+    }
+}
+
+int get_y_accel() {
+    switch (set.motion_style) {
+        case 0:
+            return (int)(GetGamepadAxisMovement(0, 1) * -64);
+        case 1:
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+                return (int)((GetMouseY() - (GetScreenHeight()/2)) * -1);
+            else
+                return 0;
+        default:
+            return 0;
+    }
 }
