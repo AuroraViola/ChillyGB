@@ -39,8 +39,11 @@ You can try it now [here](https://chillygb.arci.me) (Note that the audio in the 
   * Pixel grid
   * Color correction on GBC
   * Input editor
-  * Switch support as NRO
   * Cheats (GameGenie and GameShark)
+  * Basic gamepad support
+* **Switch features**
+  * Support for Pocket camera via IR sensor
+  * Native accelerometer support with MBC7 games
 * **Debugger**
   * Instructions viewer
   * Memory Viewer
