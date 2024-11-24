@@ -105,6 +105,7 @@ void initialize_ui() {
     ui.display.texture = LoadTextureFromImage(ui.display.image);
     ui.about.logo_image = LoadImage(RES_DIR "icons/ChillyGB-256.png");
     ui.about.logo_texture = LoadTextureFromImage(ui.about.logo_image);
+    strcpy(ui.about.version, "v0.3.1");
 
     ui.shaders[SHADER_DEFAULT] = LoadShader(0, 0);
     ui.shaders[SHADER_PIXEL_GRID] = LoadShader(0, "res/shaders/pixel_grid.fs");
