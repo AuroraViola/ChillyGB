@@ -280,8 +280,67 @@ void draw_input_editor(const char *text, KeyboardKey *key_variable, int option_n
     }
 }
 
+void draw_joypad_input_editor(const char *text, GamepadButton *button_variable, int option_number) {
+    char input_value[15];
+    nk_label(ui.ctx, text, NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
+    if (ui.settings.is_selected_input && option_number == ui.settings.selected_input) {
+        sprintf(input_value, "...");
+        int button_pressed = GetGamepadButtonPressed();
+        if (button_pressed != 0) {
+            *button_variable = button_pressed;
+            ui.settings.is_selected_input = false;
+        }
+    }
+    else {
+        char key_name[15];
+        convert_button(key_name, *button_variable);
+        sprintf(input_value, "%s", key_name);
+    }
+    if (nk_button_label(ui.ctx, input_value)) {
+        ui.settings.selected_input = option_number;
+        ui.settings.is_selected_input = true;
+    }
+}
+
+bool get_input_pressed(int index) {
+    return IsKeyDown(set.keyboard_keys[index]) || IsGamepadButtonDown(set.selected_input-1, set.gamepad_keys[index]);
+}
+
+void draw_gamepad_viewer() {
+    nk_layout_row_begin(ui.ctx, NK_STATIC, 150, 2);
+    nk_layout_row_push(ui.ctx, 120);
+    nk_spacer(ui.ctx);
+    nk_layout_row_push(ui.ctx, 300);
+    if (nk_group_begin(ui.ctx, "gamepad_view", 0)) {
+        nk_layout_space_begin(ui.ctx, NK_STATIC, 130, 10);
+        nk_layout_space_push(ui.ctx, nk_rect(15, 45, 60, 30));
+        nk_button_symbol_styled(ui.ctx, &ui.style.button_dpad, NK_SYMBOL_NONE);
+        nk_layout_space_push(ui.ctx, nk_rect(30, 30, 30, 60));
+        nk_button_symbol_styled(ui.ctx, &ui.style.button_dpad, NK_SYMBOL_NONE);
+        nk_layout_space_push(ui.ctx, nk_rect(0, 45, 30, 30));
+        nk_button_symbol_styled(ui.ctx, (get_input_pressed(DPAD_LEFT)) ? &ui.style.button_dpad_pressed : &ui.style.button_dpad,NK_SYMBOL_TRIANGLE_LEFT);
+        nk_layout_space_push(ui.ctx, nk_rect(60, 45, 30, 30));
+        nk_button_symbol_styled(ui.ctx, (get_input_pressed(DPAD_RIGHT)) ? &ui.style.button_dpad_pressed : &ui.style.button_dpad, NK_SYMBOL_TRIANGLE_RIGHT);
+        nk_layout_space_push(ui.ctx, nk_rect(30, 15, 30, 30));
+        nk_button_symbol_styled(ui.ctx, (get_input_pressed(DPAD_UP)) ? &ui.style.button_dpad_pressed: &ui.style.button_dpad, NK_SYMBOL_TRIANGLE_UP);
+        nk_layout_space_push(ui.ctx, nk_rect(30, 75, 30, 30));
+        nk_button_symbol_styled(ui.ctx, (get_input_pressed(DPAD_DOWN)) ? &ui.style.button_dpad_pressed: &ui.style.button_dpad, NK_SYMBOL_TRIANGLE_DOWN);
+        nk_layout_space_push(ui.ctx, nk_rect(105, 120, 30, 10));
+        nk_button_label_styled(ui.ctx, (get_input_pressed(BUTTON_SELECT+4)) ? &ui.style.button_buttons_pressed: &ui.style.button_buttons, "");
+        nk_layout_space_push(ui.ctx, nk_rect(150, 120, 30, 10));
+        nk_button_label_styled(ui.ctx, (get_input_pressed(BUTTON_START+4)) ? &ui.style.button_buttons_pressed: &ui.style.button_buttons, "");
+        nk_layout_space_push(ui.ctx, nk_rect(180, 50, 40, 40));
+        nk_button_label_styled(ui.ctx, (get_input_pressed(BUTTON_B+4)) ? &ui.style.button_buttons_pressed: &ui.style.button_buttons, "B");
+        nk_layout_space_push(ui.ctx, nk_rect(240, 30, 40, 40));
+        nk_button_label_styled(ui.ctx, (get_input_pressed(BUTTON_A+4)) ? &ui.style.button_buttons_pressed: &ui.style.button_buttons, "A");
+        nk_layout_space_end(ui.ctx);
+        nk_group_end(ui.ctx);
+    }
+    nk_layout_row_end(ui.ctx);
+}
+
 void draw_settings_window() {
-    if(nk_begin_titled(ui.ctx, "ctx-settings","Settings", nk_rect(20, 60, 550, 505),
+    if(nk_begin_titled(ui.ctx, "ctx-settings","Settings", nk_rect(20, 60, 550, 515),
                        NK_WINDOW_MOVABLE|NK_WINDOW_TITLE)) {
         nk_layout_row_dynamic(ui.ctx, 30, 4);
         if (nk_button_label_styled(ui.ctx, (ui.settings.view != SET_EMU) ? &ui.style.tab_button : &ui.style.tab_button_active, "Emulation"))
@@ -294,7 +353,7 @@ void draw_settings_window() {
             ui.settings.view = SET_INPUT;
 
         struct nk_vec2 size = {280, 200};
-        nk_layout_row_dynamic(ui.ctx, 370, 1);
+        nk_layout_row_dynamic(ui.ctx, 380, 1);
         if (nk_group_begin(ui.ctx, "settings_view", 0)) {
             switch (ui.settings.view) {
                 case SET_EMU:
@@ -455,15 +514,47 @@ void draw_settings_window() {
                     if (nk_button_label_styled(ui.ctx, (ui.settings.input_view != INPUT_ADVANCED) ? &ui.style.tab_button : &ui.style.tab_button_active, "Advanced"))
                         ui.settings.input_view = INPUT_ADVANCED;
                     if (nk_button_label_styled(ui.ctx, (ui.settings.input_view != INPUT_MOTION) ? &ui.style.tab_button : &ui.style.tab_button_active, "Motions"))
-                        ui.settings.is_selected_input = INPUT_MOTION;
-                    nk_layout_row_dynamic(ui.ctx, 150, 1);
-                    if (nk_group_begin(ui.ctx, "key_management", 0)) {
+                        ui.settings.input_view = INPUT_MOTION;
+                    nk_layout_row_dynamic(ui.ctx, 320, 1);
+                    if (nk_group_begin(ui.ctx, "key_management", NK_WINDOW_NO_SCROLLBAR)) {
                         switch (ui.settings.input_view) {
                             case INPUT_GAMEPAD:
-                                nk_layout_row_dynamic(ui.ctx, 30, 4);
-                                for (int i = 0; i < 8; i++) {
-                                    draw_input_editor(keys_names[ui.settings.key_order[i]], &set.keyboard_keys[ui.settings.key_order[i]], i);
+                                nk_layout_row_dynamic(ui.ctx, 30, 2);
+                                nk_label(ui.ctx, "Input:", NK_TEXT_ALIGN_RIGHT|NK_TEXT_ALIGN_MIDDLE);
+                                stpcpy(ui.settings.comboxes_gamepad, "Keyboard");
+                                int joypad_len = strlen("Keyboard")+1;;
+                                int joypad_count = 0;
+                                for (int i = 0; i < 10; i++) {
+                                    if (IsGamepadAvailable(i)) {
+                                        stpcpy(ui.settings.comboxes_gamepad + joypad_len, GetGamepadName(i));
+                                        joypad_len += strlen(GetGamepadName(i)) + 1;
+                                        joypad_count++;
+                                    }
                                 }
+                                nk_combobox_string(ui.ctx, ui.settings.comboxes_gamepad, &set.selected_input, joypad_count+1, 20, size);
+
+                                nk_layout_row_dynamic(ui.ctx, 30, 4);
+                                if (set.selected_input == 0) {
+                                    draw_input_editor("Up:", &set.keyboard_keys[2], 0);
+                                    draw_input_editor("A:", &set.keyboard_keys[4], 1);
+                                    draw_input_editor("Down:", &set.keyboard_keys[3], 2);
+                                    draw_input_editor("B:", &set.keyboard_keys[5], 3);
+                                    draw_input_editor("Left:", &set.keyboard_keys[1], 4);
+                                    draw_input_editor("Start:", &set.keyboard_keys[7], 5);
+                                    draw_input_editor("Right:", &set.keyboard_keys[0], 6);
+                                    draw_input_editor("Select:", &set.keyboard_keys[6], 7);
+                                }
+                                else {
+                                    draw_joypad_input_editor("Up:", &set.gamepad_keys[2], 0);
+                                    draw_joypad_input_editor("A:", &set.gamepad_keys[4], 1);
+                                    draw_joypad_input_editor("Down:", &set.gamepad_keys[3], 2);
+                                    draw_joypad_input_editor("B:", &set.gamepad_keys[5], 3);
+                                    draw_joypad_input_editor("Left:", &set.gamepad_keys[1], 4);
+                                    draw_joypad_input_editor("Start:", &set.gamepad_keys[7], 5);
+                                    draw_joypad_input_editor("Right:", &set.gamepad_keys[0], 6);
+                                    draw_joypad_input_editor("Select:", &set.gamepad_keys[6], 7);
+                                }
+                                draw_gamepad_viewer();
                                 break;
                             case INPUT_ADVANCED:
                                 nk_layout_row_dynamic(ui.ctx, 30, 4);
@@ -477,41 +568,11 @@ void draw_settings_window() {
                                 nk_layout_row_dynamic(ui.ctx, 30, 1);
                                 nk_label(ui.ctx, "Motion control style", NK_TEXT_ALIGN_LEFT|NK_TEXT_ALIGN_MIDDLE);
                                 nk_combobox_string(ui.ctx, "Gamepad axis\0Mouse pointer", &set.motion_style, 2, 20, size);
-
                                 break;
                         }
                         nk_group_end(ui.ctx);
                     }
-                    nk_layout_row_begin(ui.ctx, NK_STATIC, 150, 2);
-                    nk_layout_row_push(ui.ctx, 120);
-                    nk_spacer(ui.ctx);
-                    nk_layout_row_push(ui.ctx, 300);
-                    if (nk_group_begin(ui.ctx, "gamepad_view", 0)) {
-                        nk_layout_space_begin(ui.ctx, NK_STATIC, 130, 10);
-                        nk_layout_space_push(ui.ctx, nk_rect(15, 45, 60, 30));
-                        nk_button_symbol_styled(ui.ctx, &ui.style.button_dpad, NK_SYMBOL_NONE);
-                        nk_layout_space_push(ui.ctx, nk_rect(30, 30, 30, 60));
-                        nk_button_symbol_styled(ui.ctx, &ui.style.button_dpad, NK_SYMBOL_NONE);
-                        nk_layout_space_push(ui.ctx, nk_rect(0, 45, 30, 30));
-                        nk_button_symbol_styled(ui.ctx, (IsKeyDown(set.keyboard_keys[DPAD_LEFT])) ? &ui.style.button_dpad_pressed : &ui.style.button_dpad,NK_SYMBOL_TRIANGLE_LEFT);
-                        nk_layout_space_push(ui.ctx, nk_rect(60, 45, 30, 30));
-                        nk_button_symbol_styled(ui.ctx, (IsKeyDown(set.keyboard_keys[DPAD_RIGHT])) ? &ui.style.button_dpad_pressed : &ui.style.button_dpad, NK_SYMBOL_TRIANGLE_RIGHT);
-                        nk_layout_space_push(ui.ctx, nk_rect(30, 15, 30, 30));
-                        nk_button_symbol_styled(ui.ctx, (IsKeyDown(set.keyboard_keys[DPAD_UP])) ? &ui.style.button_dpad_pressed: &ui.style.button_dpad, NK_SYMBOL_TRIANGLE_UP);
-                        nk_layout_space_push(ui.ctx, nk_rect(30, 75, 30, 30));
-                        nk_button_symbol_styled(ui.ctx, (IsKeyDown(set.keyboard_keys[DPAD_DOWN])) ? &ui.style.button_dpad_pressed: &ui.style.button_dpad, NK_SYMBOL_TRIANGLE_DOWN);
-                        nk_layout_space_push(ui.ctx, nk_rect(105, 120, 30, 10));
-                        nk_button_label_styled(ui.ctx, (IsKeyDown(set.keyboard_keys[BUTTON_SELECT+4])) ? &ui.style.button_buttons_pressed: &ui.style.button_buttons, "");
-                        nk_layout_space_push(ui.ctx, nk_rect(150, 120, 30, 10));
-                        nk_button_label_styled(ui.ctx, (IsKeyDown(set.keyboard_keys[BUTTON_START+4])) ? &ui.style.button_buttons_pressed: &ui.style.button_buttons, "");
-                        nk_layout_space_push(ui.ctx, nk_rect(180, 50, 40, 40));
-                        nk_button_label_styled(ui.ctx, (IsKeyDown(set.keyboard_keys[BUTTON_B+4])) ? &ui.style.button_buttons_pressed: &ui.style.button_buttons, "B");
-                        nk_layout_space_push(ui.ctx, nk_rect(240, 30, 40, 40));
-                        nk_button_label_styled(ui.ctx, (IsKeyDown(set.keyboard_keys[BUTTON_A+4])) ? &ui.style.button_buttons_pressed: &ui.style.button_buttons, "A");
-                        nk_layout_space_end(ui.ctx);
-                        nk_group_end(ui.ctx);
-                    }
-                    nk_layout_row_end(ui.ctx);
+
                     break;
             }
             nk_group_end(ui.ctx);

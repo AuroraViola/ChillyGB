@@ -152,6 +152,65 @@ void convert_key(char key_name[15], int key) {
     }
 }
 
+void convert_button(char key_name[15], int key) {
+    switch (key) {
+        case GAMEPAD_BUTTON_LEFT_FACE_DOWN:
+            strcpy(key_name, "DPAD Down");
+            break;
+        case GAMEPAD_BUTTON_LEFT_FACE_UP:
+            strcpy(key_name, "DPAD Up");
+            break;
+        case GAMEPAD_BUTTON_LEFT_FACE_LEFT:
+            strcpy(key_name, "DPAD Left");
+            break;
+        case GAMEPAD_BUTTON_LEFT_FACE_RIGHT:
+            strcpy(key_name, "DPAD Right");
+            break;
+        case GAMEPAD_BUTTON_RIGHT_FACE_DOWN:
+            strcpy(key_name, "B");
+            break;
+        case GAMEPAD_BUTTON_RIGHT_FACE_UP:
+            strcpy(key_name, "X");
+            break;
+        case GAMEPAD_BUTTON_RIGHT_FACE_LEFT:
+            strcpy(key_name, "Y");
+            break;
+        case GAMEPAD_BUTTON_RIGHT_FACE_RIGHT:
+            strcpy(key_name, "A");
+            break;
+        case GAMEPAD_BUTTON_MIDDLE_LEFT:
+            strcpy(key_name, "-");
+            break;
+        case GAMEPAD_BUTTON_MIDDLE_RIGHT:
+            strcpy(key_name, "+");
+            break;
+        case GAMEPAD_BUTTON_LEFT_TRIGGER_1:
+            strcpy(key_name, "L");
+            break;
+        case GAMEPAD_BUTTON_LEFT_TRIGGER_2:
+            strcpy(key_name, "ZL");
+            break;
+        case GAMEPAD_BUTTON_RIGHT_TRIGGER_1:
+            strcpy(key_name, "R");
+            break;
+        case GAMEPAD_BUTTON_RIGHT_TRIGGER_2:
+            strcpy(key_name, "ZR");
+            break;
+        case GAMEPAD_BUTTON_MIDDLE:
+            strcpy(key_name, "Home");
+            break;
+        case GAMEPAD_BUTTON_LEFT_THUMB:
+            strcpy(key_name, "LS");
+            break;
+        case GAMEPAD_BUTTON_RIGHT_THUMB:
+            strcpy(key_name, "RS");
+            break;
+        default:
+            strcpy(key_name, "Unknown");
+            break;
+    }
+}
+
 void rgb_to_str(Color color, char string[10]) {
     sprintf(string, "#%02X%02X%02X", color.r, color.g, color.b);
 }
@@ -241,7 +300,9 @@ void load_default_settings() {
     set.selected_effect = 0;
     set.frame_blending = false;
     set.accurate_rtc = true;
-    set.color_correction = false;
+    set.color_correction = true;
+    set.motion_style = 1;
+    set.selected_input = 0;
     set.ch_on[0] = true;
     set.ch_on[1] = true;
     set.ch_on[2] = true;
@@ -418,6 +479,12 @@ void load_settings() {
     else
         set.debugger_key = KEY_F3;
 
+    cJSON *selected_input = cJSON_GetObjectItem(settings, "selected_input");
+    if (cJSON_IsNumber(selected_input))
+        set.selected_input = selected_input->valueint;
+    else
+        set.selected_input = 0;
+
     cJSON *motion_style = cJSON_GetObjectItem(settings, "motion_style");
     if (cJSON_IsNumber(motion_style))
         set.motion_style = motion_style->valueint;
@@ -495,6 +562,7 @@ void save_settings() {
     cJSON_AddStringToObject(settings, "bootrom_path_cgb", set.bootrom_path_cgb);
     cJSON_AddStringToObject(settings, "bootrom_path_dmg", set.bootrom_path_dmg);
     cJSON_AddNumberToObject(settings, "motion_style", set.motion_style);
+    cJSON_AddNumberToObject(settings, "selected_input", set.selected_input);
     cJSON_AddStringToObject(settings, "dsu_ip", set.dsu_ip);
     cJSON_AddNumberToObject(settings, "dsu_port", set.dsu_port);
 

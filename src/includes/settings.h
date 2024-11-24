@@ -40,6 +40,7 @@ typedef struct {
     KeyboardKey debugger_key;
     KeyboardKey rewind_key;
     int motion_style;
+    int selected_input;
 
     // DSU client
     char dsu_ip[16];
@@ -52,6 +53,7 @@ extern char keys_names[8][10];
 extern char converted_keys[][10];
 
 void convert_key(char key_name[15], int key);
+void convert_button(char key_name[15], int key);
 void load_settings();
 void save_settings();
 

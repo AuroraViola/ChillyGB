@@ -43,6 +43,7 @@ typedef struct {
     bool is_selected_input;
     uint8_t selected_input;
     char comboxes[2500];
+    char comboxes_gamepad[2500];
     int key_order[8];
 }UiSettings;
 
