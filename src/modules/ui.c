@@ -599,11 +599,11 @@ void draw_about_window() {
     if(nk_begin_titled(ui.ctx, "ctx-about","About", nk_rect((GetScreenWidth()/2-200), (GetScreenHeight()/2-250), 400, 520),
                        NK_WINDOW_CLOSABLE)) {
         nk_layout_row_begin(ui.ctx, NK_STATIC, 256, 2);
-        nk_layout_row_push(ui.ctx, (370-150)/2);
+        nk_layout_row_push(ui.ctx, (370-256)/2);
         nk_spacer(ui.ctx);
 
         struct nk_image chillygb_logo = TextureToNuklear(ui.about.logo_texture);
-        nk_layout_row_push(ui.ctx, 150);
+        nk_layout_row_push(ui.ctx, 256);
         nk_image(ui.ctx, chillygb_logo);
         nk_layout_row_end(ui.ctx);
 
