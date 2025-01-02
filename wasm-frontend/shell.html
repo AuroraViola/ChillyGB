@@ -534,7 +534,7 @@
       file.arrayBuffer().then((buffer) => {
         const path = `/file_picker_uploads/${file.name}`
         FS.writeFile(path, new Uint8Array(buffer));
-        ccall("load_cartridge", "v", ["string"], [path]);
+        ccall("load_cartridge_wasm", "v", ["string"], [path]);
       });
     };
 

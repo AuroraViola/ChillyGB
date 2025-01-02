@@ -11,7 +11,7 @@ emcc -o build-wasm/index.html \
 	-Ithird-party/cJSON \
 	-DPLATFORM_WEB \
 	-sEXPORTED_RUNTIME_METHODS=ccall \
-	-sEXPORTED_FUNCTIONS=_load_settings,_pause_game,_load_cartridge,_main,_in_game,_cameraCallback \
+	-sEXPORTED_FUNCTIONS=_load_settings,_pause_game,_load_cartridge_wasm,_main,_in_game,_cameraCallback \
 	--shell-file=wasm-frontend/shell.html \
 	-lidbfs.js \
 	--preload-file ./res 

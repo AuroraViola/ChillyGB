@@ -163,6 +163,7 @@ enum cond {
     condNZ = 0,
 };
 
+extern cpu c;
 extern float speed_mult;
 
 void initialize_cpu_memory_no_bootrom(cpu *c, settings *s);

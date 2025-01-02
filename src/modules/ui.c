@@ -128,6 +128,12 @@ void deinitialize_ui(cpu *c) {
     CloseWindow();
 }
 
+//#if defined(PLATFORM_WEB)
+void load_cartridge_wasm(char *path) {
+    load_cartridge(&c, path);
+}
+//#endif
+
 void load_cartridge(cpu *c, char *path) {
     strcpy(ui.rom_name, path);
     if(!load_game(&c->cart, ui.rom_name)){
